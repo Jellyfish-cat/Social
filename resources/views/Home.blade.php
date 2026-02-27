@@ -12,10 +12,9 @@
         background: #fff;
         margin-bottom: 30px;
     }
-
     /* Instagram Style Media Slide */
     .post-media-wrapper {
-        background-color: #bdbdbd;
+        background-color: #fafafa;
         position: relative;
         width: 100%;
         border-top: 1px solid #efefef;
@@ -23,9 +22,9 @@
     }
     .carousel-item img, .carousel-item video {
         width: 100%;
-        height: 500px; /* Tỉ lệ chuẩn Instagram Desktop */
+        height: 100%; /* Tỉ lệ chuẩn Instagram Desktop */
         object-fit: contain;
-    }
+    } 
     .carousel-control-prev, .carousel-control-next { 
         opacity: 0.8; 
         width: 10%; 
@@ -45,19 +44,6 @@
         object-fit: cover;
         border: 1px solid #dbdbdb;
     }
-    .slider-container {
-    display: flex;
-    overflow-x: auto; /* Cho phép cuộn ngang */
-    scroll-snap-type: x mandatory; /* Ép thanh cuộn phải dừng đúng vị trí item */
-    scroll-behavior: smooth; /* Tạo hiệu ứng cuộn mượt mà */
-    width: 100%;
-    height: 500px;
-    -webkit-overflow-scrolling: touch; /* Giúp vuốt mượt hơn trên iOS */
-}
-
-.slider-container::-webkit-scrollbar {
-    display: none; /* Ẩn thanh cuộn để trông giống Instagram/Facebook */
-}
     /* Interaction Icons */
     .action-icon { font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
     .action-icon:hover { color: #8e8e8e; }
@@ -112,7 +98,6 @@
                 <div class="post-media-wrapper">
             
                     @if($post->media->count() > 0)
-                            <div class="slider-container">
                         <div id="carousel-{{ $post->id }}" class="carousel slide" data-bs-ride="false">
                             <div class="carousel-indicators">
                                 @foreach($post->media as $index => $m)
@@ -147,7 +132,6 @@
                                 </button>
                             @endif
                         </div>
-                            </div>
                     @endif
                 </div>
                 

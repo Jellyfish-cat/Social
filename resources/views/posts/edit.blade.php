@@ -2,50 +2,7 @@
 
 @section('content')
 <style>
-    body { background-color: #f8f9fa; }
-
-    /* Container chính: Bo góc mạnh hơn và đổ bóng mềm */
-    .post-modal {
-        max-width: 1200px;
-        margin: 2rem auto;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-    .modal-header { 
-        padding: 1rem 1.5rem; 
-        border-bottom: 1px solid #efefef; 
-        background: #fff;
-    }
-
-    /* Layout chia đôi */
-    .edit-main-content {
-        display: flex;
-        flex-wrap: nowrap; /* Giữ nguyên layout 2 cột trên màn hình lớn */
-        min-height: 650px;
-    }
-
-    /* CỘT TRÁI: Media Slide */
-    .media-column {
-        flex: 1.2; /* Cột ảnh rộng hơn một chút */
-        background-color: #1a1a1a; /* Màu tối hơn để ảnh nổi bật */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        min-width: 500px;
-    }
-
-    .carousel-item img, .carousel-item video {
-        width: 100%;
-        height: 650px;
-        object-fit: contain;
-    }
-
+  
     /* Nút X xóa ảnh: Kiểu dáng sang trọng hơn */
     .remove-single-media {
         position: absolute;
@@ -69,56 +26,6 @@
         border-color: #ff4d4f;
         transform: scale(1.1);
     }
-
-    /* CỘT PHẢI: Thông tin */
-    .info-column {
-        width: 420px;
-        display: flex;
-        flex-direction: column;
-        border-left: 1px solid #efefef;
-        background: #fff;
-    }
-
-    /* Tỉ lệ 60%: Nội dung văn bản */
-    .content-area-wrapper {
-        height: 50%; 
-        overflow-y: auto;
-        border-bottom: 1px solid #efefef;
-        padding: 5px;
-    }
-
-    .content-area-wrapper textarea {
-        width: 100%;
-        height: 100%;
-        border: none;
-        padding: 1.5rem;
-        font-size: 1rem;
-        outline: none;
-        resize: none;
-        line-height: 1.6;
-        color: #262626;
-    }
-
-    /* Tỉ lệ 40%: Cài đặt */
-    .extra-settings-wrapper {
-        height: 50%;
-        padding: 1.5rem;
-        background: #fff;
-        overflow-y: auto;
-    }
-
-    /* User Profile Header */
-    .user-header {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #efefef;
-    }
-    .user-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
     /* Custom Switch & Inputs */
     .form-check-input:checked {
         background-color: #0866ff;
@@ -128,45 +35,6 @@
         border-radius: 8px;
         border-color: #dbdbdb;
         padding: 0.5rem;
-    }
-
-    .btn-update-fixed {
-        margin-top: 1.5rem;
-        background: linear-gradient(45deg, #0095f6, #0074cc);
-        border: none;
-        border-radius: 8px;
-        padding: 0.75rem;
-        color: white;
-        font-weight: 600;
-        width: 100%;
-        transition: opacity 0.2s;
-    }
-    .btn-update-fixed:hover {
-        opacity: 0.9;
-        color: #fff;
-    }
-
-    /* Nút thêm media */
-    .btn-add-media {
-        border: 1px dashed #dbdbdb;
-        border-radius: 10px;
-        padding: 1rem;
-        background: #fafafa;
-        transition: all 0.2s;
-        text-decoration: none;
-        color: #8e8e8e;
-    }
-    .btn-add-media:hover {
-        background: #f0f2f5;
-        border-color: #a8a8a8;
-        color: #262626;
-    }
-
-    @media (max-width: 992px) {
-        .edit-main-content { flex-direction: column; }
-        .info-column { width: 100%; height: auto; }
-        .content-area-wrapper, .extra-settings-wrapper { height: auto; }
-        .media-column { min-height: 450px; min-width: 100%; }
     }
 </style>
 

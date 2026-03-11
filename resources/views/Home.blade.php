@@ -2,63 +2,14 @@
 
 @section('content')
 <style>
-    body { background-color: #fafafa; }
-    .feed-container { max-width: 935px; margin: auto; }
     
-    /* Post Card Style */
-    .post-card {
-        border-radius: 8px;
-        border: 1px solid #dbdbdb;
-        background: #fff;
-        margin-bottom: 30px;
-    }
-    /* Instagram Style Media Slide */
-    .post-media-wrapper {
-        background-color: #fafafa;
-        position: relative;
-        width: 100%;
-        border-top: 1px solid #efefef;
-        border-bottom: 1px solid #efefef;
-    }
-    .carousel-item img, .carousel-item video {
-        width: 100%;
-        height: 100%; /* Tỉ lệ chuẩn Instagram Desktop */
-        object-fit: contain;
-    } 
-    .carousel-control-prev, .carousel-control-next { 
-        opacity: 0.8; 
-        width: 10%; 
-        height: 50%; 
-        top: 50%; 
-        transform: translateY(-50%);}
-    .carousel-indicators [data-bs-target] { 
-        width: 6px; 
-        height: 6px; 
-        border-radius: 50%; 
-        margin: 0 3px; }
-
-    /* User Avatar */
-    .avatar-circle {
-        width: 32px; height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 1px solid #dbdbdb;
-    }
-    /* Interaction Icons */
-    .action-icon { font-size: 1.5rem; cursor: pointer; transition: color 0.2s; }
-    .action-icon:hover { color: #8e8e8e; }
-    .bi-heart-fill { color: #ed4956; }
-
-    /* Right Sidebar (Suggestions) */
-    .sidebar-sticky { position: sticky; top: 90px; }
-    :root {
-        --f-backdrop-bg: rgba(93, 93, 93, 0.264) !important;
-    }
-    .fancybox__backdrop {
-        background-color: rgba(112, 112, 112, 0.544) !important;
-        backdrop-filter: blur(4px) !important;
-        -webkit-backdrop-filter: blur(4px) !important;
-    }
+    
+ .sidebar-sticky { position: sticky; top: 90px; } 
+ :root { --f-backdrop-bg: rgba(93, 93, 93, 0.264) !important; } 
+ .fancybox__backdrop { 
+    background-color: rgba(112, 112, 112, 0.544) !important; 
+    backdrop-filter: blur(4px) !important; 
+    -webkit-backdrop-filter: blur(4px) !important; }
 </style>
 
 <div class="container feed-container py-4">
@@ -67,15 +18,16 @@
             
             <div class="card post-card p-3 mb-4">
                 <div class="d-flex align-items-center gap-3">
-                    <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="avatar-circle">
+                    <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="avatar-circle" style="width:60px">
                     <a href="{{ route('posts.create') }}" class="btn btn-light rounded-pill flex-grow-1 text-start text-muted border-0 bg-light py-2 px-3">
-                        {{ auth()->user()->profile->display_name ?? 'Bạn' }} ơi, bạn đang nghĩ gì thế?
+                        {{ auth()->user()->profile->display_name ?? 'Bạn' }} ơi, bạn {{ __('Like') }} nghĩ gì thế?
                     </a>
                 </div>
             </div>
 
             @forelse($posts as $post)
             <div class="card post-card shadow-none">
+            <!-- <div class="card post-card shadow-none post-item" data-id="{{ $post->id }}"> -->
                 
                 <div class="p-3 d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
@@ -96,12 +48,11 @@
                 </div>
 
                 <div class="post-media-wrapper">
-            
                     @if($post->media->count() > 0)
                         <div id="carousel-{{ $post->id }}" class="carousel slide" data-bs-ride="false">
                             <div class="carousel-indicators">
                                 @foreach($post->media as $index => $m)
-                                    <button type="button" data-bs-target="#carousel-{{ $post->id }}" data-bs-slide-to="{{ $index }}" class="{{ $index == 0 ? 'active' : '' }}"></button>
+                                    <button type="button" data-bs-target="#carousel-{{ $post->id }}" data-bs-slide-to="{{ $index }}" class="{{ $index == 0 ? 'active' : '' }}"style="width: 8px; height: 8px; border-radius: 50%; margin-bottom:10px"></button>
                                 @endforeach
                             </div>
                             <div class="carousel-inner">
@@ -125,33 +76,40 @@
                             </div>
                             @if($post->media->count() > 1)
                                 <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{ $post->id }}" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                   <i class="bi bi-chevron-left bg-dark rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"></i>
                                 </button>
                                 <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{ $post->id }}" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <i class="bi bi-chevron-right bg-dark rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"></i>
                                 </button>
                             @endif
                         </div>
                     @endif
                 </div>
-                
-
                 <div class="p-3 pb-0">
-                  
-                    
                     <div class="post-caption small mb-1">
                         <span class="fw-bold me-1">{{ $post->user->profile->display_name ?? $post->user->name }}</span>
                         {!! nl2br(e($post->content)) !!}
                     </div>
                       <div class="d-flex justify-content-between mb-2">
                         <div class="d-flex gap-3">
-                            <i class="bi bi-heart action-icon"></i>
-                            <i class="bi bi-chat action-icon"></i>
-                            <i class="bi bi-send action-icon"></i>
+                            <button class="btn-like" data-id="{{ $post->id }}">
+                                @if($post->likes->contains('user_id', auth()->id()))
+                                <i class="bi bi-heart-fill action-icon fs-5 text-danger"></i>
+                                @else
+                                <i class="bi bi-heart action-icon fs-5 "></i>
+                              @endif
+                            </button>
+                            <button class="open-post" data-id="{{ $post->id }}">
+                                <i class="bi bi-chat action-icon fs-5"></i>
+                            </button>
+                            <!-- <i class="bi bi-chat action-icon btn-comment" data-id="{{ $post->id }}"></i> -->
+                            <i class="bi bi-send action-icon fs-5"></i>
                         </div>
-                        <i class="bi bi-bookmark action-icon"></i>
+                        <i class="bi bi-bookmark action-icon fs-5"></i>
                     </div>
-                    <div class="fw-bold small mb-2">{{ number_format($post->likes_count ?? 0) }} lượt thích</div>
+                    <div class="fw-bold small mb-2 like-count" data-post-id="{{ $post->id }}">
+                            {{ number_format($post->likes->count() ?? 0) }} lượt thích
+                        </div>
                     <div class="text-uppercase text-muted mb-2" style="font-size: 10px;">
                         {{ $post->created_at->diffForHumans() }}
                     </div>
@@ -170,9 +128,10 @@
                 </div>
             @endforelse
         </div>
-
         <div class="col-lg-4 d-none d-lg-block">
-            <div class="sidebar-sticky ps-4">
+    <div class="sidebar-sticky ps-4">
+    <!-- <div class="col-lg-4 d-none d-lg-block" id="comment-panel">
+    <div class="sidebar-sticky ps-4"> -->
                 <div class="d-flex align-items-center mb-4">
                     <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="rounded-circle" style="width: 56px; height: 56px; object-fit: cover;">
                     <div class="ms-3">
@@ -191,12 +150,23 @@
                     Giới thiệu • Trợ giúp • Báo chí • API • Việc làm • Quyền riêng tư • Điều khoản
                 </div>
                 <div class="text-muted mt-3 fw-bold" style="font-size: 12px;">
-                    © 2026 INSTAGRAM CLONE FROM GEMINI
                 </div>
             </div>
         </div>
     </div>
 </div>
+<!-- Modal xem chi tiết bài viết -->
+<div class="modal fade" id="postDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-body p-0" id="postDetailContent">
+                <!-- Nội dung chi tiết post sẽ load vào đây -->
+            </div>
+
+        </div>
+    </div>
+</div>      
 <script>
 
     document.querySelectorAll('.video-link').forEach(link => {
@@ -262,5 +232,94 @@
             }
         }
     });
-</script>
+    /*
+   document.addEventListener("DOMContentLoaded", function () {
+
+    let commentPanel = document.getElementById("comment-panel");
+    let currentPostId = null;
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.8) {
+
+                let postId = entry.target.dataset.id;
+
+                if (currentPostId !== postId) {
+                    currentPostId = postId;
+
+                    fetch(`/posts/comments/${postId}`)
+                        .then(response => response.text())
+                        .then(data => {
+                            commentPanel.querySelector(".sidebar-sticky").innerHTML = data;
+                        });
+                }
+            }
+        });
+    }, {
+        threshold: 0.8
+    });
+
+    document.querySelectorAll(".post-item").forEach(post => {
+        observer.observe(post);
+    });
+
+});*/
+document.querySelectorAll(".open-post").forEach(btn => {
+
+    btn.addEventListener("click", function(){
+
+        const postId = this.dataset.id;
+
+        fetch(`/posts/detail/${postId}`)
+        .then(res => res.text())
+        .then(html => {
+
+            document.getElementById("postDetailContent").innerHTML = html;
+
+            const modal = new bootstrap.Modal(document.getElementById("postDetailModal"));
+            modal.show();
+
+        });
+
+    });
+
+});
+document.addEventListener("click", function(e){
+
+    const btn = e.target.closest(".btn-like");
+
+    if(!btn) return;
+
+    const postId = btn.dataset.id;
+   const likeIcons = document.querySelectorAll(`.btn-like[data-id="${postId}"] i`);
+
+    fetch(`/posts/like/${postId}`, {
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "X-CSRF-TOKEN":document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.success){
+
+             const likeCounts = document.querySelectorAll(`.like-count[data-post-id="${postId}"]`); //tăng lượt thích hiện thị trên 2 trang
+                likeCounts.forEach(el => {
+                    el.innerText = data.likePost_count + " lượt thích";
+                });
+            //đổi màu tim thành đỏ
+            likeIcons.forEach(icon => {
+            icon.classList.toggle("text-danger");
+            if(icon.classList.contains("text-danger")){
+                icon.classList.replace("bi-heart","bi-heart-fill");
+            }else{
+                icon.classList.replace("bi-heart-fill","bi-heart");
+            }
+
+            });
+        }
+    });
+});
+</script>       
 @endsection

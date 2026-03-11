@@ -1,47 +1,142 @@
 <x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+<style>
+body{
+    background:#fafafa;
+}
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+.insta-wrapper{
+    max-width:350px;
+    margin:40px auto;
+}
+
+.insta-card{
+    background:#fff;
+    border:1px solid #dbdbdb;
+    padding:35px;
+}
+
+.insta-logo{
+    font-family:'Segoe UI',sans-serif;
+    font-size:32px;
+    font-weight:600;
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.insta-input{
+    background:#fafafa;
+    border:1px solid #dbdbdb;
+    padding:9px;
+    font-size:14px;
+}
+
+.insta-btn{
+    background:#0095f6;
+    border:none;
+    color:#fff;
+    font-weight:600;
+    padding:8px;
+    border-radius:6px;
+}
+
+.insta-btn:hover{
+    background:#1877f2;
+}
+
+.signup-box{
+    background:#fff;
+    border:1px solid #dbdbdb;
+    padding:20px;
+    text-align:center;
+    margin-top:10px;
+}
+
+.divider{
+    display:flex;
+    align-items:center;
+    margin:15px 0;
+}
+
+.divider hr{
+    flex:1;
+}
+
+.divider span{
+    margin:0 10px;
+    font-size:12px;
+    color:#8e8e8e;
+}
+</style>
+
+
+<div class="insta-wrapper">
+
+    <!-- Login box -->
+    <div class="insta-card">
+        <div class="insta-logo">
+           Gunpla Social Media
         </div>
+        <x-auth-session-status class="mb-3" :status="session('status')" />
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+            <input
+                type="email"
+                name="email"
+                value="{{ old('email') }}"
+                placeholder="Email"
+                class="insta-input w-full mb-2"
+                required
+            >
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+            <x-input-error :messages="$errors->get('email')" class="mb-2" />
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                class="insta-input w-full mb-3"
+                required
+            >
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+            <x-input-error :messages="$errors->get('password')" class="mb-2" />
 
-            <x-primary-button class="ms-3">
+            <button class="insta-btn w-full">
                 {{ __('Log in') }}
-            </x-primary-button>
+            </button>
+
+        </form>
+
+        <div class="divider">
+            <hr>
+            <span>Hoặc</span>
+            <hr>
         </div>
-    </form>
+
+        @if (Route::has('password.request'))
+        <div class="text-center">
+            <a href="{{ route('password.request') }}" class="text-sm text-blue-500">
+                Bạn quên mật khẩu?
+            </a>
+        </div>
+        @endif
+
+    </div>
+
+
+    <!-- Register box -->
+    <div class="signup-box">
+
+        Bạn chưa có tài khoản?
+
+        <a href="{{ route('register') }}" class="text-blue-500 font-semibold">
+            Đăng kí ngay
+        </a>
+
+    </div>
+
+</div>
+
 </x-guest-layout>

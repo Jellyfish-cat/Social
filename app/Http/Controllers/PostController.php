@@ -69,38 +69,42 @@ class PostController extends Controller
             DB::commit();
             
             if (Auth::user()->role == 'admin') { // Điều chỉnh theo logic role của bạn
-                return redirect()->route('posts.index')->with('success', 'Đăng bài thành công!');
+                return redirect()->route('/')->with('success', 'Đăng bài thành công!');
             }
             return view('2_back');
 
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+            return redirect(route('home'))->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
     }
 
     // 4. Xem chi tiết và tăng lượt xem
-    public function show($id)
-    {
-        $post = Post::with(['user.profile', 'media', 'topic', 'comments.user.profile'])->findOrFail($id);
-        
-        // Logic tăng lượt xem video (Dựa trên bảng video_views)
-        if ($post->media->where('type', 'video')->count() > 0) {
-            $mediaId = $post->media->where('type', 'video')->first()->id;
-            
-            // Ghi nhận lượt xem (Tránh spam bằng session)
-            $sessionKey = 'video_viewed_' . $mediaId;
-            if (!session()->has($sessionKey)) {
-                VideoView::create([
-                    'user_id' => Auth::id(),
-                    'media_id' => $mediaId
-                ]);
-                session()->put($sessionKey, now()->addMinutes(30));
-            }
+   public function detail($id)
+{
+    $post = Post::with([
+        'user.profile',
+        'media',
+        'topic',
+        'likes',
+        'favorites',
+        'comments' => function ($query) {
+            $query->whereNull('parent_comment_id')
+                  ->with(['user.profile', 'replies.user.profile'])
+                  ->latest();
         }
+    ])->findOrFail($id);
 
-        return view('posts.detail', compact('post'));
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | TĂNG LƯỢT XEM VIDEO (bảng video_views)
+    |--------------------------------------------------------------------------
+    */
+
+    // Lấy media đầu tiên là video (nếu có)
+
+    return view('posts.detail', compact('post'));
+}
 
     // 5. Giao diện chỉnh sửa
     public function edit($id)
@@ -111,31 +115,49 @@ class PostController extends Controller
     }
 
     // 6. Cập nhật bài viết
-    public function update(Request $request, $id)
-    {
-        $post = Post::findOrFail($id);
-        $is_comment = $request->has('is_comment_enabled') ? 1 : 0;
-        $post->topic_id = $request->topic_id;
-        $post->content = $request->content;
-        $post->is_comment_enabled = $is_comment;
-        $post->save();
+   public function update(Request $request, $id)
+{
+    $post = Post::findOrFail($id);
 
-        // Nếu có upload media mới
-        if ($request->hasFile('file')) {
-            // Xóa media cũ nếu cần thiết hoặc lưu thêm
-            foreach ($request->file('file') as $file) {
-                $path = $file->store('posts/media', 'public');
-                Media::create([
-                    'post_id' => $post->id,
-                    'file_path' => $path,
-                    'type' => str_contains($file->getMimeType(), 'video') ? 'video' : 'image'
-                ]);
-            }
+    $post->update([
+        'content' => $request->content,
+        'topic_id' => $request->topic_id,
+        'pinned' => $request->has('pinned'),
+        'is_comment_enabled' => $request->has('is_comment_enabled'),
+    ]);
+
+    // Xóa media
+    if ($request->deleted_media_ids) {
+
+        $ids = explode(',', $request->deleted_media_ids);
+
+        $medias = $post->media()->whereIn('id', $ids)->get();
+
+        foreach ($medias as $media) {
+            Storage::disk('public')->delete($media->file_path);
+            $media->delete();
         }
-
-        return redirect()->route('posts.index')->with('success', 'Cập nhật thành công');
     }
 
+    
+    if ($request->hasFile('file')) {
+
+        foreach ($request->file('file') as $file) {
+
+            $path = $file->store('posts', 'public');
+
+            $type = str_contains($file->getMimeType(), 'video') ? 'video' : 'image';
+
+            Media::create([
+                'post_id' => $post->id,
+                'file_path' => $path,
+                'type' => $type
+            ]);
+        }
+    }
+
+    return redirect()->route('home')->with('success', 'Cập nhật thành công');
+}
     // 7. Xóa bài viết (Xóa luôn comment, favorite và media liên quan)
     public function destroy($id)
     {
@@ -177,4 +199,11 @@ class PostController extends Controller
 
         return redirect()->back()->with('success', 'Duyệt bài thành công!');
     }
+public function loadComments($id)
+{
+    $post = Post::with('comments.user')->findOrFail($id);
+
+    return view('posts.comments', compact('post'));
+}
+
 }

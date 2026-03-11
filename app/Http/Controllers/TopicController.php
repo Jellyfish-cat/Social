@@ -12,7 +12,8 @@ class TopicController extends Controller
      */
     public function index()
     {
-        //
+        $topics = Topic::all();
+    return view('topics.index', compact('topics'));
     }
 
     /**
@@ -20,7 +21,7 @@ class TopicController extends Controller
      */
     public function create()
     {
-        //
+        return view('topics.create');
     }
 
     /**
@@ -28,7 +29,11 @@ class TopicController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        Topic::create([
+        'name' => $request->name,
+        'description' => $request->description
+    ]);
+    return redirect()->route('topics.index');
     }
 
     /**

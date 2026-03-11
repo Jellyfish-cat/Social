@@ -78,10 +78,8 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'vi'),
-
+    'locale' => 'vi',
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
-
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*

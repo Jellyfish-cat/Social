@@ -1,160 +1,412 @@
-@extends('layouts.app')
+    @extends('layouts.app_detail')
 
-@section('content')
-<style>
-    body { background-color: #f0f2f5; }
-    .fb-post-modal {
-        max-width: 600px;
-        margin: 2rem auto;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2);
-    }
-    .modal-header { padding: 15px; border-bottom: 1px solid #e5e5e5; }
-    
-    .content-area textarea {
-        width: 100%; border: none; padding: 15px; font-size: 1.25rem; 
-        outline: none; resize: none; min-height: 120px; line-height: 1.5;
-    }
+    @section('content')
 
-    #media-preview-wrapper {
-        position: relative; width: 100%; background-color: #000;
-        border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5;
-        {{ $post->media->count() > 0 ? '' : 'display: none;' }}
-    }
-    .carousel-item img, .carousel-item video {
-        width: 100%; height: 450px; object-fit: contain;
-    }
-    .carousel-control-prev, .carousel-control-next {
-        width: 35px; height: 35px; background: rgba(26, 26, 26, 0.8);
-        border-radius: 50%; top: 50%; transform: translateY(-50%); margin: 0 10px;
-    }
-    .remove-single-media-btn {
-        position: absolute; top: 10px; right: 10px; z-index: 10;
-        background: white; border-radius: 50%; border: none; width: 30px; height: 30px;
-        display: flex; align-items: center; justify-content: center;
-    }
-</style>
+    <style>
 
-<div class="container">
-    <div class="fb-post-modal shadow">
-        <div class="modal-header d-flex justify-content-between align-items-center">
-            <div style="width: 36px;"></div>
-            <h5 class="mb-0 fw-bold">Chỉnh sửa bài viết</h5>
-            <a href="{{ route('posts.index') }}" class="btn-light rounded-circle p-2 text-dark text-decoration-none">
-                <i class="bi bi-x-lg"></i>
-            </a>
-        </div>
+    </style>
+    <div class="container-fluid">
+        <div class="post-modal">
 
-        <form action="{{ route('posts.update', $post->id) }}" method="post" id="postForm" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
-            
-            <div class="p-3 d-flex align-items-center">
-                <img src="{{ Auth::user()->profile->avatar ? asset('storage/'.Auth::user()->profile->avatar) : 'https://via.placeholder.com/40' }}" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
-                <div class="ms-2">
-                    <div class="fw-bold">{{ Auth::user()->profile->display_name ?? Auth::user()->email }}</div>
-                    <select name="topic_id" class="form-select py-0 px-2 border-0 bg-light small" style="font-size: 12px; width: fit-content;" required>
-                        @foreach($topics as $value)
-                            <option value="{{ $value->id }}" {{ $post->topic_id == $value->id ? 'selected' : '' }}>{{ $value->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
+            <div class="edit-main-content">
 
-            <div class="content-area">
-                <textarea name="content" id="post-content" oninput="autoResize(this)">{{ $post->content }}</textarea>
-            </div>
-
-            <div id="media-preview-wrapper">
-                <div id="instaCarousel" class="carousel slide" data-bs-ride="false">
-                    <div class="carousel-indicators" id="carousel-indicators">
-                        @foreach($post->media as $index => $m)
-                            <button type="button" data-bs-target="#instaCarousel" data-bs-slide-to="{{ $index }}" class="{{ $index == 0 ? 'active' : '' }}"></button>
-                        @endforeach
-                    </div>
-                    <div class="carousel-inner" id="carousel-inner">
-                        @foreach($post->media as $index => $m)
-                            <div class="carousel-item {{ $index == 0 ? 'active' : '' }}" id="media-item-{{ $m->id }}">
-                                <button type="button" class="remove-single-media-btn shadow-sm" onclick="deleteMedia({{ $m->id }})">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                                @if($m->type == 'image')
-                                    <img src="{{ asset('storage/' . $m->file_path) }}" class="d-block">
-                                @else
-                                    <video src="{{ asset('storage/' . $m->file_path) }}" controls class="d-block w-100" style="height:450px;"></video>
+                {{-- ================= LEFT MEDIA ================= --}}
+                <div class="media-column">
+                     <div class="media-top">
+                        @if($post->media->count()==0)
+                        <div class="carousel-item active">
+                         <div class="placeholder-content">
+                                    <i class="bi bi-image fs-1 mb-3"></i>
+                                    <p class="fw-medium">Bài viết này hiện chưa có ảnh</p>
+                                </div>
+                        </div>
                                 @endif
+                    <div id="instaCarousel" class="carousel slide w-100" data-bs-ride="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-indicators">
+                                @foreach($post->media as $index => $m)
+                                    <button type="button" data-bs-target="#carousel-{{ $post->id }}" data-bs-slide-to="{{ $index }}" class="{{ $index == 0 ? 'active' : '' }}"style="width: 8px; height: 8px; border-radius: 50%; margin-bottom:10px"></button>
+                                @endforeach
                             </div>
-                        @endforeach
+                            @foreach($post->media as $index => $m)
+                                <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                                    @if($m->type == 'image')
+                                        <img src="{{ asset('storage/' . $m->file_path) }}"
+                                            class="d-block w-100">
+                                    @else
+                                        <video src="{{ asset('storage/' . $m->file_path) }}"
+                                            controls
+                                            class="d-block w-100">
+                                        </video>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    
+                        @if($post->media->count() > 1)
+                            <button class="carousel-control-prev"
+                                    type="button"
+                                    data-bs-target="#instaCarousel"
+                                    data-bs-slide="prev">
+                                            <i class="bi bi-chevron-left bg-dark rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"></i>
+                            </button>
+
+                            <button class="carousel-control-next"
+                                    type="button"
+                                    data-bs-target="#instaCarousel"
+                                    data-bs-slide="next">
+                                            <i class="bi bi-chevron-right bg-dark rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"></i>
+                            </button>
+                        @endif
                     </div>
                     
-                    <button class="carousel-control-prev" type="button" data-bs-target="#instaCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#instaCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    </button>
                 </div>
-            </div>
-
-            <div class="px-3 mt-3">
-                <div class="form-check form-switch small mb-2">
-                    <input class="form-check-input" type="checkbox" id="pinned" name="pinned" value="1" {{ $post->pinned ? 'checked' : '' }}>
-                    <label class="form-check-label" for="pinned">Ghim bài viết này</label>
-                </div>
-                <div class="form-check form-switch small">
-                    <input class="form-check-input" type="checkbox" id="is_comment_enabled" name="is_comment_enabled" value="1" {{ $post->is_comment_enabled ? 'checked' : '' }}>
-                    <label class="form-check-label" for="is_comment_enabled">Cho phép bình luận</label>
-                </div>
-            </div>
-
-            <div class="add-to-post">
-                <span class="fw-bold small text-muted">Thêm ảnh/video mới</span>
-                <div class="tool-icons">
-                    <i class="bi bi-image-fill text-success fs-4" style="cursor: pointer;" onclick="document.getElementById('file').click()"></i>
-                </div>
-            </div>
-            
-            <input type="file" class="d-none" id="file" name="file[]" multiple onchange="previewNewMedia()" accept="image/*,video/*">
-
-            <button type="submit" class="btn-post-fb">Lưu thay đổi</button>
-        </form>
+                    <div class="media-bottom p-3">
+        <div class="small">
+            <b>{{ $post->user->profile->display_name ?? $post->user->email }}</b>
+            {{ $post->content }}
+        </div>
     </div>
 </div>
+                <div class="info-column">
+                    <div class="d-flex align-items-center p-3 border-bottom">
+                        <img src="{{ $post->user->profile->avatar 
+                                    ? asset('storage/'.$post->user->profile->avatar) 
+                                    : 'https://i.pravatar.cc/150' }}"
+                            class="user-avatar me-3">
+                        <div>
+                            <div class="fw-bold small">
+                                {{ $post->user->profile->display_name ?? $post->user->email }}
+                            </div>
+                            <div class="text-muted" style="font-size:12px;">
+                                {{ $post->created_at->diffForHumans() }}
+                            </div>
+                        </div>
+                    </div>
 
-<script>
-    function autoResize(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-    }
-    window.onload = () => autoResize(document.getElementById('post-content'));
+                    {{-- Content + Comments --}}
+                <div class="comment-box" data-post-id="{{ $post->id }}">
+                    @if($post->comments->count() == 0)
+                    <div class="no-comment text-center text-muted py-5">
+                        <i class="bi bi-chat-dots" style="font-size:40px;"></i>
+                        <div class="mt-2 small fw-bold">Chưa có bình luận nào</div>
+                        <div class="small">Hãy là người đầu tiên bình luận.</div>
+                    </div>
+                    @endif
+       
 
-    // Xử lý xóa 1 ảnh đang hiển thị
-    function deleteMedia(mediaId) {
-        if(!confirm('Xóa tệp này?')) return;
+                        {{-- Comments --}}
+                @foreach($post->comments->where('parent_id', null) as $comment)
+                <div class="comment-item d-flex">
 
-        fetch(`/posts/media/${mediaId}`, {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-        }).then(res => {
-            if(res.ok) {
-                const item = document.getElementById(`media-item-${mediaId}`);
-                item.remove();
-                // Cập nhật lại slide đầu tiên làm active
-                const items = document.querySelectorAll('.carousel-item');
-                if(items.length > 0) {
-                    items[0].classList.add('active');
-                } else {
-                    document.getElementById('media-preview-wrapper').style.display = 'none';
-                }
+                    <img src="{{ $comment->user->profile->avatar 
+                    ? asset('storage/'.$comment->user->profile->avatar) 
+                    : 'https://i.pravatar.cc/150' }}"
+                    class="rounded-circle me-2">
+
+                <div class="w-100">
+
+            <div>
+                <span class="fw-bold small">
+                    {{ $comment->user->profile->display_name ?? $comment->user->email }}
+                </span>
+                <span class="small ms-1">
+                    {{ $comment->content }}
+                </span>
+            </div>
+
+            <div class="d-flex align-items-center mt-1">
+
+                {{-- Time --}}
+                <span class="text-muted me-3" style="font-size:11px;">
+                    {{ $comment->created_at?->diffForHumans() }}
+                </span>
+
+                {{-- Like comment --}}
+                <form method="POST"
+                    action="{{ route('comments.like', $comment->id) }}"
+                    class="me-3">
+                    @csrf
+                    <button type="submit"
+                            class="btn btn-sm p-0 text-muted small">
+                        ❤️ {{ $comment->likes->count() }}
+                    </button>
+                </form>
+
+                {{-- Reply button --}}
+                <button class="btn btn-sm p-0 text-muted small"
+                        onclick="document.getElementById('reply-{{ $comment->id }}').classList.toggle('d-none')">
+                    Trả lời
+                </button>
+            </div>
+
+            {{-- Reply form --}}
+            <div id="reply-{{ $comment->id }}" class="d-none mt-2">
+
+                <form method="POST"
+                    action="{{ route('comments.reply', $comment->id) }}"
+                    class="d-flex">
+                    @csrf
+
+                    <textarea name="content"
+            class="form-control border-0 shadow-none small comment-textarea"
+            placeholder="Viết bình luận..."
+            rows="1"
+            required></textarea>
+                    <button type="submit"
+                            class="btn btn-sm btn-primary">
+                        Gửi
+                    </button>
+                </form>
+
+            </div>
+
+            {{-- Replies --}}
+            @foreach($post->comments->where('parent_id', $comment->id) as $reply)
+                <div class="d-flex mt-3 ms-4">
+
+                    <img src="{{ $reply->user->profile->avatar 
+                                ? asset('storage/'.$reply->user->profile->avatar) 
+                                : 'https://i.pravatar.cc/150' }}"
+                        class="rounded-circle me-2"
+                        width="28" height="28">
+
+                    <div>
+                        <span class="fw-bold small">
+                            {{ $reply->user->profile->display_name ?? $reply->user->email }}
+                        </span>
+                        <span class="small ms-1">
+                            {{ $reply->content }}
+                        </span>
+                        <div class="text-muted" style="font-size:11px;">
+                            {{ $reply->created_at?->diffForHumans() }}
+                        </div>
+                    </div>
+
+                </div>
+            @endforeach
+
+        </div>
+
+    </div>
+
+    @endforeach
+
+                    </div>
+
+                    {{-- Action --}}
+                    <div class="action-section">
+
+                        <div class="d-flex justify-content-between mb-2">
+                        <div class="d-flex">
+                            <button class="btn-like" data-id="{{ $post->id }}">
+                                @if($post->likes->contains('user_id', auth()->id()))
+                                <i class="bi bi-heart-fill action-icon fs-5 me-3 text-danger"></i>
+                                @else
+                                <i class="bi bi-heart action-icon fs-5 me-3 "></i>
+                              @endif
+                            </button>
+                            <i class="bi bi-send fs-5 me-3"></i>
+                        </div>
+                             <i class="bi bi-bookmark fs-5"></i>
+                        </div>
+
+                        <div class="fw-bold small mb-2 like-count" data-post-id="{{ $post->id }}">
+                            {{ number_format($post->likes->count() ?? 0) }} lượt thích
+                        </div>
+
+                        {{-- Form comment --}}
+                        @if($post->is_comment_enabled)
+                            <form method="POST" action="{{ route('comments.create', $post->id) }}" class="d-flex comment-form">
+                                @csrf
+                                    <textarea name="content"
+                                    class="form-control border-0 shadow-none small comment-textarea"
+                                    data-post-id="{{ $post->id }}"
+                                    placeholder="Viết bình luận..."
+                                    rows="1"
+                                    required></textarea>
+
+                                            <button class="btn btn-link btn-sm text-primary fw-bold comment-submit"
+                            data-post-id="{{ $post->id }}" type="button">
+                        <i class="bi bi-send"></i>
+                    </button>
+                            </form>
+                        @else
+                            <p class="text-muted small">Bài viết đã tắt bình luận.</p>
+                        @endif
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    @endsection
+    <script>
+    //định dạng scroll khung comment
+    document.addEventListener("input", function(e) {
+        if (e.target.classList.contains("comment-textarea")) {
+            e.target.style.height = "auto";
+            e.target.style.height = e.target.scrollHeight + "px";
+        }
+    });
+    //json gửi comment
+            document.addEventListener("click", function(e){
+
+            const button = e.target.closest(".comment-submit");
+            if(!button) return;
+
+            e.preventDefault();
+
+            const postId = button.dataset.postId;
+
+            const input = document.querySelector(
+                `.comment-textarea[data-post-id="${postId}"]`
+            );
+
+            const content = input.value.trim();
+            if (!content) return;
+
+            button.disabled = true;
+
+            fetch(`/comments/create/${postId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    content: content
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+
+                if (data.success) {
+
+                    const avatar = data.avatar
+                        ? `/storage/${data.avatar}`
+                        : "https://i.pravatar.cc/150";
+
+                    const commentHtml = `
+                  
+                    <div class="comment-item d-flex">
+                    <img src="${avatar}"
+                    class="rounded-circle me-2">
+
+                <div class="w-100">
+
+            <div>
+                <span class="fw-bold small">
+                    ${data.user_name}
+                </span>
+                <span class="small ms-1">
+                    ${data.content}
+                </span>
+            </div>
+
+            <div class="d-flex align-items-center mt-1">
+
+                <span class="text-muted me-3" style="font-size:11px;">
+                    ${data.created_at}
+                </span>
+
+                <form method="POST"
+                action="/comments/like/${data.comment_id}"
+                class="me-3">
+                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
+                    <button type="submit"
+                            class="btn btn-sm p-0 text-muted small">
+                        ❤️ ${data.like_count}
+                    </button>
+                </form>
+
+                <button class="btn btn-sm p-0 text-muted small"
+                        onclick="document.getElementById('reply-${data.comment_id}').classList.toggle('d-none')">
+                    Trả lời
+                </button>
+            </div>
+
+            <div id="reply-${data.comment_id}" class="d-none mt-2">
+
+                <form method="POST"
+                action="/comments/reply/${data.comment_id}"
+                class="d-flex">
+                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
+
+                    <textarea name="content"
+            class="form-control border-0 shadow-none small comment-textarea"
+            placeholder="Viết bình luận..."
+            rows="1"
+            required></textarea>
+                    <button type="submit"
+                            class="btn btn-sm btn-primary">
+                        Gửi
+                    </button>
+                </form>
+
+            </div>
+                    `;
+                    const commentBox = document.querySelector(
+                `.comment-box[data-post-id="${postId}"]`
+            );
+
+            commentBox.insertAdjacentHTML("afterbegin", commentHtml);
+
+            input.value = "";
+            input.style.height = "35px";
+        }
+
+        button.disabled = false;
+    })
+    .catch(() => {
+        button.disabled = false;
+    });
+
+});
+document.addEventListener("DOMContentLoaded", function(){
+
+document.querySelectorAll(".btn-like").forEach(btn => {
+
+    btn.addEventListener("click", function(){
+
+        const postId = this.dataset.id;
+        const likeBtn = this;
+        const likeIcon = likeBtn.querySelector("i");
+
+        fetch(`/posts/like/${postId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
             }
-        });
-    }
+        })
+        .then(res => res.json())
+        .then(data => {
 
-    function previewNewMedia() {
-        // Code này để preview các ảnh sắp upload thêm (tương tự như trang Create)
-        // Lưu ý: Ảnh mới chưa có ID nên nút X của ảnh mới sẽ chỉ xóa trên giao diện
-        alert('Đã chọn tệp mới. Nhấn Lưu để cập nhật.');
-    }
-</script>
-@endsection
+            if(data.success){
+
+                const likeCount = document.querySelector(`.like-count[data-post-id="${postId}"]`);
+
+                likeCount.innerText = data.likePost_count + " lượt thích";
+
+                likeIcon.classList.toggle("text-danger");
+
+                if(likeIcon.classList.contains("text-danger")){
+                    likeIcon.classList.remove("bi-heart");
+                    likeIcon.classList.add("bi-heart-fill");
+                }else{
+                    likeIcon.classList.remove("bi-heart-fill");
+                    likeIcon.classList.add("bi-heart");
+                }
+
+            }
+
+        });
+
+    });
+
+});
+
+});
+    </script>

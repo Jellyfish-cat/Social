@@ -64,13 +64,34 @@
         <a class="navbar-brand fw-bold fs-4" href="{{ route('home') }}" style="letter-spacing: -1px;">
             GUNPLA SOCIAL MEDIA
         </a>
-
         <div class="d-flex align-items-center gap-4">
             <a href="{{ route('home') }}" class="text-dark"><i class="bi bi-house-door fs-4"></i></a>
             <a href="{{ route('posts.create') }}" class="text-dark"><i class="bi bi-plus-square fs-4"></i></a>
             <a href="#" class="text-dark"><i class="bi bi-chat-dots fs-4"></i></a>
             <a href="#" class="text-dark"><i class="bi bi-heart fs-4"></i></a>
-
+            <div class="dropdown">
+    <a href="#" class="d-flex align-items-center text-dark" data-bs-toggle="dropdown">
+        <i class="bi bi-globe fs-4"></i>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+        <li>
+            <a class="dropdown-item d-flex align-items-center" 
+               href="{{ route('lang.switch','vi') }}">
+                <span class="me-2">Tiếng Việt</span> 
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item d-flex align-items-center" 
+               href="{{ route('lang.switch','en') }}">
+                <span class="me-2">English</span> 
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li class="px-3 small text-muted">
+            Current: {{ app()->getLocale() }}
+        </li>
+    </ul>
+</div>
             {{-- Profile Avatar --}}
             <div class="dropdown">
                 <a href="#" data-bs-toggle="dropdown" aria-expanded="false">
@@ -89,6 +110,7 @@
                     </li>
                 </ul>
             </div>
+
         </div>
 
     </div>

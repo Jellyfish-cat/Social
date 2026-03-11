@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\LikePost;
+use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LikePostController extends Controller
 {
@@ -26,9 +28,37 @@ class LikePostController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store($id)
     {
-        //
+        try {
+        $user = Auth::user();
+        $liked = LikePost::where('user_id', $user->id)
+                        ->where('post_id', $id)
+                        ->exists();
+        if(!$liked){
+            LikePost::create([
+                'user_id' => $user->id,
+                'post_id' => $id
+            ]);
+        }
+        else{   
+            $like=likepost::where('user_id', $user->id)
+                        ->where('post_id', $id);
+            $like->delete();
+        }
+        $likePost_count = LikePost::where('post_id', $id)->count();
+        return response()->json([
+            'success' => true,
+            'likePost_count' => $likePost_count
+        ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ],500);
+    }
+
     }
 
     /**

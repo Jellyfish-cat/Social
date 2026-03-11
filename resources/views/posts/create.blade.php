@@ -6,7 +6,7 @@
         <div class="modal-header d-flex justify-content-between align-items-center">
             <div style="width: 36px;"></div>
             <h6 class="mb-0 fw-bold text-uppercase" style="letter-spacing: 1px; font-size: 0.85rem;">Tạo bài viết mới</h6>
-            <a href="{{ route('posts.index') }}" class="btn-light rounded-circle p-2 text-dark text-decoration-none transition" title="Hủy bỏ">
+            <a href="javascript:history.back()"  class="btn-light rounded-circle p-2 text-dark text-decoration-none transition" title="Hủy bỏ">
                 <i class="bi bi-x-lg"></i>
             </a>
         </div>
@@ -69,7 +69,7 @@
                                 <i class="bi bi-plus-circle-dotted fs-5 me-2"></i>
                                 <span class="small fw-bold">Thêm ảnh hoặc video</span>
                             </a>
-                            <input type="file" class="d-none" id="file" name="file[]" multiple accept="image/*,video/*" onchange="previewFiles()">
+                            <input type="file" class="d-none" id="file" name="file[]" multiple accept="image/*,video/*" onchange="previewCreateFiles()">
                         </div>
 
                         <button type="submit" class="btn-update-fixed shadow-sm">
@@ -83,70 +83,6 @@
 </div>
 
 <script>
-    let selectedFiles = [];
-function previewFiles() {
-    const previewContainer = document.getElementById('preview-container');
-    const indicatorsContainer = document.getElementById('carousel-indicators');
-    const fileInput = document.getElementById('file');
-    const files = fileInput.files;
-    
-    const prevBtn = document.querySelector('.carousel-control-prev');
-    const nextBtn = document.querySelector('.carousel-control-next');
-
-    //thêm ảnh mới vào danh sách chọn trước đó
-    Array.from(files).forEach(file => {
-        selectedFiles.push(file);
-    });
-
-    // Nếu không có ảnh nào cả
-    if (selectedFiles.length === 0) {
-        previewContainer.innerHTML = `
-            <div class="carousel-item active">
-                <div class="placeholder-content">
-                    <i class="bi bi-image fs-1 mb-3"></i>
-                    <p class="fw-medium">Hiện chưa có ảnh</p>
-                </div>
-            </div>`;
-        prevBtn.classList.add('d-none');
-        nextBtn.classList.add('d-none');
-        return;
-    }
-    //reset giao diện
-    previewContainer.innerHTML = '';
-    indicatorsContainer.innerHTML = '';
-    //duyệt toàn bộ ảnh
-    selectedFiles.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            const div = document.createElement('div');
-            div.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-            let mediaHtml = '';
-            if (file.type.includes('image')) {
-                mediaHtml = `<img src="${e.target.result}" class="d-block w-100">`;
-            } else if (file.type.includes('video')) {
-                mediaHtml = `<video src="${e.target.result}" controls class="d-block w-100"></video>`;
-            }
-            div.innerHTML = mediaHtml;
-            previewContainer.appendChild(div);
-            const newIndicator = document.createElement('button');
-            newIndicator.type = 'button';
-            newIndicator.dataset.bsTarget = '#instaCarousel';
-            newIndicator.dataset.bsSlideTo = index;
-            newIndicator.style.cssText = "width: 6px; height: 6px; border-radius: 50%;";
-            if (index === 0) newIndicator.className = 'active';
-            indicatorsContainer.appendChild(newIndicator);
-            if (selectedFiles.length > 1) {
-                prevBtn.classList.remove('d-none');
-                nextBtn.classList.remove('d-none');
-            } else {
-                prevBtn.classList.add('d-none');
-                nextBtn.classList.add('d-none');
-            }
-        };
-        reader.readAsDataURL(file);
-    });
-    // Reset input để lần sau chọn lại cùng file vẫn trigger change
- 
-}
+   
 </script>
 @endsection 

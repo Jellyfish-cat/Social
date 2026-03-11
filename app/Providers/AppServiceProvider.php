@@ -1,8 +1,11 @@
 <?php
 
 namespace App\Providers;
+use Carbon\Carbon;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Session;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (Session::has('locale')) {
+            App::setLocale(Session::get('locale'));
+            Carbon::setLocale(Session::get('locale'));
+        }
     }
 }

@@ -2,215 +2,273 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    background-color: #f0f2f5;
+/* ===== GLOBAL ===== */
+
+body{
+    background:#f0f2f5;
 }
 
-.card {
-    border-radius: 12px;
+.card{
+    border-radius:12px;
 }
 
-.card-header {
-    background: white;
+.card-header,
+.card-footer{
+    background:#fff;
 }
 
-.card-footer {
-    background: white;
+/* ===== POST MODAL ===== */
+   .feed-container { max-width: 1160px; margin: auto; }
+
+.post-modal{
+    max-width:1160px;
+    margin:2rem auto;
+    background:#fff;
+    border-radius:12px;
+    border:1px solid rgba(0,0,0,.05);
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    height:75vh;
 }
 
-/* Container chính: Bo góc mạnh và đổ bóng mềm giống Code 2 */
-.post-modal {
-    max-width: 1200px;
-    margin: 2rem auto;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+.modal-header{
+    padding:1rem 1.5rem;
+    border-bottom:8px solid #efefef;
 }
 
-.modal-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #efefef;
-    background: #fff;
+/* ===== MAIN LAYOUT ===== */
+
+.edit-main-content{
+    display:flex;
+    height:100%;
 }
 
-/* Layout chia đôi */
-.edit-main-content {
-    display: flex;
-    flex-wrap: nowrap;
-    min-height: 650px;
+/* ===== MEDIA COLUMN ===== */
+
+.media-column{
+    flex:1;
+    min-width:500px;
+    background:#ffffff;
+    display:flex;
+    flex-direction:column;
 }
 
-/* CỘT TRÁI: Media Slide (Màu nền tối giống Code 2) */
-.media-column {
-    flex: 1.2;
-    background-color: #cbcbcbab;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    min-width: 500px;
+.media-top{
+    height:80%;
+    border-bottom:5px solid #efefef;
+    display:flex;
+}
+
+.media-bottom{
+    height:90px;
+    overflow-y:auto;
+    scrollbar-width:none;
+
 }
 
 .carousel-item img,
-.carousel-item video {
-    width: 100%;
+.carousel-item video{
+    width:100%;
+    height:400px;
+    object-fit:contain;
+
+}
+.placeholder-content{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;   /* căn giữa dọc */
+    align-items:center;       /* căn giữa ngang */
+    text-align:center;
+    color:#8e8e8e;
+}
+
+.carousel-item{
+    height:400px; /* bằng chiều cao media */
+    
+}
+/* ===== INFO COLUMN ===== */
+
+.info-column{
+    width:420px;
+    display:flex;
+    flex-direction:column;
+    border-left:8px solid #efefef;
+}
+
+/* ===== USER HEADER ===== */
+
+.user-header{
+    padding:1rem 1.5rem;
+    border-bottom:1px solid #efefef;
+}
+
+.user-avatar{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    object-fit:cover;
+}
+
+/* ===== CONTENT TEXTAREA ===== */
+
+.content-area-wrapper{
+    min-height:150px;
+    border-top:2px solid #efefef;
+    border-bottom:5px solid #efefef;
+    overflow-y:auto;
+}
+
+.content-area-wrapper textarea{
+    width:100%;
+    border:none;
+    outline:none;
+    resize:none;
+    padding:1.5rem;
+    line-height:1.6;
     height: 100%;
-    object-fit: contain;
+    overflow-y:hidden;
+    
+}
+.content-area-wrapper textarea:focus{
+    outline:none;
+    border:none;
+    box-shadow:none;
+}  
+
+/* ===== EXTRA SETTINGS ===== */
+
+.extra-settings-wrapper{
+    padding:1.5rem;
+    overflow-y:auto;
+    height: 40%;
+
 }
 
-/* Placeholder cho trường hợp chưa có ảnh */
-.placeholder-content {
-    height: 650px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    /* Màu chữ sáng hơn trên nền tối */
+/* ===== BUTTON ===== */
+
+.btn-update-fixed{
+    margin-top:1.5rem;
+    width:100%;
+    padding:.75rem;
+    border:none;
+    border-radius:8px;
+    color:#fff;
+    font-weight:600;
+    background:linear-gradient(45deg,#0095f6,#0074cc);
 }
 
-/* CỘT PHẢI: Thông tin */
-.info-column {
-    width: 420px;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #efefef;
-    background: #fff;
+.btn-update-fixed:hover{
+    opacity:.9;
 }
 
-/* Nội dung văn bản */
-.content-area-wrapper {
-    height: 50%;
-    overflow-y: auto;
-    border-bottom: 1px solid #efefef;
-    padding: 5px;
+/* ===== ADD MEDIA ===== */
+
+.btn-add-media{
+    border:1px dashed #dbdbdb;
+    border-radius:10px;
+    padding:1rem;
+    background:#fafafa;
+    text-decoration:none;
+    color:#8e8e8e;
+    transition:.2s;
 }
 
-.content-area-wrapper textarea {
-    width: 100%;
-    height: 100%;
-    border: none;
-    padding: 1.5rem;
-    font-size: 1rem;
-    outline: none;
-    resize: none;
-    line-height: 1.6;
-    color: #262626;
+.btn-add-media:hover{
+    background:#f0f2f5;
+    color:#262626;
 }
 
-/* Cài đặt extra */
-.extra-settings-wrapper {
-    height: 50%;
-    padding: 1.5rem;
-    background: #fff;
-    overflow-y: auto;
-}
-
-/* User Profile Header */
-.user-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #efefef;
-}
-
-.user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-/* Nút cập nhật/đăng bài */
-.btn-update-fixed {
-    margin-top: 1.5rem;
-    background: linear-gradient(45deg, #0095f6, #0074cc);
-    border: none;
-    border-radius: 8px;
-    padding: 0.75rem;
-    color: white;
-    font-weight: 600;
-    width: 100%;
-    transition: opacity 0.2s;
-}
-
-.btn-update-fixed:hover {
-    opacity: 0.9;
-    color: #fff;
-}
-
-/* Nút thêm media nét đứt giống Code 2 */
-.btn-add-media {
-    border: 1px dashed #dbdbdb;
-    border-radius: 10px;
-    padding: 1rem;
-    background: #fafafa;
-    transition: all 0.2s;
-    text-decoration: none;
-    color: #8e8e8e;
-}
-
-.btn-add-media:hover {
-    background: #f0f2f5;
-    border-color: #a8a8a8;
-    color: #262626;
-}
+/* ===== CAROUSEL ===== */
 
 .carousel-control-prev,
-.carousel-control-next {
-    opacity: 0.8;
-    width: 10%;
-    height: 60%;
-    top: 50%;
-    transform: translateY(-50%);
+.carousel-control-next{
+    width:10%;
+    height:60%;
+    top:50%;
+    transform:translateY(-50%);
+    opacity:.8;
 }
 
-/* Nút X xóa ảnh: Kiểu dáng sang trọng hơn */
-.remove-single-media {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(8px);
-    /* Hiệu ứng kính mờ */
-    color: #fff;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    transition: all 0.3s ease;
+/* ===== DELETE MEDIA BUTTON ===== */
+
+.remove-single-media{
+    position:absolute;
+    top:20px;
+    right:20px;
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    backdrop-filter:blur(8px);
+    background:rgba(0,0,0,.4);
+    border:1px solid rgba(255,255,255,.5);
+    transition:.3s;
 }
 
-.remove-single-media:hover {
-    background: #ff4d4f;
-    border-color: #ff4d4f;
-    transform: scale(1.1);
+.remove-single-media:hover{
+    background:#ff4d4f;
+    transform:scale(1.1);
 }
 
+/* ===== COMMENTS ===== */
 
-@media (max-width: 992px) {
-    .edit-main-content {
-        flex-direction: column;
-    }
+.comment-box{
+    flex:1;
+    padding:15px;
+    overflow-y:auto;
+    scrollbar-width:none;
+}
 
-    .info-column {
-        width: 100%;
-        height: auto;
-    }
+.comment-textarea{
+    resize:none;
+    min-height:35px;
+    max-height:120px;
+    overflow-y:auto;
+}
 
-    .content-area-wrapper,
-    .extra-settings-wrapper {
-        height: auto;
-    }
+.comment-item{
+    margin-bottom:14px;
+}
 
-    .media-column {
-        min-height: 450px;
-        min-width: 100%;
-    }
+.comment-item img{
+    width:32px;
+    height:32px;
+    object-fit:cover;
+}
+
+.action-section{
+    border-top:5px solid #efefef;
+    padding:10px 15px;
+}
+
+.comment-form input{
+    border:none;
+    outline:none;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media(max-width:992px){
+
+.edit-main-content{
+    flex-direction:column;
+}
+
+.media-column{
+    min-width:100%;
+    min-height:450px;
+}
+
+.info-column{
+    width:100%;
+    border-left:none;
+    border-top:1px solid #efefef;
+}
+
 }

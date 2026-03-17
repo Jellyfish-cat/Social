@@ -41,6 +41,21 @@
                         <i class="bi bi-three-dots cursor-pointer" data-bs-toggle="dropdown"></i>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                             <li><a class="dropdown-item small" href="{{ route('posts.edit', $post->id) }}">Chỉnh sửa</a></li>
+                            <li>
+                            <form
+                                action="{{ route('posts.destroy',$post->id) }}"
+                                method="POST"
+                                class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <a class="dropdown-item small">
+                                <button 
+                                    onclick="return confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')">
+                                    Xóa
+                                </button>
+                            </a>
+                            </form>
+                        </li>
                             <li><hr class="dropdown-divider"></li>
                             <li><button class="dropdown-item small text-danger">Báo cáo</button></li>
                         </ul>
@@ -103,23 +118,46 @@
                                 <i class="bi bi-chat action-icon fs-5"></i>
                             </button>
                             <!-- <i class="bi bi-chat action-icon btn-comment" data-id="{{ $post->id }}"></i> -->
-                            <i class="bi bi-send action-icon fs-5"></i>
+                            <i class="bi bi-share action-icon fs-5"></i>
                         </div>
                         <i class="bi bi-bookmark action-icon fs-5"></i>
                     </div>
-                    <div class="fw-bold small mb-2 like-count" data-post-id="{{ $post->id }}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div class="fw-bold small like-count" data-post-id="{{ $post->id }}">
                             {{ number_format($post->likes->count() ?? 0) }} lượt thích
                         </div>
+                        <div class="fw-bold small comment-count" data-post-id="{{ $post->id }}">
+                            {{ number_format($post->comments->count() ?? 0) }} bình luận
+                        </div>
+                    </div>
                     <div class="text-uppercase text-muted mb-2" style="font-size: 10px;">
                         {{ $post->created_at->diffForHumans() }}
                     </div>
                 </div>
-
-                <div class="p-3 border-top d-flex align-items-center">
-                    <i class="bi bi-emoji-smile fs-5 me-2"></i>
-                    <input type="text" class="form-control form-control-sm border-0 shadow-none p-0" placeholder="Thêm bình luận...">
-                    <button class="btn btn-link btn-sm text-primary text-decoration-none fw-bold p-0 ms-2 opacity-50">Đăng</button>
-                </div>
+                <form class="p-3 border-top d-flex comment-form align-items-center" novalidate>
+                    <button class="btn-icon" >
+                    <i class="bi bi-emoji-smile fs-5"></i>
+                    </button>
+                        <input type="file" id="file" hidden multiple onchange="previewCreateFiles()">
+                        <button type="button" class="btn-image btn"onclick="event.preventDefault(); document.getElementById('file').click();">
+                            <i class="bi bi-image fs-5"></i>
+                                </button>
+                     <textarea name="content"
+                            class="form-control border-0 shadow-none small comment-textarea"
+                                    data-post-id="{{ $post->id }}"
+                                    placeholder="Viết bình luận..."
+                                    rows="1"
+                                    required></textarea>
+                            <input type="hidden" name="post_id" value="{{ $post->id }}">
+                            <input type="hidden" name="parent_id" class="parent-id">
+                    <button type="button" class="btn-cancel-comment text-muted me-2">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                    <button class="btn btn-link btn-sm text-primary fw-bold comment-submit"
+                                data-post-id="{{ $post->id }}" type="button">
+                            <i class="bi bi-send fs-5"></i>
+                        </button>
+                    </form>
             </div>
             @empty
                 <div class="text-center py-5">
@@ -130,8 +168,8 @@
         </div>
         <div class="col-lg-4 d-none d-lg-block">
     <div class="sidebar-sticky ps-4">
-    <!-- <div class="col-lg-4 d-none d-lg-block" id="comment-panel">
-    <div class="sidebar-sticky ps-4"> -->
+                <!-- <div class="col-lg-4 d-none d-lg-block" id="comment-panel">
+                <div class="sidebar-sticky ps-4"> -->
                 <div class="d-flex align-items-center mb-4">
                     <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="rounded-circle" style="width: 56px; height: 56px; object-fit: cover;">
                     <div class="ms-3">
@@ -157,169 +195,14 @@
 </div>
 <!-- Modal xem chi tiết bài viết -->
 <div class="modal fade" id="postDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1290px;">
         <div class="modal-content">
-
             <div class="modal-body p-0" id="postDetailContent">
                 <!-- Nội dung chi tiết post sẽ load vào đây -->
             </div>
-
         </div>
     </div>
 </div>      
 <script>
-
-    document.querySelectorAll('.video-link').forEach(link => {
-        const video = document.createElement('video');
-        video.src = link.href + "#t=0.5";
-        video.crossOrigin = "anonymous"; // Tránh lỗi bảo mật
-        video.muted = true;
-
-        video.addEventListener('loadeddata', () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Lấy ảnh đã chụp gán vào data-thumb cho Fancybox
-            const base64Image = canvas.toDataURL('image/jpeg');
-            link.setAttribute('data-thumb', base64Image);
-        });
-    });
-    document.addEventListener("DOMContentLoaded", function() {
-    // 3. Tự động Play/Pause video khi lướt qua
-    const videoOptions = {
-        root: null, // Lấy toàn bộ màn hình làm khung nhìn
-        threshold: 0.6 // Video phải hiển thị được 60% diện tích thì mới tính là "đang xem"
-    };
-
-    const videoObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const video = entry.target;
-
-            if (entry.isIntersecting) {
-                // Nếu video lọt vào tầm mắt -> Phát
-                video.play().catch(error => {
-                    // Trình duyệt thường chặn autoplay nếu chưa có tương tác, 
-                    // nên ta bắt lỗi để tránh crash code
-                    console.log("Autoplay bị chặn hoặc có lỗi:", error);
-                });
-            } else {
-                // Nếu lướt qua khỏi tầm mắt -> Tắt
-                video.pause();
-                video.currentTime = 0; // Tùy chọn: Reset về đầu nếu muốn
-            }
-        });
-    }, videoOptions);
-
-    // Bắt đầu theo dõi tất cả các video có class .feed-video
-    document.querySelectorAll('.feed-video').forEach(v => {
-        videoObserver.observe(v);
-    });
-});
-    Fancybox.bind("[data-fancybox^='gallery-']", {
-    Compact: false,
-    Animated: true,
-        Thumbs: {
-            autoStart: true,
-        },
-        Html: {
-            video: {
-                autoplay: true,
-                controls: true,
-                format: "mp4" 
-            }
-        }
-    });
-    /*
-   document.addEventListener("DOMContentLoaded", function () {
-
-    let commentPanel = document.getElementById("comment-panel");
-    let currentPostId = null;
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-
-            if (entry.isIntersecting && entry.intersectionRatio >= 0.8) {
-
-                let postId = entry.target.dataset.id;
-
-                if (currentPostId !== postId) {
-                    currentPostId = postId;
-
-                    fetch(`/posts/comments/${postId}`)
-                        .then(response => response.text())
-                        .then(data => {
-                            commentPanel.querySelector(".sidebar-sticky").innerHTML = data;
-                        });
-                }
-            }
-        });
-    }, {
-        threshold: 0.8
-    });
-
-    document.querySelectorAll(".post-item").forEach(post => {
-        observer.observe(post);
-    });
-
-});*/
-document.querySelectorAll(".open-post").forEach(btn => {
-
-    btn.addEventListener("click", function(){
-
-        const postId = this.dataset.id;
-
-        fetch(`/posts/detail/${postId}`)
-        .then(res => res.text())
-        .then(html => {
-
-            document.getElementById("postDetailContent").innerHTML = html;
-
-            const modal = new bootstrap.Modal(document.getElementById("postDetailModal"));
-            modal.show();
-
-        });
-
-    });
-
-});
-document.addEventListener("click", function(e){
-
-    const btn = e.target.closest(".btn-like");
-
-    if(!btn) return;
-
-    const postId = btn.dataset.id;
-   const likeIcons = document.querySelectorAll(`.btn-like[data-id="${postId}"] i`);
-
-    fetch(`/posts/like/${postId}`, {
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json",
-            "X-CSRF-TOKEN":document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(res=>res.json())
-    .then(data=>{
-        if(data.success){
-
-             const likeCounts = document.querySelectorAll(`.like-count[data-post-id="${postId}"]`); //tăng lượt thích hiện thị trên 2 trang
-                likeCounts.forEach(el => {
-                    el.innerText = data.likePost_count + " lượt thích";
-                });
-            //đổi màu tim thành đỏ
-            likeIcons.forEach(icon => {
-            icon.classList.toggle("text-danger");
-            if(icon.classList.contains("text-danger")){
-                icon.classList.replace("bi-heart","bi-heart-fill");
-            }else{
-                icon.classList.replace("bi-heart-fill","bi-heart");
-            }
-
-            });
-        }
-    });
-});
 </script>       
 @endsection

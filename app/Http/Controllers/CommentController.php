@@ -41,9 +41,9 @@ class CommentController extends Controller
                         'user_id' => $user ? $user->id : 1,
                         'post_id' => $post->id,
                         'content' => $request->content,
+                        'parent_comment_id'=> $request -> parent_id,
                         'status' => 1
                     ]);
-
                     DB::commit();
                     return response()->json([
                     'success' => true,
@@ -53,6 +53,7 @@ class CommentController extends Controller
                     'parent_comment_id' => $comment->parent_comment_id,
                     'user_is_owner' => $user->id,
                     'user_name' => $user->profile->display_name,
+                    'comment_count' => $post->comments->count(),
                     'like_count' => $comment->likes->count(),
                     'created_at' => $comment->created_at->diffForHumans()
                     ]);
@@ -62,10 +63,18 @@ class CommentController extends Controller
                 return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
             }
         }
-
     /**
      * Display the specified resource.
      */
+    public function latest(Post $post)
+{
+    $comments = Comment::where('post_id',$post->id)
+        ->latest()
+        ->take(5)
+        ->get();
+
+    return response()->json($comments);
+}
     public function show(Comment $comment)
     {
         //

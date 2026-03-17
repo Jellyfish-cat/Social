@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\LikeComment;
+use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LikeCommentController extends Controller
 {
@@ -26,9 +28,37 @@ class LikeCommentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store($id)
     {
-        //
+         try {
+        $user = Auth::user();
+        $liked = LikeComment::where('user_id', $user->id)
+                        ->where('comment_id', $id)
+                        ->exists();
+        if(!$liked){
+            LikeComment::create([
+                'user_id' => $user->id,
+                'comment_id' => $id
+            ]);
+        }
+        else{   
+            LikeComment::where('user_id',$user->id)
+            ->where('comment_id',$id)
+            ->delete();
+        }
+        $likeComment_count = LikeComment::where('comment_id', $id)->count();
+        return response()->json([
+            'success' => true,
+            'likeComment_count' => $likeComment_count
+        ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ],500);
+    }
+
     }
 
     /**

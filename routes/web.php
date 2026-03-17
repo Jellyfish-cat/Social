@@ -8,6 +8,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikePostController;
+use App\Http\Controllers\LikeCommentController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 
@@ -122,12 +123,14 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::post('/posts/like/{id}', [LikePostController::class,'store'])->name('posts.like');
-
-
+  /*
+    | Like Comment
+    */
+     Route::post('/comment/like/{id}', [LikeCommentController::class,'store'])->name('comment.like');
     /*
     | Comments
     */
-
+    Route::get('/comments/latest/{post}', [CommentController::class,'latest']);
     Route::post('/posts/{post}/comment', [CommentController::class,'store']);
 
     Route::get('/posts/comments/{id}', [PostController::class,'loadComments']);

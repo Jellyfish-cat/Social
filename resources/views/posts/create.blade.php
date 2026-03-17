@@ -38,11 +38,9 @@
                         <img src="{{ Auth::user()->profile->avatar ? asset('storage/'.Auth::user()->profile->avatar) : 'https://i.pravatar.cc/150' }}" class="user-avatar border me-3">
                         <span class="fw-bold text-dark small">{{ Auth::user()->profile->display_name ?? Auth::user()->email }}</span>
                     </div>
-
                     <div class="content-area-wrapper">
                         <textarea name="content" placeholder="Bạn đang nghĩ gì..." required>{{ old('content') }}</textarea>
                     </div>
-
                     <div class="extra-settings-wrapper d-flex flex-column justify-content-between">
                         <div>
                             <div class="mb-4">
@@ -64,14 +62,12 @@
                                     <input class="form-check-input" type="checkbox" id="is_comment_enabled" name="is_comment_enabled" value="1" checked>
                                 </div>
                             </div>
-                            
                             <a href="javascript:void(0)" class="btn-add-media d-flex align-items-center justify-content-center w-100 mt-2" onclick="document.getElementById('file').click()">
                                 <i class="bi bi-plus-circle-dotted fs-5 me-2"></i>
                                 <span class="small fw-bold">Thêm ảnh hoặc video</span>
                             </a>
                             <input type="file" class="d-none" id="file" name="file[]" multiple accept="image/*,video/*" onchange="previewCreateFiles()">
                         </div>
-
                         <button type="submit" class="btn-update-fixed shadow-sm">
                             Đăng bài viết
                         </button>

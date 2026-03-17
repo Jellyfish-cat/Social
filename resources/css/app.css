@@ -21,7 +21,7 @@ body{
    .feed-container { max-width: 1160px; margin: auto; }
 
 .post-modal{
-    max-width:1160px;
+    max-width:1290px;
     margin:2rem auto;
     background:#fff;
     border-radius:12px;
@@ -49,7 +49,7 @@ body{
 
 .media-column{
     flex:1;
-    min-width:500px;
+    min-width:600px;
     background:#ffffff;
     display:flex;
     flex-direction:column;
@@ -92,7 +92,7 @@ body{
 /* ===== INFO COLUMN ===== */
 
 .info-column{
-    width:420px;
+    width:500px;
     display:flex;
     flex-direction:column;
     border-left:8px solid #efefef;
@@ -250,6 +250,29 @@ body{
 .comment-form input{
     border:none;
     outline:none;
+}
+.reply-list{
+    margin-left:3px;
+}
+.content{
+    overflow-wrap: break-word;
+    max-width:85%;
+}
+/*amination tim*/
+.action-icon{
+    display:inline-block;
+}
+.action-icon:hover{
+     transform:scale(1.15);
+}
+.any-pop{
+    animation: anyPop .4s ease;
+    display:inline-block;
+}
+@keyframes anyPop{
+    0%{ transform:scale(1); }
+    50%{ transform:scale(1.5); }
+    100%{ transform:scale(1); }
 }
 
 /* ===== RESPONSIVE ===== */

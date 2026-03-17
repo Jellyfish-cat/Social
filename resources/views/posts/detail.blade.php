@@ -7,10 +7,8 @@
     </style>
     <div class="container-fluid">
         <div class="post-modal">
-
             <div class="edit-main-content">
-
-                {{-- ================= LEFT MEDIA ================= --}}
+                {{-- ================= LEFT MEDIA ================= --}}    
                 <div class="media-column">
                      <div class="media-top">
                         @if($post->media->count()==0)
@@ -83,7 +81,6 @@
                             </div>
                         </div>
                     </div>
-
                     {{-- Content + Comments --}}
                 <div class="comment-box" data-post-id="{{ $post->id }}">
                     @if($post->comments->count() == 0)
@@ -93,99 +90,134 @@
                         <div class="small">Hãy là người đầu tiên bình luận.</div>
                     </div>
                     @endif
-       
-
                         {{-- Comments --}}
-                @foreach($post->comments->where('parent_id', null) as $comment)
-                <div class="comment-item d-flex">
-
+                @foreach($post->comments->where('parent_comment_id', null) as $comment)
+                <div class="comment-item d-flex" data-comment-id="{{ $comment->id }}">
                     <img src="{{ $comment->user->profile->avatar 
                     ? asset('storage/'.$comment->user->profile->avatar) 
                     : 'https://i.pravatar.cc/150' }}"
                     class="rounded-circle me-2">
-
-                <div class="w-100">
-
-            <div>
-                <span class="fw-bold small">
+                <div class="w-100" style="min-width:0;">
+                <div class="fw-bold small">
                     {{ $comment->user->profile->display_name ?? $comment->user->email }}
-                </span>
-                <span class="small ms-1">
+                </div>
+                <div class="small ms-1 content">
                     {{ $comment->content }}
-                </span>
-            </div>
-
-            <div class="d-flex align-items-center mt-1">
-
+                </div>
+            <div class="d-flex align-items-center ">
                 {{-- Time --}}
-                <span class="text-muted me-3" style="font-size:11px;">
+                <span class="text-muted me-3" style="font-size:13px;">
                     {{ $comment->created_at?->diffForHumans() }}
                 </span>
-
-                {{-- Like comment --}}
-                <form method="POST"
-                    action="{{ route('comments.like', $comment->id) }}"
-                    class="me-3">
-                    @csrf
-                    <button type="submit"
-                            class="btn btn-sm p-0 text-muted small">
-                        ❤️ {{ $comment->likes->count() }}
-                    </button>
-                </form>
-
+                {{-- Like comment list --}}
+                <button class="btn-reply-list like-comment-count me-3" style="font-size:13px;"
+                    data-comment-id="{{ $comment->id }}"
+                    data-username="{{ $comment->user->profile->display_name }}"
+                    data-post-id="{{ $post->id }}">
+                    {{ $comment->likes->count() }} lượt thích
+                </button>
                 {{-- Reply button --}}
-                <button class="btn btn-sm p-0 text-muted small"
-                        onclick="document.getElementById('reply-{{ $comment->id }}').classList.toggle('d-none')">
+                <button class="btn-reply" style="font-size:13px;"
+                    data-comment-id="{{ $comment->id }}"
+                    data-username="{{ $comment->user->profile->display_name }}"
+                    data-post-id="{{ $post->id }}">
                     Trả lời
                 </button>
-            </div>
-
-            {{-- Reply form --}}
-            <div id="reply-{{ $comment->id }}" class="d-none mt-2">
-
-                <form method="POST"
-                    action="{{ route('comments.reply', $comment->id) }}"
-                    class="d-flex">
-                    @csrf
-
-                    <textarea name="content"
-            class="form-control border-0 shadow-none small comment-textarea"
-            placeholder="Viết bình luận..."
-            rows="1"
-            required></textarea>
-                    <button type="submit"
-                            class="btn btn-sm btn-primary">
-                        Gửi
-                    </button>
-                </form>
-
-            </div>
-
-            {{-- Replies --}}
-            @foreach($post->comments->where('parent_id', $comment->id) as $reply)
-                <div class="d-flex mt-3 ms-4">
-
-                    <img src="{{ $reply->user->profile->avatar 
-                                ? asset('storage/'.$reply->user->profile->avatar) 
-                                : 'https://i.pravatar.cc/150' }}"
-                        class="rounded-circle me-2"
-                        width="28" height="28">
-
-                    <div>
-                        <span class="fw-bold small">
-                            {{ $reply->user->profile->display_name ?? $reply->user->email }}
-                        </span>
-                        <span class="small ms-1">
-                            {{ $reply->content }}
-                        </span>
-                        <div class="text-muted" style="font-size:11px;">
-                            {{ $reply->created_at?->diffForHumans() }}
-                        </div>
-                    </div>
-
+                {{-- Like comment --}}
+                <div class="ms-auto d-flex" style="gap:2px;">
+                <button type="button"
+                    class="btn-comment-like btn-sm p-0 text-muted small" data-comment-id="{{ $comment->id }}"
+                    data-username="{{ $comment->user->profile->display_name }}"
+                    data-post-id="{{ $post->id }}">
+                    @if($comment->likes->contains('user_id', auth()->id()))
+                        <i class="bi bi-heart-fill action-icon fs-6 me-2 text-danger"></i>
+                    @else
+                        <i class="bi bi-heart action-icon fs-6 me-2 "></i>
+                    @endif
+                </button>
+                <button type="button"
+                    class="btn btn-sm p-0 text-muted small" data-comment-id="{{ $comment->id }}"
+                    data-username="{{ $comment->user->profile->display_name }}"
+                    data-post-id="{{ $post->id }}">
+                    @if($comment->likes->contains('user_id', auth()->id()))
+                        <i class="bi bi-hand-thumbs-down-fill action-icon fs-6 text-danger"></i>
+                    @else
+                        <i class="bi bi-hand-thumbs-down action-icon fs-6  "></i>
+                    @endif
+                </button>
                 </div>
-            @endforeach
-
+            </div>
+            {{-- Replies --}}
+        @php
+            $replies = $comment->replies;
+        @endphp
+    @if($replies->count() > 0)
+    <div class="view-replies text-black small mt-1" style="cursor:pointer" data-comment-id="{{ $comment->id }}">
+        &mdash;&ndash; Xem {{ $replies->count() }} phản hồi <i class="bi bi-caret-down-fill ms-1"></i>
+    </div>
+    <div class="reply-list d-none" id="reply-{{ $comment->id }}">
+        @foreach($replies as $reply)
+            <div class="comment-item d-flex mt-3 ms-1">
+                <img src="{{ $reply->user->profile->avatar 
+                            ? asset('storage/'.$reply->user->profile->avatar) 
+                            : 'https://i.pravatar.cc/150' }}"
+                    class="rounded-circle me-2"
+                    width="28" height="28">
+                <div class="w-100 "style="min-width:0;">
+                    <div class="fw-bold small">
+                        {{ $reply->user->profile->display_name ?? $reply->user->email }}
+                    </div>
+                    <div class="small ms-1 content">
+                        {{ $reply->content }}
+                    </div>
+                    <div class="d-flex align-items-center mt-1">
+                {{-- Time --}}
+                <span class="text-muted me-3" style="font-size:13px;">
+                    {{ $reply->created_at?->diffForHumans() }}
+                </span>
+                {{-- Like comment list --}}
+                <button class="btn-reply-list me-3 like-comment-count" style="font-size:13px;"
+                    data-comment-id="{{ $reply->id }}"
+                    data-username="{{ $reply->user->profile->display_name }}"
+                    data-post-id="{{ $post->id }}">
+                    {{ $reply->likes->count() }} lượt thích
+                </button>
+                {{-- Reply button --}}
+                <button class="btn-reply " style="font-size:13px;"
+                    data-comment-id="{{ $reply->parent_comment_id }}"
+                    data-username="{{ $reply->user->profile->display_name }}"  
+                    data-post-id="{{ $post->id }}">
+                    Trả lời
+                </button>
+                <div class="ms-auto d-flex" style="gap:2px;">
+                <button type="button"
+                    class="btn-comment-like btn-sm p-0 text-muted small"  data-comment-id="{{ $reply->id }}"
+                    data-username="{{ $reply->user->profile->display_name }}"
+                    data-post-id="{{ $post->id }}">
+                    @if($reply->likes->contains('user_id', auth()->id()))
+                        <i class="bi bi-heart-fill action-icon fs-6 me-2 text-danger"></i>
+                    @else
+                        <i class="bi bi-heart action-icon fs-6 me-2 "></i>
+                    @endif
+                </button>
+                <button type="button"
+                    class="btn btn-sm p-0 text-muted small" data-comment-id="{{ $reply->id }}"
+                    data-username="{{ $reply->user->profile->display_name }}"
+                    data-post-id="{{ $post->id }}">
+                    @if($reply->likes->contains('user_id', auth()->id()))
+                        <i class="bi bi-hand-thumbs-down-fill action-icon fs-6 text-danger"></i>
+                    @else
+                        <i class="bi bi-hand-thumbs-down action-icon fs-6  "></i>
+                    @endif
+                </button>
+                  </div>
+            </div>
+                    
+                </div>
+            </div>
+        @endforeach
+    </div>
+    @endif
         </div>
 
     </div>
@@ -206,30 +238,46 @@
                                 <i class="bi bi-heart action-icon fs-5 me-3 "></i>
                               @endif
                             </button>
-                            <i class="bi bi-send fs-5 me-3"></i>
-                        </div>
                              <i class="bi bi-bookmark fs-5"></i>
                         </div>
-
-                        <div class="fw-bold small mb-2 like-count" data-post-id="{{ $post->id }}">
+                            <i class="bi bi-share fs-5 me-3"></i>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                        <div class="fw-bold small like-count" data-post-id="{{ $post->id }}">
                             {{ number_format($post->likes->count() ?? 0) }} lượt thích
                         </div>
-
+                        <div class="fw-bold small comment-count" data-post-id="{{ $post->id }}">
+                            {{ number_format($post->comments->count() ?? 0) }} bình luận
+                        </div>
+                    </div>
                         {{-- Form comment --}}
                         @if($post->is_comment_enabled)
-                            <form method="POST" action="{{ route('comments.create', $post->id) }}" class="d-flex comment-form">
-                                @csrf
+                            <form class="d-flex comment-form" novalidate>
+                                <div class="preview-media d-flex flex-wrap gap-2 mb-2"></div>
+                         <div class="d-flex align-items-center w-100">
+                            <button class="btn-icon" >
+                            <i class="bi bi-emoji-smile fs-5"></i>
+                            </button>
+                                <input type="file" id="file" hidden multiple onchange="previewCreateFiles()">
+                                <button type="button" class="btn-image btn"onclick="event.preventDefault(); document.getElementById('file').click();">
+                                    <i class="bi bi-image fs-5"></i>
+                                </button>
                                     <textarea name="content"
                                     class="form-control border-0 shadow-none small comment-textarea"
                                     data-post-id="{{ $post->id }}"
                                     placeholder="Viết bình luận..."
                                     rows="1"
                                     required></textarea>
-
-                                            <button class="btn btn-link btn-sm text-primary fw-bold comment-submit"
-                            data-post-id="{{ $post->id }}" type="button">
-                        <i class="bi bi-send"></i>
-                    </button>
+                                    <input type="hidden" name="post_id" value="{{ $post->id }}">
+                                    <input type="hidden" name="parent_id" class="parent-id">
+                            <button type="button" class="btn-cancel-comment text-muted me-2">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            <button class="btn btn-link btn-sm text-primary fw-bold comment-submit"
+                                data-post-id="{{ $post->id }}" type="button">
+                            <i class="bi bi-send fs-5"></i>
+                        </button>
+                         </div>
                             </form>
                         @else
                             <p class="text-muted small">Bài viết đã tắt bình luận.</p>
@@ -243,170 +291,5 @@
     </div>
     @endsection
     <script>
-    //định dạng scroll khung comment
-    document.addEventListener("input", function(e) {
-        if (e.target.classList.contains("comment-textarea")) {
-            e.target.style.height = "auto";
-            e.target.style.height = e.target.scrollHeight + "px";
-        }
-    });
-    //json gửi comment
-            document.addEventListener("click", function(e){
 
-            const button = e.target.closest(".comment-submit");
-            if(!button) return;
-
-            e.preventDefault();
-
-            const postId = button.dataset.postId;
-
-            const input = document.querySelector(
-                `.comment-textarea[data-post-id="${postId}"]`
-            );
-
-            const content = input.value.trim();
-            if (!content) return;
-
-            button.disabled = true;
-
-            fetch(`/comments/create/${postId}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    content: content
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-
-                if (data.success) {
-
-                    const avatar = data.avatar
-                        ? `/storage/${data.avatar}`
-                        : "https://i.pravatar.cc/150";
-
-                    const commentHtml = `
-                  
-                    <div class="comment-item d-flex">
-                    <img src="${avatar}"
-                    class="rounded-circle me-2">
-
-                <div class="w-100">
-
-            <div>
-                <span class="fw-bold small">
-                    ${data.user_name}
-                </span>
-                <span class="small ms-1">
-                    ${data.content}
-                </span>
-            </div>
-
-            <div class="d-flex align-items-center mt-1">
-
-                <span class="text-muted me-3" style="font-size:11px;">
-                    ${data.created_at}
-                </span>
-
-                <form method="POST"
-                action="/comments/like/${data.comment_id}"
-                class="me-3">
-                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
-                    <button type="submit"
-                            class="btn btn-sm p-0 text-muted small">
-                        ❤️ ${data.like_count}
-                    </button>
-                </form>
-
-                <button class="btn btn-sm p-0 text-muted small"
-                        onclick="document.getElementById('reply-${data.comment_id}').classList.toggle('d-none')">
-                    Trả lời
-                </button>
-            </div>
-
-            <div id="reply-${data.comment_id}" class="d-none mt-2">
-
-                <form method="POST"
-                action="/comments/reply/${data.comment_id}"
-                class="d-flex">
-                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
-
-                    <textarea name="content"
-            class="form-control border-0 shadow-none small comment-textarea"
-            placeholder="Viết bình luận..."
-            rows="1"
-            required></textarea>
-                    <button type="submit"
-                            class="btn btn-sm btn-primary">
-                        Gửi
-                    </button>
-                </form>
-
-            </div>
-                    `;
-                    const commentBox = document.querySelector(
-                `.comment-box[data-post-id="${postId}"]`
-            );
-
-            commentBox.insertAdjacentHTML("afterbegin", commentHtml);
-
-            input.value = "";
-            input.style.height = "35px";
-        }
-
-        button.disabled = false;
-    })
-    .catch(() => {
-        button.disabled = false;
-    });
-
-});
-document.addEventListener("DOMContentLoaded", function(){
-
-document.querySelectorAll(".btn-like").forEach(btn => {
-
-    btn.addEventListener("click", function(){
-
-        const postId = this.dataset.id;
-        const likeBtn = this;
-        const likeIcon = likeBtn.querySelector("i");
-
-        fetch(`/posts/like/${postId}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-
-            if(data.success){
-
-                const likeCount = document.querySelector(`.like-count[data-post-id="${postId}"]`);
-
-                likeCount.innerText = data.likePost_count + " lượt thích";
-
-                likeIcon.classList.toggle("text-danger");
-
-                if(likeIcon.classList.contains("text-danger")){
-                    likeIcon.classList.remove("bi-heart");
-                    likeIcon.classList.add("bi-heart-fill");
-                }else{
-                    likeIcon.classList.remove("bi-heart-fill");
-                    likeIcon.classList.add("bi-heart");
-                }
-
-            }
-
-        });
-
-    });
-
-});
-
-});
     </script>

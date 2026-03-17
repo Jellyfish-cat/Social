@@ -28,7 +28,7 @@ return new class extends Migration
           ->cascadeOnDelete();
 
     $table->text('content');
-
+    $table->string('media_path')->nullable();
     $table->timestamps();
 });
 

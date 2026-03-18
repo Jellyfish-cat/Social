@@ -120,7 +120,13 @@
                             <!-- <i class="bi bi-chat action-icon btn-comment" data-id="{{ $post->id }}"></i> -->
                             <i class="bi bi-share action-icon fs-5"></i>
                         </div>
-                        <i class="bi bi-bookmark action-icon fs-5"></i>
+                        <button class="btn-favorite" data-id="{{ $post->id }}">
+                            @if($post->favorites->contains('user_id', auth()->id()))
+                                <i class="bi bi-bookmark-fill action-icon fs-5 text-warning"></i>
+                            @else
+                                <i class="bi bi-bookmark action-icon fs-5 "></i>
+                                @endif
+                        </button>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <div class="fw-bold small like-count" data-post-id="{{ $post->id }}">
@@ -134,30 +140,6 @@
                         {{ $post->created_at->diffForHumans() }}
                     </div>
                 </div>
-                <form class="p-3 border-top d-flex comment-form align-items-center" novalidate>
-                    <button class="btn-icon" >
-                    <i class="bi bi-emoji-smile fs-5"></i>
-                    </button>
-                        <input type="file" id="file" hidden multiple onchange="previewCreateFiles()">
-                        <button type="button" class="btn-image btn"onclick="event.preventDefault(); document.getElementById('file').click();">
-                            <i class="bi bi-image fs-5"></i>
-                                </button>
-                     <textarea name="content"
-                            class="form-control border-0 shadow-none small comment-textarea"
-                                    data-post-id="{{ $post->id }}"
-                                    placeholder="Viết bình luận..."
-                                    rows="1"
-                                    required></textarea>
-                            <input type="hidden" name="post_id" value="{{ $post->id }}">
-                            <input type="hidden" name="parent_id" class="parent-id">
-                    <button type="button" class="btn-cancel-comment text-muted me-2">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                    <button class="btn btn-link btn-sm text-primary fw-bold comment-submit"
-                                data-post-id="{{ $post->id }}" type="button">
-                            <i class="bi bi-send fs-5"></i>
-                        </button>
-                    </form>
             </div>
             @empty
                 <div class="text-center py-5">

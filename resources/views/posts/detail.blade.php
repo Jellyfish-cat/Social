@@ -104,6 +104,11 @@
                 <div class="small ms-1 content">
                     {{ $comment->content }}
                 </div>
+                 @if($comment->media_path)
+                <div class="mt-1 comment-media">
+                    <img src="{{ asset('storage/'.$comment->media_path) }}" width="100" class="rounded">
+                </div>
+                    @endif
             <div class="d-flex align-items-center ">
                 {{-- Time --}}
                 <span class="text-muted me-3" style="font-size:13px;">
@@ -170,6 +175,11 @@
                     <div class="small ms-1 content">
                         {{ $reply->content }}
                     </div>
+                    @if($reply->media_path)
+                <div class="mt-1 comment-media">
+                    <img src="{{ asset('storage/'.$reply->media_path) }}" width="100" class="rounded">
+                </div>
+                    @endif
                     <div class="d-flex align-items-center mt-1">
                 {{-- Time --}}
                 <span class="text-muted me-3" style="font-size:13px;">
@@ -212,23 +222,19 @@
                 </button>
                   </div>
             </div>
-                    
                 </div>
             </div>
         @endforeach
     </div>
     @endif
         </div>
-
     </div>
-
     @endforeach
 
                     </div>
 
                     {{-- Action --}}
                     <div class="action-section">
-
                         <div class="d-flex justify-content-between mb-2">
                         <div class="d-flex">
                             <button class="btn-like" data-id="{{ $post->id }}">
@@ -252,32 +258,34 @@
                     </div>
                         {{-- Form comment --}}
                         @if($post->is_comment_enabled)
-                            <form class="d-flex comment-form" novalidate>
+                            <form class="d-flex flex-column comment-form">
+                                @csrf
                                 <div class="preview-media d-flex flex-wrap gap-2 mb-2"></div>
-                         <div class="d-flex align-items-center w-100">
-                            <button class="btn-icon" >
-                            <i class="bi bi-emoji-smile fs-5"></i>
-                            </button>
-                                <input type="file" id="file" hidden multiple onchange="previewCreateFiles()">
-                                <button type="button" class="btn-image btn"onclick="event.preventDefault(); document.getElementById('file').click();">
-                                    <i class="bi bi-image fs-5"></i>
-                                </button>
+                                <div class="d-flex align-items-center w-100">
+                                    <button class="btn-icon">
+                                        <i class="bi bi-emoji-smile fs-5"></i>
+                                    </button>
+                                    <input type="file" id="comment-file-{{ $post->id }}" name="file" hidden onchange="previewCommentFiles(this)">
+                                    <button type="button" class="btn-image btn"
+                                         onclick="event.preventDefault(); document.getElementById('comment-file-{{ $post->id }}').click();">
+                                        <i class="bi bi-image fs-5"></i>
+                                        </button>
                                     <textarea name="content"
-                                    class="form-control border-0 shadow-none small comment-textarea"
                                     data-post-id="{{ $post->id }}"
-                                    placeholder="Viết bình luận..."
-                                    rows="1"
-                                    required></textarea>
+                                        class="form-control border-0 shadow-none small comment-textarea"
+                                        placeholder="Viết bình luận..."
+                                        rows="1"
+                                        required></textarea>
                                     <input type="hidden" name="post_id" value="{{ $post->id }}">
-                                    <input type="hidden" name="parent_id" class="parent-id">
-                            <button type="button" class="btn-cancel-comment text-muted me-2">
+                                    <input type="hidden" name="parent_comment_id" class="parent-id">
+                                     <button type="button" class="btn-cancel-comment text-muted me-2">
                                 <i class="bi bi-x-lg"></i>
                             </button>
-                            <button class="btn btn-link btn-sm text-primary fw-bold comment-submit"
-                                data-post-id="{{ $post->id }}" type="button">
-                            <i class="bi bi-send fs-5"></i>
-                        </button>
-                         </div>
+                                    <button class="btn btn-link btn-sm text-primary fw-bold comment-submit"
+                                            data-post-id="{{ $post->id }}" type="button">
+                                        <i class="bi bi-send fs-5"></i>
+                                    </button>
+                                </div>
                             </form>
                         @else
                             <p class="text-muted small">Bài viết đã tắt bình luận.</p>

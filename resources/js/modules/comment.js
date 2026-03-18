@@ -24,17 +24,23 @@
                 const content = input.value.trim();
                 if (!content) return;
                 button.disabled = true;
+                const fileInput = form.querySelector("input[type='file']");
+                const formData = new FormData();
+                formData.append("content", content);
+                formData.append("parent_id", parentId);
+
+                // 👉 THÊM FILE
+                if(fileInput && fileInput.files.length > 0){
+                    formData.append("file", fileInput.files[0]);
+                }
+
                 fetch(`/comments/create/${postId}`, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
                         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        content: content,
-                        parent_id: parentId
-                    })
-                })
+                    body: formData
+})
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
@@ -50,6 +56,11 @@
                             CommentCounts.forEach(el => {
                                 el.innerText = data.comment_count + " Bình luận";
                             });
+                        const mediaHtml = data.media_path 
+                            ? `<div class="mt-1 comment-media">
+                                <img src="/storage/${data.media_path}" width="100" class="rounded">
+                            </div>` 
+                            : "";
                         const commentHtml = `
                         <div class="comment-item d-flex mt-2" data-comment-id="${data.comment_id}">
                             <img src="${avatar}"
@@ -61,6 +72,7 @@
                         <div class="small ms-1 content">
                             ${data.content}
                         </div>
+                        ${mediaHtml}
                         <div class="d-flex align-items-center">
                         <span class="text-muted me-3" style="font-size:13px;">
                             ${data.created_at}
@@ -119,7 +131,6 @@
                                 <div class="reply-list" id="reply-${parentId}"></div>`
                             );
                             replyList = document.querySelector(`#reply-${parentId}`);
-               
                         }
                     }
                     if(replyList){
@@ -132,8 +143,16 @@
                 }
                 input.value = "";
                 input.style.height = "35px";
+                // reset preview đúng form
+                commentFile = null;
+                // clear input file
+                fileInput.value = "";
+                // clear preview UI đúng form
+                const previewContainer = form.querySelector('.preview-media');
+                if(previewContainer){
+                    previewContainer.innerHTML = '';
+                }
             }
-            
             button.disabled = false;
             parentInput.value = null;
         })
@@ -243,4 +262,60 @@
         });
     });
     //comment ảnh
-    
+    let commentFile = null;
+    // xóa ảnh
+    window.deleteCommentMedia = function() {
+        if (!confirm('Bạn có chắc muốn xóa tệp này?')) return;
+        commentFile = null;
+        renderCommentPreview();
+    }
+    // render preview
+    function renderCommentPreview() {
+        const previewContainer = document.querySelector('.preview-media');
+        previewContainer.innerHTML = '';
+        if (!commentFile) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            let mediaHtml = '';
+            if (commentFile.type.includes('image')) {
+                mediaHtml = `<img src="${e.target.result}" width="80" class="rounded">`;
+            } else if (commentFile.type.includes('video')) {
+                mediaHtml = `<video src="${e.target.result}" width="80" controls></video>`;
+            }
+            previewContainer.innerHTML = `
+                <div class="position-relative">
+                    ${mediaHtml}
+                    <button type="button"
+                        onclick="deleteCommentMedia()"
+                        class="btn btn-sm btn-danger position-absolute top-0 end-0">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+        }
+        reader.readAsDataURL(commentFile);
+    }
+    // chọn file (ghi đè luôn)
+    window.previewCommentFiles = function(input) {
+    const previewContainer = input.closest(".comment-form").querySelector(".preview-media");
+    previewContainer.innerHTML = '';
+    const file = input.files[0];
+    if(!file) return;
+    commentFile = file; //shoc
+    const reader = new FileReader();
+    reader.onload = function(e){
+        previewContainer.innerHTML = `
+            <div class="position-relative">
+                <img src="${e.target.result}" width="150" class="rounded">
+                <button type="button"
+                    class="btn btn-sm position-absolute top-0 end-0 remove-single-media shadow remove-small"
+                    onclick="this.parentElement.remove(); input.value=''">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        `;
+    }
+    reader.readAsDataURL(file);
+    }
+
+        

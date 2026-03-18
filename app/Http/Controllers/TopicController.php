@@ -12,7 +12,7 @@ class TopicController extends Controller
      */
     public function index()
     {
-        $topics = Topic::all();
+        $topics = Topic::paginate(10)->withQueryString();
     return view('topics.index', compact('topics'));
     }
 
@@ -29,11 +29,15 @@ class TopicController extends Controller
      */
     public function store(Request $request)
     {
-        Topic::create([
-        'name' => $request->name,
-        'description' => $request->description
-    ]);
-    return redirect()->route('topics.index');
+        $topic = Topic::create([
+            'name' => $request->name,
+            'description' => $request->description,
+        ]);
+        return response()->json([
+            'success' => true,
+            'count' => topic::count(),
+            'data' => $topic
+        ]);
     }
 
     /**
@@ -47,24 +51,48 @@ class TopicController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Topic $topic)
+    public function edit(Request $request, $id)
     {
-        //
+        $topic = Topic::findOrFail($id);
+        $page = $request->page ?? 1;
+        return view('topics.edit', compact('topic','page'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Topic $topic)
+    public function update(Request $request, $id)
     {
-        //
+        $topic = Topic::findOrFail($id);
+        $topic->update([
+            'name' => $request->name,
+            'description' => $request->description
+        ]);
+        return redirect()->route('topics.index')
+                        ->with('success', 'Cập nhật thành công!');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Topic $topic)
+    public function destroy(Request $request, $id)
     {
-        //
+        $topic = Topic::find($id);
+
+        if (!$topic) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy topic'
+            ], 404);
+        }
+
+        $topic->delete();
+        $topiclist = topic::latest()->get();
+        return response()->json([
+            'success' => true,
+            'data' => $topiclist,
+            'count' => topic::count(),
+            'message' => 'Xóa thành công'
+        ]);
     }
 }

@@ -44,6 +44,13 @@ class CommentController extends Controller
                         'parent_comment_id'=> $request -> parent_id,
                         'status' => 1
                     ]);
+                    if ($request->hasFile('file')) {
+                        $file = $request->file('file');
+                        $fileName = time().'_'.$file->getClientOriginalName();
+                        $path = $file->storeAs('comments/media', $fileName, 'public');
+                        $comment->media_path = $path;
+                        $comment->save();
+                    }
                     DB::commit();
                     return response()->json([
                     'success' => true,
@@ -55,6 +62,7 @@ class CommentController extends Controller
                     'user_name' => $user->profile->display_name,
                     'comment_count' => $post->comments->count(),
                     'like_count' => $comment->likes->count(),
+                    'media_path'=> $comment->media_path,
                     'created_at' => $comment->created_at->diffForHumans()
                     ]);
 

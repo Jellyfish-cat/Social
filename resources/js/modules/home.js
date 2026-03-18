@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+    
 
     document.querySelectorAll('.video-link').forEach(link => {
         const video = document.createElement('video');

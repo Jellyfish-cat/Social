@@ -80,10 +80,8 @@ window.previewCreateFiles = function() {
     //reset input để chọn lại cùng file vẫn trigger
 }
 //đưa lại file vào input trước khi submit form
-document.addEventListener("DOMContentLoaded", function(){
 
     const form = document.getElementById("postForm");
-
     form.addEventListener("submit", function(e){
 
         const fileInput = document.getElementById("file");
@@ -101,5 +99,3 @@ document.addEventListener("DOMContentLoaded", function(){
         fileInput.files = dt.files;
 
     });
-
-});

@@ -8,6 +8,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikePostController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LikeCommentController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
@@ -74,10 +75,11 @@ Route::prefix('topics')->group(function () {
     Route::get('/', [TopicController::class,'index'])->name('topics.index');
 
     Route::get('/create', [TopicController::class,'create'])->name('topics.create');
-    Route::post('/create', [TopicController::class,'store'])->name('topics.create');
+    Route::post('/store', [TopicController::class,'store'])->name('topics.store');
 
     Route::get('/edit/{id}', [TopicController::class,'edit'])->name('topics.edit');
-    Route::delete('/destroy/{id}', [TopicController::class,'destroy'])->name('topics.destroy');
+    Route::post('/update/{id}', [TopicController::class,'update'])->name('topics.update');
+    Route::post('/destroy/{id}', [TopicController::class,'destroy'])->name('topics.destroy');
 
 });
 
@@ -103,11 +105,9 @@ Route::prefix('posts')->group(function () {
 */
 
 Route::middleware('auth')->group(function () {
-
     /*
     | Post CRUD
     */
-
     Route::get('/posts/create', [PostController::class,'create'])->name('posts.create');
     Route::post('/posts/store', [PostController::class,'store'])->name('posts.store');
 
@@ -123,6 +123,10 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::post('/posts/like/{id}', [LikePostController::class,'store'])->name('posts.like');
+    /*
+    | favorite Post
+    */
+    Route::post('/posts/favorite/{id}', [FavoriteController::class,'store'])->name('posts.favorite');
   /*
     | Like Comment
     */

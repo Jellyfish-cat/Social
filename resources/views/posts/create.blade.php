@@ -16,7 +16,6 @@
                 <div class="media-column">
                     <div id="instaCarousel" class="carousel slide w-100" data-bs-ride="false">
                         <div class="carousel-indicators mb-3" id="carousel-indicators"></div>
-
                         <div class="carousel-inner" id="preview-container">
                             <div class="carousel-item active">
                                 <div class="placeholder-content">

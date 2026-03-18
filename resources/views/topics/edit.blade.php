@@ -1,16 +1,57 @@
 @extends('layouts.app')
 @section('content')
-<div class="container mt-4">
-<p><a href="{{ route('category') }}">Về danh sách</a></p>
-<h3 class="text-info">Cập nhật</h3>
-<form action="{{ route('category.edit', ['id' => $category->id]) }}" method="post">
-@csrf
-<div class="mb-3">
-<label class="form-label" for="name">Tên</label>
-<input type="text" class="form-control" id="name" name="name" value="{{ $category->name }}"
-required />
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ route('topics.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Về danh sách
+        </a>
+        <h3 class="text-warning me-3">
+            <i class="bi bi-pencil-square"></i> Chỉnh sửa chủ đề
+        </h3>
+    </div>
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Cập nhật thông tin chủ đề</h5>
+        </div>
+        <form action="{{ route('topics.update', $topic->id) }}" method="POST">
+            @csrf
+            <div class="card-body">
+                <!-- Name -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Tên chủ đề
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           name="name"
+                           value="{{ old('name', $topic->name) }}"
+                           required>
+                </div>
+                <!-- Description -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        Mô tả
+                    </label>
+                    <textarea
+                        class="form-control"
+                        name="description"
+                        rows="3">{{ old('description', $topic->description) }}</textarea>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <a href="{{ route('topics.index',['page' => $page]) }}"
+                   class="btn btn-outline-secondary">
+                   Hủy
+                </a>
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-save"></i> Cập nhật
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-<button type="submit" class="btn btn-primary"> Lưu </button>
-</form>
-</div>
+
 @endsection

@@ -16,7 +16,12 @@ body{
 .card-footer{
     background:#fff;
 }
-
+ .sidebar-sticky { position: sticky; top: 90px; } 
+ :root { --f-backdrop-bg: rgba(93, 93, 93, 0.264) !important; } 
+ .fancybox__backdrop { 
+    background-color: rgba(112, 112, 112, 0.544) !important; 
+    backdrop-filter: blur(4px) !important; 
+    -webkit-backdrop-filter: blur(4px) !important; }
 /* ===== POST MODAL ===== */
    .feed-container { max-width: 1160px; margin: auto; }
 
@@ -266,11 +271,17 @@ body{
 .reply-list{
     margin-left:3px;
 }
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .content{
     overflow-wrap: break-word;
     max-width:85%;
 }
-/*amination tim*/
 .action-icon{
     display:inline-block;
 }
@@ -286,6 +297,9 @@ body{
     50%{ transform:scale(1.5); }
     100%{ transform:scale(1); }
 }
+/* Container phải có overflow hidden */
+/*amination tim*/
+
 
 /* ===== RESPONSIVE ===== */
 

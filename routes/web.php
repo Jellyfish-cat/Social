@@ -55,6 +55,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class,'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class,'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class,'destroy'])->name('profile.destroy');
+    Route::get('/profile/detail/{id}', [ProfileController::class,'detail'])->name('profile.detail');
+    Route::get('/profile/posts/{id}', [ProfileController::class, 'posts']);
+    Route::get('/profile/favorites/{id}', [ProfileController::class, 'favorites']);
+    Route::get('/profile/comments/{id}', [ProfileController::class, 'comments']);
+        Route::get('/profile/likes/{id}', [ProfileController::class, 'likes']);
 
 });
 Route::middleware('auth')->group(function () {

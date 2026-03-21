@@ -4,6 +4,7 @@ document.addEventListener("click", function (e) {
 
     const postId = btn.dataset.id;
     const favoriteIcons = document.querySelectorAll(`.btn-favorite[data-id="${postId}"] i`);
+    startLoading();
     fetch(`/posts/favorite/${postId}`, {
         method: "POST",
         headers: {
@@ -21,8 +22,14 @@ document.addEventListener("click", function (e) {
                 } else {
                     icon.classList.replace("bi-bookmark-fill", "bi-bookmark");
                 }
+                icon.classList.remove("any-pop"); 
+                void icon.offsetWidth; // reset animation
+                icon.classList.add("any-pop");
             });
 
-        });
+        })
+            .finally(() => {
+        finishLoading();
+    });
 
 });

@@ -63,6 +63,8 @@ class CommentController extends Controller
                     'comment_count' => $post->comments->count(),
                     'like_count' => $comment->likes->count(),
                     'media_path'=> $comment->media_path,
+                    'is_image' => $comment->isImage(),
+                    'is_video' => $comment->isVideo(),
                     'created_at' => $comment->created_at->diffForHumans()
                     ]);
 

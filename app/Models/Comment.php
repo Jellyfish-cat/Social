@@ -39,5 +39,16 @@ class Comment extends Model
     {
         return $this->hasMany(LikeComment::class);
     }
+    public function isImage()
+    {
+        $ext = strtolower(pathinfo($this->media_path, PATHINFO_EXTENSION));
+        return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+    }
+
+    public function isVideo()
+    {
+        $ext = strtolower(pathinfo($this->media_path, PATHINFO_EXTENSION));
+        return in_array($ext, ['mp4', 'webm', 'ogg']);
+    }
 }
 

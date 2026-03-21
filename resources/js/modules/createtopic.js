@@ -12,6 +12,7 @@ document.addEventListener("submit", function(e) {
         e.preventDefault();
         const form = e.target;
         const formData = new FormData(form);
+        startLoading();
         fetch("/topics/store", {
             method: "POST",
             headers: {
@@ -56,6 +57,9 @@ document.addEventListener("submit", function(e) {
                 form.reset();
             }
         })
-        .catch(err => console.error(err));
+        .catch(err => console.error(err))
+        .finally(() => {
+            finishLoading(); 
+        });
     }
 });

@@ -33,7 +33,7 @@
                 if(fileInput && fileInput.files.length > 0){
                     formData.append("file", fileInput.files[0]);
                 }
-
+                startLoading();
                 fetch(`/comments/create/${postId}`, {
                     method: "POST",
                     headers: {
@@ -42,7 +42,7 @@
                     body: formData
 })
                 .then(res => res.json())
-                .then(data => {
+                .then(data => {console.log(data);
                     if (data.success) {
                             sendIcons.forEach(icon=>{
                                 icon.classList.remove("any-pop"); 
@@ -56,11 +56,30 @@
                             CommentCounts.forEach(el => {
                                 el.innerText = data.comment_count + " Bình luận";
                             });
-                        const mediaHtml = data.media_path 
-                            ? `<div class="mt-1 comment-media">
-                                <img src="/storage/${data.media_path}" width="100" class="rounded">
-                            </div>` 
-                            : "";
+                            let mediaHtml = "";
+                            if (data.media_path) {
+                                const url = `/storage/${data.media_path}`;
+                                if (data.is_image) {
+                                    mediaHtml = `
+                                        <div class="mt-1 comment-media">
+                                            <a href="${url}" data-fancybox="gallery-${data.comment_id}">
+                                                <img src="${url}" width="100" class="rounded">
+                                            </a>
+                                        </div>
+                                    `;
+                                } 
+                                else if (data.is_video) {
+                                    mediaHtml = `
+                                        <div class="mt-1 comment-media">
+                                            <a href="${url}" data-fancybox="gallery-${data.comment_id}" data-type="video">
+                                                <video width="260" controls class="rounded">
+                                                    <source src="${url}">
+                                                </video>
+                                            </a>
+                                        </div>
+                                    `;
+                                }
+                            }
                         const commentHtml = `
                         <div class="comment-item d-flex mt-2" data-comment-id="${data.comment_id}">
                             <img src="${avatar}"
@@ -156,11 +175,16 @@
             button.disabled = false;
             parentInput.value = null;
         })
+        
         .catch(() => {
-            button.disabled = false;
-        });
-
+        button.disabled = false;
+    })
+    .finally(() => {
+        finishLoading();
     });
+        
+    });
+    
     //hủy bình luận
     document.addEventListener("click", function(e){
     const btn = e.target.closest(".btn-cancel-comment");
@@ -229,6 +253,7 @@
         if(!btn) return;
         const commentId = btn.dataset.commentId;
         const likeIcons = document.querySelectorAll(`.btn-comment-like[data-comment-id="${commentId}"] i`);
+        startLoading();
         fetch(`/comment/like/${commentId}`, {
             method:"POST",
             headers:{
@@ -256,10 +281,15 @@
                 }else{
                     icon.classList.replace("bi-heart-fill","bi-heart");
                 }
-
+                            icon.classList.remove("any-pop"); 
+                void icon.offsetWidth; // reset animation
+                icon.classList.add("any-pop");
                 });
             }
-        });
+        })
+            .finally(() => {
+        finishLoading();
+    });
     });
     //comment ảnh
     let commentFile = null;
@@ -304,6 +334,7 @@
     commentFile = file; //shoc
     const reader = new FileReader();
     reader.onload = function(e){
+        if (file.type.includes('image')) {
         previewContainer.innerHTML = `
             <div class="position-relative">
                 <img src="${e.target.result}" width="150" class="rounded">
@@ -314,6 +345,18 @@
                 </button>
             </div>
         `;
+    } else if (file.type.includes('video')) {
+        previewContainer.innerHTML = `
+            <div class="position-relative">
+                <video src="${e.target.result}" width="200" controls class="rounded"></video>
+               <button type="button"
+                    class="btn btn-sm position-absolute top-0 end-0 remove-single-media shadow remove-small"
+                    onclick="this.parentElement.remove(); input.value=''">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        `;
+    }
     }
     reader.readAsDataURL(file);
     }

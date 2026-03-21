@@ -1,3 +1,16 @@
+window.startLoading = function() {
+    const bar = document.getElementById("loading-bar");
+    if(bar) bar.style.width = "30%";
+    setTimeout(() => { if(bar) bar.style.width = "60%"; }, 200);
+    setTimeout(() => { if(bar) bar.style.width = "85%"; }, 500);
+}
+window.finishLoading = function() {
+    const bar = document.getElementById("loading-bar");
+    if(bar) bar.style.width = "100%";
+    setTimeout(() => {
+        if(bar) bar.style.width = "0%";
+    }, 300);
+}
 document.addEventListener("DOMContentLoaded", () => {
     
 

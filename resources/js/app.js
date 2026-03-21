@@ -15,5 +15,6 @@ import './modules/createtopic';
 import './modules/deleteTopic';
 import './modules/indextopic';
 import './modules/favorites';
+import './modules/detailprofile';
 
 

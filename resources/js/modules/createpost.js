@@ -81,7 +81,8 @@ window.previewCreateFiles = function() {
 }
 //đưa lại file vào input trước khi submit form
 
-    const form = document.getElementById("postForm");
+const form = document.getElementById("postForm");
+if (form) { // <--- Thêm dòng check này
     form.addEventListener("submit", function(e){
 
         const fileInput = document.getElementById("file");
@@ -99,3 +100,4 @@ window.previewCreateFiles = function() {
         fileInput.files = dt.files;
 
     });
+}

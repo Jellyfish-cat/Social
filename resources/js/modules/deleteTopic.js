@@ -10,6 +10,7 @@
         if (!confirm("Bạn có chắc muốn xóa không?")) return;
         // Disable nút để tránh spam click
         btn.disabled = true;
+        startLoading();
         fetch(`/topics/destroy/${id}`, {
             method: "POST",
             headers: {
@@ -50,5 +51,7 @@
         })
         .finally(() => {
             btn.disabled = false;
+            finishLoading(); 
+    
         });
     });

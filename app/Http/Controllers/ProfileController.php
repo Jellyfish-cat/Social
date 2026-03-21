@@ -9,13 +9,23 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use App\Models\Profile;
-
+use App\Models\User;
+use App\Models\Favorite;
+use App\Models\Post;
+use App\Models\Comment;
 
 class ProfileController extends Controller
 {
     /**
      * Display the user's profile form.
      */
+    public function detail($id)
+    {
+        $profile = profile::findorfail($id);
+        $user = $profile->user;
+        $posts = $user->posts()->latest()->get();
+        return view('profile.detail', compact('profile','user','posts'));
+    }
      public function setup()
     {
         return view('profile.setup_profile');
@@ -87,5 +97,47 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+    public function posts($id)
+    {
+        $user = User::findOrFail($id);
+
+        $posts = $user->posts()
+            ->latest()
+            ->get();
+
+        return view('profile.partials.post-list', compact('posts'));
+    }
+
+    public function favorites($id)
+    {
+        $user = User::findOrFail($id);
+
+        $posts = Post::whereHas('favorites', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->latest()
+        ->get();
+
+        return view('profile.partials.post-list', compact('posts'));
+    }
+    public function comments($id)
+    {
+        $user = User::findOrFail($id);
+        $comments = Comment::where('user_id', $user->id)
+            ->latest()
+            ->get();
+        return view('profile.partials.comment-list', compact('comments'));
+    }
+        public function likes($id)
+    {
+        $user = User::findOrFail($id);
+        $posts = Post::whereHas('likes', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->latest()
+        ->get();
+
+        return view('profile.partials.post-list', compact('posts'));
     }
 }

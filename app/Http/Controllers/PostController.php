@@ -80,8 +80,9 @@ class PostController extends Controller
     }
 
     // 4. Xem chi tiết và tăng lượt xem
-   public function detail($id)
-{
+   public function detail(request $request, $id)
+    {
+    $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
     $post = Post::with([
         'user.profile',
         'media',
@@ -103,7 +104,7 @@ class PostController extends Controller
 
     // Lấy media đầu tiên là video (nếu có)
 
-    return view('posts.detail', compact('post'));
+    return view('posts.detail', compact('post','layout'));
 }
 
     // 5. Giao diện chỉnh sửa

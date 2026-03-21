@@ -3,6 +3,7 @@ document.addEventListener("click", function(e){
     if(!btn) return;
     const postId = btn.dataset.id;
     const likeIcons = document.querySelectorAll(`.btn-like[data-id="${postId}"] i`);
+    startLoading();
     fetch(`/posts/like/${postId}`,{
         method:"POST",
         headers:{
@@ -24,8 +25,14 @@ document.addEventListener("click", function(e){
             }else{
                 icon.classList.replace("bi-heart-fill","bi-heart");
             }
+            icon.classList.remove("any-pop"); 
+                void icon.offsetWidth; // reset animation
+                icon.classList.add("any-pop");
         });
 
-    });
+    })
+    .finally(() => {
+            finishLoading();
+        });
 
 });

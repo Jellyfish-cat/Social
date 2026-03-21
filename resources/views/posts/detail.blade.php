@@ -1,4 +1,4 @@
-    @extends('layouts.app_detail')
+    @extends($layout)
 
     @section('content')
 
@@ -30,7 +30,7 @@
                                 <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
                                     @if($m->type == 'image')
                                         <img src="{{ asset('storage/' . $m->file_path) }}"
-                                            class="d-block w-100">
+                                            class="d-block w-100" >
                                     @else
                                         <video src="{{ asset('storage/' . $m->file_path) }}"
                                             controls
@@ -68,10 +68,12 @@
 </div>
                 <div class="info-column">
                     <div class="d-flex align-items-center p-3 border-bottom">
+                         <a href="{{ route('profile.detail', $post->user->id) }}" >
                         <img src="{{ $post->user->profile->avatar 
                                     ? asset('storage/'.$post->user->profile->avatar) 
                                     : 'https://i.pravatar.cc/150' }}"
                             class="user-avatar me-3">
+                         </a>
                         <div>
                             <div class="fw-bold small">
                                 {{ $post->user->profile->display_name ?? $post->user->email }}
@@ -93,10 +95,11 @@
                         {{-- Comments --}}
                 @foreach($post->comments->where('parent_comment_id', null) as $comment)
                 <div class="comment-item d-flex" data-comment-id="{{ $comment->id }}">
+                     <a href="{{ route('profile.detail', $comment->user->id) }}" >
                     <img src="{{ $comment->user->profile->avatar 
                     ? asset('storage/'.$comment->user->profile->avatar) 
                     : 'https://i.pravatar.cc/150' }}"
-                    class="rounded-circle me-2">
+                    class="rounded-circle me-2"></a>
                 <div class="w-100" style="min-width:0;">
                 <div class="fw-bold small">
                     {{ $comment->user->profile->display_name ?? $comment->user->email }}
@@ -105,10 +108,20 @@
                     {{ $comment->content }}
                 </div>
                  @if($comment->media_path)
-                <div class="mt-1 comment-media">
-                    <img src="{{ asset('storage/'.$comment->media_path) }}" width="100" class="rounded">
-                </div>
-                    @endif
+                    <div class="mt-1 comment-media">
+                        @if($comment->isImage())
+                        <a href="{{ asset('storage/' . $comment->media_path) }}" 
+                                            data-fancybox="gallery-{{ $comment->id }}">
+                            <img src="{{ asset('storage/'.$comment->media_path) }}" width="100" class="rounded"></a>
+                        @elseif($comment->isVideo())
+                        <a href="{{ asset('storage/' . $comment->media_path) }}" 
+                                            data-fancybox="gallery-{{ $comment->id }}">
+                            <video width="260" controls class="rounded">
+                                <source src="{{ asset('storage/'.$comment->media_path) }}">
+                            </video></a>
+                        @endif
+                    </div>
+                @endif
             <div class="d-flex align-items-center ">
                 {{-- Time --}}
                 <span class="text-muted me-3" style="font-size:13px;">
@@ -162,12 +175,13 @@
     </div>
     <div class="reply-list d-none" id="reply-{{ $comment->id }}">
         @foreach($replies as $reply)
-            <div class="comment-item d-flex mt-3 ms-1">
+            <div class="comment-item d-flex mt-3 ms-1" data-comment-id="{{ $reply->id }}">
+                 <a href="{{ route('profile.detail', $reply->user->id) }}" >
                 <img src="{{ $reply->user->profile->avatar 
                             ? asset('storage/'.$reply->user->profile->avatar) 
                             : 'https://i.pravatar.cc/150' }}"
                     class="rounded-circle me-2"
-                    width="28" height="28">
+                    width="28" height="28"></a>
                 <div class="w-100 "style="min-width:0;">
                     <div class="fw-bold small">
                         {{ $reply->user->profile->display_name ?? $reply->user->email }}

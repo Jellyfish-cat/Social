@@ -4,14 +4,18 @@ document.addEventListener("click", function (e) {
     if (!btn) return;
 
     const postId = btn.dataset.id;
+    if (window.matchMedia("(max-width: 992px)").matches) {
+        window.location.href = `/posts/detail/${postId}`;
+        return;
+    }
     const scrollCommentId = btn.dataset.scrollCommentId;
     const action = btn.dataset.action;
-    
+
     const commentIcons = document.querySelectorAll(`.open-post[data-id="${postId}"] i`);
     startLoading();
-    fetch(`/posts/detail/${postId}`,{
-    headers: {
-        'X-Requested-With': 'XMLHttpRequest'
+    fetch(`/posts/detail/${postId}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
         .then(res => res.text())
@@ -67,26 +71,26 @@ document.addEventListener("click", function (e) {
                 }
             }, { once: true });
         })
-                .finally(() => {
+        .finally(() => {
             finishLoading();
         });
 });
-window.addEventListener('popstate', function(event){
+window.addEventListener('popstate', function (event) {
     const modalEl = document.getElementById("postDetailModal");
     const modal = bootstrap.Modal.getInstance(modalEl);
 
-    if(event.state && event.state.modalPostId){
+    if (event.state && event.state.modalPostId) {
         // load lại modal
         startLoading();
         fetch(`/posts/detail/${event.state.modalPostId}`)
             .then(res => res.text())
             .then(html => {
                 document.getElementById("postDetailContent").innerHTML = html;
-                if(!modal) new bootstrap.Modal(modalEl).show();
+                if (!modal) new bootstrap.Modal(modalEl).show();
             })
             .finally(() => {
-            finishLoading();
-        });
+                finishLoading();
+            });
     } else {
         if (modal && modalEl.classList.contains('show')) {
             modal.hide();

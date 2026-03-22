@@ -43,14 +43,20 @@
                     <div class="extra-settings-wrapper d-flex flex-column justify-content-between">
                         <div>
                             <div class="mb-4">
-                                <label class="form-label mb-2 fw-bold text-secondary small text-uppercase">Chủ đề</label>
-                                <select name="topic_id" class="form-select form-select-sm shadow-none" required>
-                                    <option value="">Chọn chủ đề</option>
-                                    @foreach($topics as $value)
-                                        <option value="{{ $value->id }}">{{ $value->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>  
+                                <label class="form-label fw-bold text-secondary small text-uppercase">
+                                    Chủ đề:
+                                    <span id="selected-topics"></span>
+                                </label>
+                                <div class="d-flex gap-2">
+                                    <input type="text" id="topic-input"
+                                        class="form-control form-control-sm"
+                                        placeholder="Nhập chủ đề...">
+
+                                    <button type="button" id="add-topic-btn" class="btn btn-sm btn-primary">+</button>
+                                </div>
+                                <div id="suggestions" class="list-group mt-1"></div>
+                                <input type="hidden" name="topic_ids" id="topic-ids">
+                            </div>
                             <div class="mb-4 border-top pt-3">
                                 <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-3">
                                     <label class="form-check-label small fw-bold text-dark" for="pinned">Ghim bài viết này</label>

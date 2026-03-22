@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\SearchHistory;
+use App\Models\Post;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class SearchHistoryController extends Controller
@@ -14,7 +16,34 @@ class SearchHistoryController extends Controller
     {
         //
     }
-
+    public function search(Request $request)
+    {
+        $keyword = $request->input('q');
+        $posts = Post::with(['user.profile', 'media', 'likes', 'comments', 'favorites'])
+            ->where('content', 'LIKE', "%{$keyword}%")
+            ->orWhereHas('user.profile', function ($q) use ($keyword) {
+                $q->where('display_name', 'LIKE', "%{$keyword}%");
+            })
+            ->latest()
+            ->get();
+        return view('search.result', compact('posts', 'keyword'));
+    }    
+    public function searchTab(Request $request,$type)
+    {
+         $keyword = $request->input('q');
+        if ($type === 'post') {
+            $posts = Post::where('content', 'LIKE', "%{$keyword}%")->latest()->get();
+            return view('search.partials.post-list', compact('posts', 'keyword'));
+        } 
+        elseif ($type === 'people') {
+            // Đã sửa lại truy vấn dùng bảng User
+            $users = User::where('name', 'LIKE', "%{$keyword}%")
+                        ->orWhereHas('profile', function($q) use ($keyword) {
+                            $q->where('display_name', 'LIKE', "%{$keyword}%");
+                        })->get();
+            return view('search.partials.people-list', compact('users'));
+        } 
+    }
     /**
      * Show the form for creating a new resource.
      */

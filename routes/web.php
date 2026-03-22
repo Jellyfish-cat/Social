@@ -10,6 +10,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikePostController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LikeCommentController;
+use App\Http\Controllers\SearchHistoryController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 
@@ -78,7 +79,7 @@ Route::middleware('auth')->group(function () {
 Route::prefix('topics')->group(function () {
 
     Route::get('/', [TopicController::class,'index'])->name('topics.index');
-
+    Route::get('/search', [TopicController::class, 'search']);
     Route::get('/create', [TopicController::class,'create'])->name('topics.create');
     Route::post('/store', [TopicController::class,'store'])->name('topics.store');
 
@@ -115,11 +116,9 @@ Route::middleware('auth')->group(function () {
     */
     Route::get('/posts/create', [PostController::class,'create'])->name('posts.create');
     Route::post('/posts/store', [PostController::class,'store'])->name('posts.store');
-
     Route::get('/posts/edit/{id}', [PostController::class,'edit'])->name('posts.edit');
     Route::put('/posts/update/{id}', [PostController::class,'update'])->name('posts.update');
     Route::delete('/posts/destroy/{id}', [PostController::class,'destroy'])->name('posts.destroy');
-
     Route::post('/ckeditor-upload', [PostController::class,'uploadImage'])->name('ckeditor.upload');
 
 
@@ -147,7 +146,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/comments/create/{id}', [CommentController::class,'store'])->name('comments.create');
     Route::post('/comments/reply/{id}', [CommentController::class,'reply'])->name('comments.reply');
     Route::post('/comments/like/{id}', [CommentController::class,'like'])->name('comments.like');
-
+        /*
+    | Search
+    */
+    Route::get('/search', [SearchHistoryController::class, 'search'])->name('search.result');
+    Route::get('/search/tab/{type}', [SearchHistoryController::class, 'searchTab']);
 
     /*
     | Admin duyệt bài

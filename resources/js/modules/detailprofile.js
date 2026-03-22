@@ -4,9 +4,9 @@ window.addEventListener("DOMContentLoaded", () => {
     if (savedTab) {
         let btnClass =
             savedTab === "comments" ? "comment-profile" :
-            savedTab === "favorites" ? "fav-profile" :
-            savedTab === "likes" ? "like-profile" :
-            "post-profile";
+                savedTab === "favorites" ? "fav-profile" :
+                    savedTab === "likes" ? "like-profile" :
+                        "post-profile";
         currentTab = savedTab;
         const tabBtn = document.querySelector(`.${btnClass}`);
         if (tabBtn) setActiveTab(tabBtn);
@@ -41,27 +41,28 @@ document.addEventListener("click", function (e) {
 
 });
 function loadProfilePosts(type) {
-    
+
     const container = document.getElementById("post-list");
+    if (!container) return;
     const userId = window.location.pathname.split('/').pop();
-        container.innerHTML = `
+    container.innerHTML = `
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status"></div>
             <div class="mt-2">Đang tải...</div>
         </div>
     `;
-        startLoading();
-        fetch(`/profile/${type}/${userId}`)
-            .then(res => res.text())
-            .then(html => {
-                container.innerHTML = html;
-                container.className = "";
-                currentTab = type;
-                sessionStorage.setItem("currentProfileTab", type);
-            })
-                .finally(() => {
-        finishLoading();
-    });
+    startLoading();
+    fetch(`/profile/${type}/${userId}`)
+        .then(res => res.text())
+        .then(html => {
+            container.innerHTML = html;
+            container.className = "";
+            currentTab = type;
+            sessionStorage.setItem("currentProfileTab", type);
+        })
+        .finally(() => {
+            finishLoading();
+        });
 }
 
 function setActiveTab(activeBtn) {

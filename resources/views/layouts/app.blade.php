@@ -12,161 +12,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body {
-            background-color: #fafafa;
-            overflow-x: hidden;
-        }
+
         /* Loại bỏ giới hạn 600px để tràn màn hình */
-        .full-width-container {
-            width: 100%;
-            padding-left: 20px;
-            padding-right: 20px;
-        }
-        .navbar {
-            padding: 0.5rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .post-card {
-            border: 1px solid #dbdbdb;
-            background: white;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-        }
-        .avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid #ddd;
-        }
-        /* Media hiển thị to và rõ */
-        .post-image {
-            width: 100%;
-            max-height: 80vh; /* Giới hạn chiều cao bằng 80% màn hình để không phải cuộn quá nhiều */
-            object-fit: contain; /* Giữ nguyên tỉ lệ ảnh không bị cắt */
-            background-color: #000;
-        }
-        #loading-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            height: 4px;
-            width: 0%;
-            background: linear-gradient(90deg, #0d6efd, #0dcaf0);
-            z-index: 9999;
-            transition: width 0.3s ease;
-        }
-        /* Responsive cho mobile */
-        @media (max-width: 768px) {
-            .navbar { padding: 0.5rem 1rem; }
-            .full-width-container { padding: 0; }
-            .post-card { border-radius: 0; border-left: none; border-right: none; }
-        }
-
-        /* Sidebar Hover Effect */
-        .sidebar-hover {
-            position: fixed;   /* Cố định Sidebar hoàn toàn */
-            top: 0;
-            left: 0;
-            bottom: 0;
-            z-index: 1040;     /* Nổi lên trên nội dung khác */
-            width: 90px;
-            transition: width 0.3s ease !important;
-            overflow-x: hidden;
-            white-space: nowrap;
-        }
-        .sidebar-hover:hover {
-            width: 230px;
-        }
-
-        /* Chuyển động content và navbar khi hover sidebar */
-        .main-content {
-            margin-left: 80px;
-            transition: margin-left 0.3s ease cubic-bezier(0.19, 1, 0.22, 1) !important;
-        }
-        .sidebar-hover:hover ~ .main-content {
-            margin-left: 230px;
-        }
-        .sidebar-hover:hover ~ .main-content .search-navbar {
-            margin-left: 50px;
-            margin-right: 50px;
-        }
-
-        .sidebar-hover .nav-text {
-            display: inline-block;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            vertical-align: middle;
-            font-size: 16px;
-        }
-        .sidebar-hover:hover .nav-text {
-            opacity: 1;
-            transition-delay: 0.1s;
-        }
-
-
-        .sidebar-hover:not(:hover) .dropdown-menu {
-            display: none ;
-        }
-        .hover-bg-light:hover {
-            background-color: #f0f2f5;
-        }
-        .nav-item:hover{
-            transform: scale(1.05);
-        }
-        .dropdown:hover{
-             transform: scale(1.05);
-        }
-
-        /* Search Navbar Styles */
-        .search-navbar {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #efefef;
-            margin-left: 150px;
-            margin-right: 150px;
-            padding: 12px 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-        .search-input-wrapper {
-            position: relative;
-            max-width: 9    00px;
-            width: 100%;
-        }
-        .search-input-wrapper .search-icon {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #8e8e8e;
-            font-size: 1rem;
-        }
-        .search-input-wrapper input {
-            background-color: #f1f2f5;
-            border: 1px solid transparent;
-            border-radius: 50px;
-            padding: 10px 20px 10px 48px;
-            font-size: 0.95rem;
-            width: 100%;
-            transition: all 0.2s ease;
-        }
-        .search-input-wrapper input:focus {
-            background-color: #fff;
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-            outline: none;
-        }
-        .search-input-wrapper input::placeholder {
-            color: #8e8e8e;
-        }
+        
     </style>
 </head>
 <body>
@@ -241,19 +89,26 @@
             </ul>
         </div>
     </nav>
-
     <!-- Main Content -->
     <div class="flex-grow-1 w-100 main-content">
-        
-        <!-- Search Navbar -->
-        <nav class="search-navbar shadow-sm rounded" >
+            <form action="{{ route('search.result') }}" method="GET" class="search-wrapper search-form">
+    <div class="search-wrapper">
+        <nav class="search-navbar shadow-sm rounded-5">
             <div class="search-input-wrapper">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" placeholder="Tìm kiếm người dùng, bài viết, hashtag..." aria-label="Tìm kiếm">
+                <button type="button" class="btn-Search  search-icon">
+                    <i class="bi bi-search"></i>
+                </button>
+                <input type="text" name="q" class="search-input"placeholder="Tìm kiếm người dùng, bài viết, hashtag..." aria-label="Tìm kiếm">
+                <button type="button" class="btn-cancel-Search text-muted me-2 search-icon-end">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+
             </div>
         </nav>
+    </div>
+</form>
 
-        <div class="container-fluid py-4">
+        <div class="container-fluid">
             <div class="row justify-content-center">
                 <div class="col-12 col-lg-10 col-xl-9"> 
                      @yield('content')

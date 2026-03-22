@@ -195,8 +195,8 @@
     textarea.value = "";
     textarea.style.height = "35px";
     parentInput.value = "";
-
 });
+
     //js reply
     document.addEventListener("click", function(e){
 

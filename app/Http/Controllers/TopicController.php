@@ -95,4 +95,11 @@ class TopicController extends Controller
             'message' => 'Xóa thành công'
         ]);
     }
+    public function search(Request $request)
+    {
+        $q = $request->q;
+        return Topic::where('name', 'like', "%$q%")
+            ->limit(5)
+            ->get();
+    }
 }

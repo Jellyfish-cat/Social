@@ -25,7 +25,6 @@
                 <tr>
                     <th width="5%">#</th>
                     <th width="25%">Tên chủ đề</th>
-                    <th>Mô tả</th>
                     <th width="120">Hành động</th>
                 </tr>
             </thead>
@@ -35,7 +34,6 @@
                         <form id="form-create-topic" class="d-flex gap-2">
                             @csrf
                             <input type="text" name="name" class="form-control" placeholder="Tên chủ đề..." required>
-                            <input type="text" name="description" class="form-control" placeholder="Mô tả...">
 
                             <button class="btn btn-success">Lưu</button>
                             <button type="button" class="btn btn-secondary" id="btn-cancel">Hủy</button>
@@ -50,9 +48,7 @@
                     <td class="fw-semibold">
                         {{ $topic->name }}
                     </td>
-                    <td class="text-muted">
-                        {{ $topic->description }}
-                    </td>
+          
                     <td class="text-center">
                         <a href="{{ route('topics.edit', ['id' => $topic->id, 'page' => request('page')]) }}"
                            class="btn btn-warning btn-sm">

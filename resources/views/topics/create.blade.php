@@ -27,17 +27,7 @@
                            placeholder="Nhập tên chủ đề..."
                            required>
                 </div>
-                <!-- Description -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        Mô tả
-                    </label>
-                    <textarea
-                        class="form-control"
-                        name="description"
-                        rows="3"
-                        placeholder="Nhập mô tả chủ đề..."></textarea>
-                </div>
+                
             </div>
             <!-- Footer -->
             <div class="card-footer d-flex justify-content-end gap-2">

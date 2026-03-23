@@ -17,5 +17,6 @@ import './modules/indextopic';
 import './modules/favorites';
 import './modules/detailprofile';
 import './modules/search';
+import './modules/searchtopic';
 
 

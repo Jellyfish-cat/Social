@@ -44,15 +44,44 @@ class PostController extends Controller
         try {
             $post = new Post();
             $post->user_id = Auth::id();
-            $post->topic_id = $request->topic_id;
             $post->content = $request->content;
             $post->is_comment_enabled = $request->is_comment_enabled ?? 1;
             $post->pinned = 0;
-            // Giả sử status mặc định là 0 (chờ duyệt) nếu bạn có thêm cột này, 
-            // hoặc dùng logic riêng của bạn.
+
             $post->save();
 
-            // Xử lý Media (Ảnh/Video) - Tương ứng bảng media
+            // topic đã có
+            $topicIds = $request->topic_ids
+                ? explode(',', $request->topic_ids)
+                : [];
+
+            // topic mới
+            $newTopics = $request->new_topics
+                ? explode(',', $request->new_topics)
+                : [];
+
+            foreach ($newTopics as $name) {
+                if (!$name) continue;
+
+                $topic = Topic::firstOrCreate([
+                    'name' => strtolower(trim($name))
+                ]);
+
+                $topicIds[] = $topic->id;
+            }
+
+            // loại trùng + null
+            $topicIds = array_unique(array_filter($topicIds));
+
+            // giới hạn 3
+            if (count($topicIds) > 3) {
+                DB::rollBack();
+                return back()->with('error', 'Chỉ tối đa 3 chủ đề');
+            }
+
+            // gắn topic vào post
+            $post->topics()->sync($topicIds);
+
             if ($request->hasFile('file')) {
                 foreach ($request->file('file') as $file) {
                     $fileName = time() . '_' . $file->getClientOriginalName();
@@ -67,18 +96,18 @@ class PostController extends Controller
             }
 
             DB::commit();
-            
-            if (Auth::user()->role == 'admin') { // Điều chỉnh theo logic role của bạn
+
+            if (Auth::user()->role == 'admin') {
                 return redirect()->route('/')->with('success', 'Đăng bài thành công!');
             }
+
             return view('2_back');
 
         } catch (\Exception $e) {
-            DB::rollback();
-            return redirect(route('home'))->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+            DB::rollBack();
+            return redirect(route('home'))->with('error', 'Có lỗi: ' . $e->getMessage());
         }
     }
-
     // 4. Xem chi tiết và tăng lượt xem
    public function detail(request $request, $id)
     {

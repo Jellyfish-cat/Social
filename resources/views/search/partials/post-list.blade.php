@@ -10,7 +10,14 @@
                         </a>
                         <div>
                             <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }}</div>
-                            <div class="text-muted" style="font-size: 11px;">{{ $post->topic->name ?? 'Chung' }}</div>
+                            <div class="text-muted" style="font-size: 13px;">
+                            @if($post->topics->count())
+                                @foreach($post->topics as $topic)
+                                    <span class="badge bg-secondary me-1">{{ $topic->name }}</span>
+                                @endforeach
+                            @else
+                                <span>Chung</span>
+                            @endif</div>
                         </div>
                     </div>
                     <div class="dropdown">

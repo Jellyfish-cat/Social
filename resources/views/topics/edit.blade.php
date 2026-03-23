@@ -29,16 +29,7 @@
                            value="{{ old('name', $topic->name) }}"
                            required>
                 </div>
-                <!-- Description -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        Mô tả
-                    </label>
-                    <textarea
-                        class="form-control"
-                        name="description"
-                        rows="3">{{ old('description', $topic->description) }}</textarea>
-                </div>
+
             </div>
             <!-- Footer -->
             <div class="card-footer d-flex justify-content-end gap-2">

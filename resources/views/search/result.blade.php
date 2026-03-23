@@ -30,7 +30,7 @@
                         <button class="nav-link text-dark hover-bg-light rounded-pill fw-semibold px-4" id="people-tab"  type="button" role="tab"><i class="bi bi-people me-2"></i>Mọi người</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link text-dark hover-bg-light rounded-pill fw-semibold px-4" id="photos-tab"  type="button" role="tab"><i class="bi bi-images me-2"></i>Hình ảnh / Video</button>
+                        <button class="nav-link text-dark hover-bg-light rounded-pill fw-semibold px-4" id="topic-tab"  type="button" role="tab"><i class="bi bi-tags me-2"></i>Chủ đề</button>
                     </li>
                 </ul>
             </div>
@@ -46,7 +46,7 @@
 
     </div>
 </div>
-<div class="modal fade" id="postDetailModal" tabindex="-1">
+<div class="modal fade back-to" id="postDetailModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1290px;">
         <div class="modal-content">
             <div class="modal-body p-0" id="postDetailContent">

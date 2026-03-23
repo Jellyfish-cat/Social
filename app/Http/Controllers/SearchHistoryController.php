@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SearchHistory;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\Topic;
 use Illuminate\Http\Request;
 
 class SearchHistoryController extends Controller
@@ -42,7 +43,16 @@ class SearchHistoryController extends Controller
                             $q->where('display_name', 'LIKE', "%{$keyword}%");
                         })->get();
             return view('search.partials.people-list', compact('users'));
+        }
+        elseif ($type === 'topic') {
+            // Đã sửa lại truy vấn dùng bảng User
+            $topics = Topic::where('name', 'LIKE', "%{$keyword}%")
+                    ->withCount('posts') 
+                    ->latest()    
+                    ->get();
+            return view('search.partials.topic-list', compact('topics'));
         } 
+        
     }
     /**
      * Show the form for creating a new resource.

@@ -258,7 +258,13 @@
                                 <i class="bi bi-heart action-icon fs-5 me-3 "></i>
                               @endif
                             </button>
-                             <i class="bi bi-bookmark fs-5"></i>
+                             <button class="btn-favorite" data-id="{{ $post->id }}">
+                            @if($post->favorites->contains('user_id', auth()->id()))
+                                <i class="bi bi-bookmark-fill action-icon fs-5 text-warning"></i>
+                            @else
+                                <i class="bi bi-bookmark action-icon fs-5 "></i>
+                                @endif
+                        </button>
                         </div>
                             <i class="bi bi-share fs-5 me-3"></i>
                         </div>

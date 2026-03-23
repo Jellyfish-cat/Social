@@ -88,7 +88,7 @@
     </div>
 </div>
 <!-- Modal xem chi tiết bài viết -->
-<div class="modal fade" id="postDetailModal" tabindex="-1">
+<div class="modal fade back-to" id="postDetailModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1290px;">
         <div class="modal-content">
             <div class="modal-body p-0" id="postDetailContent">

@@ -75,26 +75,48 @@ document.addEventListener("click", function (e) {
             finishLoading();
         });
 });
+// tính năng back lại 
 window.addEventListener('popstate', function (event) {
-    const modalEl = document.getElementById("postDetailModal");
-    const modal = bootstrap.Modal.getInstance(modalEl);
+    const modalEl = document.querySelector(".back-to");
+    const modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
 
     if (event.state && event.state.modalPostId) {
-        // load lại modal
-        startLoading();
-        fetch(`/posts/detail/${event.state.modalPostId}`)
+        let href = "";
+        if (modalEl && modalEl.dataset.id === "postDetailModal") {
+            href = "posts/detail";
+        }
+        fetch(`/${href}/${event.state.modalPostId}`)
             .then(res => res.text())
             .then(html => {
-                document.getElementById("postDetailContent").innerHTML = html;
-                if (!modal) new bootstrap.Modal(modalEl).show();
+                if (modalEl) modalEl.innerHTML = html;
+                if (!modal && modalEl) new bootstrap.Modal(modalEl).show();
             })
             .finally(() => {
                 finishLoading();
             });
-    } else {
-        if (modal && modalEl.classList.contains('show')) {
+
+    }
+    else if (event.state && event.state.isTopicList) {
+        startLoading();
+        const topicListUrl = event.state.listUrl || window.location.href;
+        fetch(topicListUrl)
+            .then(res => res.text())
+            .then(html => {
+                const container = document.getElementById("search-results-container");
+                if (container) {
+                    container.innerHTML = html;
+                }
+            })
+            .finally(() => {
+                finishLoading();
+            });
+
+    }
+    else {
+        if (modal && modalEl && modalEl.classList.contains('show')) {
             modal.hide();
         }
     }
 });
+
 

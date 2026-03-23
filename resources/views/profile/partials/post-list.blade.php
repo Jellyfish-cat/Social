@@ -8,7 +8,14 @@
                         <img src="{{ asset('storage/' . ($post->user->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
                         </a><div>
                             <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }}</div>
-                            <div class="text-muted" style="font-size: 11px;">{{ $post->topic->name ?? 'Chung' }}</div>
+                            <div class="text-muted" style="font-size: 13px;">
+                            @if($post->topics->count())
+                                @foreach($post->topics as $topic)
+                                    <span class="badge bg-secondary me-1">{{ $topic->name }}</span>
+                                @endforeach
+                            @else
+                                <span>Chung</span>
+                            @endif</div>
                         </div>
                     </div>
                     <div class="dropdown">
@@ -35,7 +42,6 @@
                         </ul>
                     </div>
                 </div>
-
                 <div class="post-media-wrapper">
                     @if($post->media->count() > 0)
                         <div id="carousel-{{ $post->id }}" class="carousel slide" data-bs-ride="false">

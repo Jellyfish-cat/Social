@@ -79,10 +79,10 @@ Route::middleware('auth')->group(function () {
 Route::prefix('topics')->group(function () {
 
     Route::get('/', [TopicController::class,'index'])->name('topics.index');
-    Route::get('/search', [TopicController::class, 'search']);
+    Route::get('/search', [TopicController::class, 'search'])->name('topics.search');
     Route::get('/create', [TopicController::class,'create'])->name('topics.create');
     Route::post('/store', [TopicController::class,'store'])->name('topics.store');
-
+    Route::get('/show/{id}', [TopicController::class,'show'])->name('topics.show');
     Route::get('/edit/{id}', [TopicController::class,'edit'])->name('topics.edit');
     Route::post('/update/{id}', [TopicController::class,'update'])->name('topics.update');
     Route::post('/destroy/{id}', [TopicController::class,'destroy'])->name('topics.destroy');

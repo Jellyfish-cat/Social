@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Topic;
+use App\Models\post;
 use Illuminate\Http\Request;
 
 class TopicController extends Controller
@@ -27,15 +28,19 @@ class TopicController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
     {
-        $topic = Topic::create([
-            'name' => $request->name,
-            'description' => $request->description,
+        $request->validate([
+            'name' => 'required|string|max:50'
         ]);
+
+        $topic = Topic::firstOrCreate([
+            'name' => strtolower(trim($request->name)),
+        ]);
+
         return response()->json([
             'success' => true,
-            'count' => topic::count(),
             'data' => $topic
         ]);
     }
@@ -43,9 +48,12 @@ class TopicController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Topic $topic)
+    public function show($id)
     {
-        //
+        $topic = Topic::findOrFail($id);
+    $posts = $topic->posts()->latest()->get();
+        return view('profile.partials.post-list', compact('posts'));
+
     }
 
     /**
@@ -65,8 +73,7 @@ class TopicController extends Controller
     {
         $topic = Topic::findOrFail($id);
         $topic->update([
-            'name' => $request->name,
-            'description' => $request->description
+            'name' => $request->name
         ]);
         return redirect()->route('topics.index')
                         ->with('success', 'Cập nhật thành công!');

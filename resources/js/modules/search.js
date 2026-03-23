@@ -44,7 +44,12 @@ document.addEventListener("click", function (e) {
         setActiveTab(peopleTab);
         return;
     }
-
+    const topicTab = e.target.closest("#topic-tab");
+    if (topicTab) {
+        loadProfilePosts("topic");
+        setActiveTab(topicTab);
+        return;
+    }
 
 });
 function loadProfilePosts(type) {
@@ -77,3 +82,24 @@ function setActiveTab(activeTab) {
     activeTab.classList.add('active');
     activeTab.classList.remove('text-dark', 'hover-bg-light');
 }
+document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".topic-show");
+    if (!btn) return;
+    const topicId = btn.dataset.id;
+    const container = document.getElementById("search-results-container");
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2">Đang tải...</div>
+        </div>
+    `;
+    startLoading();
+    fetch(`/topics/show/${topicId}`)
+        .then(res => res.text())
+        .then(html => {
+            container.innerHTML = html;
+        })
+        .finally(() => {
+            finishLoading();
+        });
+});

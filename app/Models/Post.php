@@ -45,7 +45,10 @@ class Post extends Model
     {
         return $this->hasMany(Favorite::class);
     }
-
+    public function topics()
+    {
+        return $this->belongsToMany(Topic::class);
+    }
     // Share bài viết
     public function sharedPost()
     {

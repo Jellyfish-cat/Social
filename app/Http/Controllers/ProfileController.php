@@ -101,7 +101,6 @@ class ProfileController extends Controller
     public function posts($id)
     {
         $user = User::findOrFail($id);
-
         $posts = $user->posts()
             ->latest()
             ->get();

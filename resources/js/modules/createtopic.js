@@ -32,9 +32,6 @@ document.addEventListener("submit", function(e) {
                        <td class="fw-semibold">
                        ${data.data.name}
                        </td>
-                        <td class="text-muted">
-                        ${data.data.description ?? ""}
-                        </td>
                        <td class="text-center">
                         <a href="/topics/edit/${data.data.id})"
                            class="btn btn-warning btn-sm">

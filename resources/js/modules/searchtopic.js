@@ -3,44 +3,41 @@ let newTopics = []; // chỉ name
 let suggestedTopics = []; // cache search
 const input = document.getElementById("topic-input");
 const suggestions = document.getElementById("suggestions");
-input.addEventListener("input", async () => {
-    let q = input.value.trim().toLowerCase();
-    if (!q) {
-        suggestions.innerHTML = "";
-        return;
-    }
-    let res = await fetch(`/topics/search?q=${q}`);
-    let data = await res.json();
-
-    suggestedTopics = data;
-
-    suggestions.innerHTML = data.map(t => `
+if (input) {
+    input.addEventListener("input", async () => {
+        let q = input.value.trim().toLowerCase();
+        if (!q) {
+            suggestions.innerHTML = "";
+            return;
+        }
+        let res = await fetch(`/topics/search?q=${q}`);
+        let data = await res.json();
+        suggestedTopics = data;
+        suggestions.innerHTML = data.map(t => `
         <button type="button" class="list-group-item list-group-item-action"
             onclick="selectTopic(${t.id}, '${t.name}')">
             ${t.name}
         </button>
     `).join("");
-});
+    });
+}
 
 window.selectTopic = function (id, name) {
     if (selectedTopics.length >= 3) {
         alert("Chỉ chọn tối đa 3 chủ đề");
         return;
     }
-
     if (selectedTopics.find(t => t.id === id)) return;
-
     selectedTopics.push({ id, name });
     renderSelected();
-
     resetInput();
 }
 
-document.getElementById("add-topic-btn").onclick = () => {
+const btn = document.getElementById("add-topic-btn");
+if (btn) {
+    btn.onclick = function () {
     let name = input.value.trim();
-
     if (!name) return;
-
     let lowerName = name.toLowerCase();
     let existed = suggestedTopics.find(t => t.name.toLowerCase() === lowerName);
     if (existed) {
@@ -61,10 +58,10 @@ document.getElementById("add-topic-btn").onclick = () => {
     }
     newTopics.push(lowerName);
     selectedTopics.push({ id: null, name });
-
     renderSelected();
     resetInput();
-};
+}
+}
 
 const selectedBox = document.getElementById("selected-topics");
 const hiddenIds = document.getElementById("topic-ids");

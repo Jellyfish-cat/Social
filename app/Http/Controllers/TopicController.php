@@ -14,6 +14,7 @@ class TopicController extends Controller
     public function index()
     {
         $topics = Topic::paginate(10)->withQueryString();
+        
     return view('topics.index', compact('topics'));
     }
 
@@ -51,8 +52,10 @@ class TopicController extends Controller
     public function show($id)
     {
         $topic = Topic::findOrFail($id);
-    $posts = $topic->posts()->latest()->get();
-        return view('profile.partials.post-list', compact('posts'));
+        $posts = $topic->posts()->latest()->get();
+        $checktopic= true;
+        $display_name = $topic->name;
+        return view('search.partials.post-list', compact('posts','checktopic','display_name'));
 
     }
 

@@ -29,7 +29,6 @@ document.addEventListener("click", function(e){
                 void icon.offsetWidth; // reset animation
                 icon.classList.add("any-pop");
         });
-
     })
     .finally(() => {
             finishLoading();

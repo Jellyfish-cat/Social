@@ -21,6 +21,7 @@ return new class extends Migration
     $table->string('keyword');
 
     $table->timestamp('created_at')->useCurrent();
+    $table->timestamps();
 });
 
     }

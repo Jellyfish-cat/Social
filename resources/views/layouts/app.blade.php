@@ -39,7 +39,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
+                <a href="{{  route('conversations.index')}}" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
                     <i class="bi bi-chat-dots" style="min-width: 40px; text-align: center;"></i>
                     <span class="nav-text">Nhắn tin</span>
                 </a>
@@ -98,13 +98,15 @@
                 <button type="button" class="btn-Search  search-icon">
                     <i class="bi bi-search"></i>
                 </button>
-                <input type="text" name="q" class="search-input"placeholder="Tìm kiếm người dùng, bài viết, hashtag..." aria-label="Tìm kiếm">
+                <input autocomplete="off" type="text" name="q" 
+                class="search-input"placeholder="Tìm kiếm người dùng, bài viết, hashtag..." aria-label="Tìm kiếm">
                 <button type="button" class="btn-cancel-Search text-muted me-2 search-icon-end">
                     <i class="bi bi-x-lg"></i>
                 </button>
-
             </div>
+            
         </nav>
+            <div id="suggestions" class="list-group mt-1 rounded-5 mt-2 mx-auto " style="width:1020px"></div>
     </div>
 </form>
 

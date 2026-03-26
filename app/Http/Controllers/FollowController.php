@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Follow;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FollowController extends Controller
 {
@@ -20,23 +22,64 @@ class FollowController extends Controller
      */
     public function create()
     {
-        //
+        
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+
+    public function store($id)
     {
-        //
+        try {
+        $user = Auth::user();
+        $followed = Follow::where('follower_id', $user->id)
+                        ->where('following_id', $id)
+                        ->exists();
+        if(!$followed){
+            Follow::create([
+                'follower_id' => $user->id,
+                'following_id' => $id
+            ]);
+         }else{   
+            $follow=Follow::where('follower_id', $user->id)
+                        ->where('following_id', $id);
+            $follow->delete();
+        }
+        //có bao nhiêu người theo dõi $id (tài khoản đích)
+        $Following_count = Follow::where('following_id', $id)->count();
+        $follower_count =  Follow::where('follower_id', $user->id)->count();
+        return response()->json([
+            'success' => true,
+            'following_count' => $Following_count,
+            'follower_count' => $follower_count
+        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ],500);
+    }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Follow $follow)
-    {
-        //
+    public function detail(request $request,$id)
+       {
+        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        $type = request()->header('X-Type');
+        $follow=collect();
+        $user=null;
+        if($type == "follower"){
+            $user = User::with('followers.profile')->findOrFail($id);
+            $follow = $user->followers;
+        }
+        else if($type == "following"){
+            $user = User::with('following.profile')->findOrFail($id);
+            $follow = $user->following;
+        }
+        return view('follow.detail', compact('follow', 'user', 'layout'));
     }
 
     /**

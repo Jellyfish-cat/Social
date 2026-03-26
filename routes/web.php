@@ -10,9 +10,14 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikePostController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LikeCommentController;
+use App\Http\Controllers\FollowController;
+use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\ConversationUserController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\SearchHistoryController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
+
 
 Route::get('/lang/{locale}', function ($locale) {
 
@@ -150,6 +155,7 @@ Route::middleware('auth')->group(function () {
     | Search
     */
     Route::get('/search', [SearchHistoryController::class, 'search'])->name('search.result');
+    Route::get('/search/suggestions', [SearchHistoryController::class, 'suggestions'])->name('search.suggestions');
     Route::get('/search/tab/{type}', [SearchHistoryController::class, 'searchTab']);
 
     /*
@@ -165,6 +171,26 @@ Route::middleware('auth')->group(function () {
 
 });
 
+/*
+|--------------------------------------------------------------------------
+| follow
+|--------------------------------------------------------------------------
+
+*/
+    Route::middleware('auth')->group(function () {
+        Route::post('/follows/store/{id}', [FollowController::class,'store'])->name('follows.store');
+        Route::get('/follows/detail/{id}', [FollowController::class,'detail'])->name('follows.detail');
+
+    });
+    /*
+|--------------------------------------------------------------------------
+| follow
+|--------------------------------------------------------------------------
+
+*/
+    Route::middleware('auth')->group(function () {
+        Route::get('/message', [ConversationController::class,'index'])->name('conversations.index');
+    });
 
 /*
 |--------------------------------------------------------------------------

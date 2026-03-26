@@ -18,5 +18,8 @@ import './modules/favorites';
 import './modules/detailprofile';
 import './modules/search';
 import './modules/searchtopic';
+import './modules/follow';
+import './modules/suggestionsSearch';
+import './modules/convertation';
 
 

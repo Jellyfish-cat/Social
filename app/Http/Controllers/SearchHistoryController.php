@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Auth;
 use App\Models\SearchHistory;
 use App\Models\Post;
 use App\Models\User;
@@ -20,6 +20,18 @@ class SearchHistoryController extends Controller
     public function search(Request $request)
     {
         $keyword = $request->input('q');
+
+        $updated=SearchHistory::where('user_id', Auth::id())
+        ->where('keyword', $keyword)
+        ->update([
+            'updated_at' => now()
+        ]);
+        if ($updated === 0) {
+            SearchHistory::create([
+                'user_id' => Auth::id(),
+                'keyword' => $keyword
+            ]);
+        }
         $posts = Post::with(['user.profile', 'media', 'likes', 'comments', 'favorites'])
             ->where('content', 'LIKE', "%{$keyword}%")
             ->orWhereHas('user.profile', function ($q) use ($keyword) {
@@ -27,14 +39,19 @@ class SearchHistoryController extends Controller
             })
             ->latest()
             ->get();
-        return view('search.result', compact('posts', 'keyword'));
+        $checktopic=false;
+        return view('search.result', compact('posts', 'keyword','checktopic'));
     }    
     public function searchTab(Request $request,$type)
     {
          $keyword = $request->input('q');
         if ($type === 'post') {
-            $posts = Post::where('content', 'LIKE', "%{$keyword}%")->latest()->get();
-            return view('search.partials.post-list', compact('posts', 'keyword'));
+            $posts = Post::where('content', 'LIKE', "%{$keyword}%")
+                        ->orWhereHas('user.profile', function($q) use ($keyword) {
+                            $q->where('display_name', 'LIKE', "%{$keyword}%");
+                        })->latest()->get();
+            $checktopic =false;
+            return view('search.partials.post-list', compact('posts', 'keyword','checktopic'));
         } 
         elseif ($type === 'people') {
             // Đã sửa lại truy vấn dùng bảng User
@@ -52,7 +69,14 @@ class SearchHistoryController extends Controller
                     ->get();
             return view('search.partials.topic-list', compact('topics'));
         } 
-        
+
+    }
+    public function suggestions(Request $request)
+    {
+        $q = $request->q;
+        return SearchHistory::where('keyword', 'like', "%$q%")
+            ->limit(5)
+            ->get();
     }
     /**
      * Show the form for creating a new resource.

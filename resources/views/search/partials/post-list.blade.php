@@ -1,5 +1,9 @@
           <div class="tab-pane fade show active" id="posts-content" role="tabpanel">
+            @if($checktopic)
+                    <h5 class="fw-bold mb-3 px-2">Bài viết chủ đề : {{$display_name}}</h5>
+            @else
                     <h5 class="fw-bold mb-3 px-2">Khám phá bài viết</h5>
+            @endif
                     @forelse($posts as $post)
             <div class="card post-card shadow-none">
             <!-- <div class="card post-card shadow-none post-item" data-id="{{ $post->id }}"> -->

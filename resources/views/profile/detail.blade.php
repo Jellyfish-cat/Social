@@ -19,14 +19,23 @@
                         Chỉnh sửa hồ sơ
                     </a>
                 @else
-                    <button class="btn btn-primary btn-sm">Follow</button>
+                   @if($user->followers->contains(Auth::id()))
+                                    <button class="btn btn-light rounded-pill fw-semibold px-4 btn-sm follow-btn" 
+                                    data-id="{{$user->id}}">Đang Theo dõi</button>
+                                    @else
+                                    <button class="btn btn-primary rounded-pill fw-semibold px-4 btn-sm follow-btn" 
+                                    data-id="{{$user->id}}">Theo dõi</button>
+                                    @endif
                 @endif
             </div>
             {{-- Stats --}}
             <div class="d-flex gap-4 mb-3">
                 <div><strong>{{ $user->posts->count() }}</strong> bài viết</div>
-                <div><strong>{{ $followersCount ?? 0 }}</strong> người theo dõi</div>
-                <div><strong>{{ $followingCount ?? 0 }}</strong> đang theo dõi</div>
+                <button class="open-follow" data-type="follower" data-id="{{$user->id}}">
+                    <strong class="follow-count"  data-id="{{$user->id}}">{{ $user->followers->count() ?? 0 }}</strong> người theo dõi</button>
+                <button class="open-follow"  data-type="following" data-id="{{$user->id}}">
+                    <strong class="following-count" data-authid="{{$user->id}}">{{ $user->following->count() ?? 0 }}</strong>
+                     đang theo dõi</button>
             </div>
             {{-- Bio --}}
             <div>
@@ -97,7 +106,16 @@
         </div>
     </div>
 </div>      
-
+<!-- Modal xem chi tiết người theo dõi -->
+<div class="modal fade back-to-follow" id="followDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 800px;">
+        <div class="modal-content">
+            <div class="modal-body p-0" id="followDetailContent">
+                <!-- Nội dung chi tiết post sẽ load vào đây -->
+            </div>
+        </div>
+    </div>
+</div> 
 <style>
 /* Avatar */
 .avatar-wrapper {

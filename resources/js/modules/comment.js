@@ -11,6 +11,7 @@
                 e.preventDefault();
                 const postId = button.dataset.postId;
                 const sendIcons = document.querySelectorAll(`.comment-submit[data-post-id="${postId}"] i`);
+                 const NoComent = document.querySelector(`.comment-box[data-post-id="${postId}"] .no-comment`);
                 const form = button.closest(".comment-form");
                 const input = form.querySelector(".comment-textarea");
                 const parentInput = input.closest("form").querySelector(".parent-id");
@@ -164,6 +165,9 @@
                 input.style.height = "35px";
                 // reset preview đúng form
                 commentFile = null;
+                if (NoComent) {
+                    NoComent.classList.add('d-none');
+                }
                 // clear input file
                 fileInput.value = "";
                 // clear preview UI đúng form

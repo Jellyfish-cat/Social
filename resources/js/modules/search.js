@@ -1,14 +1,28 @@
-document.addEventListener("click", function(e){
+let currentTabsearch = "post";
+window.addEventListener("DOMContentLoaded", () => {
+    const savedTab = sessionStorage.getItem("currentSearchTab");
+    if (savedTab) {
+        let btnClass =
+            savedTab === "people" ? "people-tab" :
+                savedTab === "topic" ? "topic-tab" :
+                    "post-tab";
+        currentTabsearch = savedTab;
+        const tabBtn = document.querySelector(`.${btnClass}`);
+        if (tabBtn) setActiveSearchTab(tabBtn);
+        loadSearchPosts(savedTab); // load nội dung tab lưu trước
+    }
+});
+document.addEventListener("click", function (e) {
     const btn = e.target.closest(".btn-cancel-Search");
-    if(!btn) return;
+    if (!btn) return;
     const form = btn.closest(".search-form");
     const input = form.querySelector(".search-input");
     input.value = "";
     input.focus(); // focus lại cho user gõ tiếp
 });
-document.addEventListener("click", function(e){
+document.addEventListener("click", function (e) {
     const btn = e.target.closest(".btn-Search");
-    if(!btn) return;
+    if (!btn) return;
     e.preventDefault();
     const form = btn.closest("form");
     const input = form.querySelector("input[name='q']");
@@ -18,41 +32,34 @@ document.addEventListener("click", function(e){
     window.location.href = `/search?q=${encodeURIComponent(keyword)}`;
     finishLoading();
 });
-/*let currentTab = "post";
-window.addEventListener("DOMContentLoaded", () => {
-    const savedTab = sessionStorage.getItem("currentProfileTab");
-    if (savedTab) {
-        let btnClass =
-            savedTab === "people" ? "people-tab" :
-                        "post-tab";
-        currentTab = savedTab;
-        const tabBtn = document.querySelector(`.${btnClass}`);
-        if (tabBtn) setActiveTab(tabBtn);
-        loadProfilePosts(savedTab); // load nội dung tab lưu trước
-    }
-});*/
+
 document.addEventListener("click", function (e) {
     const postTab = e.target.closest("#post-tab");
     if (postTab) {
-        loadProfilePosts("post");
-        setActiveTab(postTab);
+        loadSearchPosts("post");
+        setActiveSearchTab(postTab);
+        updateHistory("post");
         return;
     }
     const peopleTab = e.target.closest("#people-tab");
     if (peopleTab) {
-        loadProfilePosts("people");
-        setActiveTab(peopleTab);
+        loadSearchPosts("people");
+        setActiveSearchTab(peopleTab);
+        updateHistory("people");
+
         return;
     }
     const topicTab = e.target.closest("#topic-tab");
     if (topicTab) {
-        loadProfilePosts("topic");
-        setActiveTab(topicTab);
+        loadSearchPosts("topic");
+        setActiveSearchTab(topicTab);
+        updateHistory("topic");
+
         return;
     }
 
 });
-function loadProfilePosts(type) {
+function loadSearchPosts(type) {
     const container = document.getElementById("search-results-container");
     if (!container) return;
     const urlParams = new URLSearchParams(window.location.search);
@@ -64,16 +71,19 @@ function loadProfilePosts(type) {
         </div>
     `;
     startLoading();
-     fetch(`/search/tab/${type}?q=${encodeURIComponent(keyword)}`)
+    fetch(`/search/tab/${type}?q=${encodeURIComponent(keyword)}`)
         .then(res => res.text())
         .then(html => {
             container.innerHTML = html;
+            container.className = "";
+            currentTabsearch = type;
+            sessionStorage.setItem("currentSearchTab", type);
         })
         .finally(() => {
             finishLoading();
         });
 }
-function setActiveTab(activeTab) {
+function setActiveSearchTab(activeTab) {
     document.querySelectorAll('#searchTabs .nav-link').forEach(tab => {
         tab.classList.remove('active');
         tab.classList.add('text-dark', 'hover-bg-light');
@@ -102,4 +112,45 @@ document.addEventListener("click", function (e) {
         .finally(() => {
             finishLoading();
         });
+    updateHistory("topic");
+});
+//cập nhật lịch sử để back
+function updateHistory(type) {
+    const url = new URL(window.location);
+    url.searchParams.set('tab', type);
+    window.history.pushState({ tab: type }, '', url);
+}
+//bắt click back
+window.addEventListener("popstate", function (e) {
+    if (e.state && e.state.tab) {
+        let type = e.state.tab;
+        if (type !== currentTab) {
+            let btnClass =
+                type === "topic" ? "topic-tab" :
+                    type === "people" ? "people-tab" :
+                        "post-tab";
+
+            const tabBtn = document.querySelector(`#${btnClass}`);
+            if (tabBtn) setActiveSearchTab(tabBtn);
+            loadSearchPosts(type);
+        }
+    }
+    else { }
+});
+window.addEventListener("DOMContentLoaded", () => {
+    if (!document.getElementById("search-results-container")) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentType = urlParams.get('tab') || sessionStorage.getItem("currentSearchTab") || "post";
+
+    let btnClass =
+        currentType === "topic" ? "topic-tab" :
+            currentType === "people" ? "people-tab" :
+                "post-tab";
+    currentTabsearch = currentType;
+    const tabBtn = document.querySelector(`#${btnClass}`);
+    if (tabBtn) setActiveSearchTab(tabBtn);
+    loadSearchPosts(currentType);
+    const url = new URL(window.location);
+    url.searchParams.set('tab', currentType);
+    window.history.replaceState({ tab: currentType }, '', url);
 });

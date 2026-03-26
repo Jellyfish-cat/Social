@@ -102,7 +102,12 @@ body{
             >
 
             <x-input-error :messages="$errors->get('password')" class="mb-2" />
-
+                <div class="flex items-center mb-3">
+    <input type="checkbox" name="remember" id="remember" class="mr-2">
+    <label for="remember" class="text-sm text-gray-600">
+        Ghi nhớ đăng nhập
+    </label>
+</div>  
             <button class="insta-btn w-full">
                 {{ __('Log in') }}
             </button>

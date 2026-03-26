@@ -9,22 +9,33 @@
                                     </a>
                                     <div>
                                         <a href="{{ route('profile.detail', $user->id) }}" class="fw-bold text-dark text-decoration-none d-block fs-6">{{ $user->profile->display_name ?? $user->name }}</a>
-                                        <span class="text-muted small">@ {{ $user->name }}</span> • <span class="text-muted small">{{ $user->followers_count ?? 0 }} người theo dõi</span>
+                                        <span class="text-muted small">@ {{ $user->name }}</span> • 
+                                         <strong class="text-muted small follow-count" data-id={{$user->id}}>
+                                            {{ $user->followers->count() ?? 0 }}</strong> người theo dõi
+
                                     </div>
                                 </div>
-                                <button class="btn btn-dark rounded-pill fw-semibold px-4 btn-sm">Theo dõi</button>
+                                @if($user->id != Auth::id())
+                                 @if($user->followers->contains(Auth::id()))
+                                    <button class="btn btn-light rounded-pill fw-semibold px-4 btn-sm follow-btn" 
+                                    data-id="{{$user->id}}">Đang Theo dõi</button>
+                                    @else
+                                    <button class="btn btn-primary rounded-pill fw-semibold px-4    sm follow-btn" 
+                                    data-id="{{$user->id}}">Theo dõi</button>
+                                    @endif
+                                @endif
                             </div>
                             @endforeach
                         @else
                             <div class="text-center py-5">
-                                <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+                                <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">    
                                     <i class="bi bi-person-x fs-1 text-muted"></i>
                                 </div>
                                 <h6 class="fw-bold text-dark">Chưa có thông tin hiển thị</h6>
                             </div>
                         @endif
                     </div>
-                </div>
+                </div>  
 
                 <!-- Tab Hình Ảnh & Video (PHOTOS/VIDEOS) (Preview Skeleton) -->
                 <div class="tab-pane fade" id="photos-content" role="tabpanel">

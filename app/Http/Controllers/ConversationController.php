@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
+use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,10 +28,43 @@ class ConversationController extends Controller
                 return optional($conversation->latestMessage)->created_at;
             })
             ->values();
+        $messages = collect();
+        if ($conversations->isNotEmpty()) {
+        $first = $conversations->first();
+        $messages = Message::where('conversation_id', $first->id)
+            ->with(['sender.profile', 'media'])
+            ->orderBy('created_at')
+                ->get();
+        }
+    return view('Message.conversations', compact('conversations', 'messages'));
 
-        return view('Message.conversations', compact('conversations'));
+
+    }
+   public function messageTab($id)
+{
+    $authId = auth()->id();
+
+    $conversation = Conversation::whereHas('users', function ($q) use ($authId) {
+            $q->where('user_id', $authId);
+        })
+        ->whereHas('users', function ($q) use ($id) {
+            $q->where('user_id', $id);
+        })
+        ->first();  // ← thêm lại ->first()
+
+    if (!$conversation) {
+        $conversation = Conversation::create(['type' => 'private']);
+        $conversation->users()->attach([$authId, $id]);
     }
 
+    $messages = Message::where('conversation_id', $conversation->id)
+        ->with(['sender.profile', 'media'])
+        ->orderBy('created_at')
+        ->get();
+
+    // Trả về partial view (chỉ HTML tin nhắn) cho fetch JS
+    return view('Message.message', compact('messages'));
+}
     /**
      * Show the form for creating a new resource.
      */

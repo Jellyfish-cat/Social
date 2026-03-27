@@ -56,7 +56,7 @@
                                         width="28" height="28">
                                      </a>
                                     <div class="small fw-semibold text-dark">
-                                        {{ $comment->post->user->profile->display_name }}
+                                        {{ $comment->post->user->profile->display_name }} Bài viết
                                     </div>
                                 </div>
                                 <div class="small text-dark comment-textare" 

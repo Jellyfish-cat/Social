@@ -20,7 +20,7 @@
                                     <button class="btn btn-light rounded-pill fw-semibold px-4 btn-sm follow-btn" 
                                     data-id="{{$user->id}}">Đang Theo dõi</button>
                                     @else
-                                    <button class="btn btn-primary rounded-pill fw-semibold px-4    sm follow-btn" 
+                                    <button class="btn btn-primary rounded-pill fw-semibold px-4 btn-sm follow-btn" 
                                     data-id="{{$user->id}}">Theo dõi</button>
                                     @endif
                                 @endif

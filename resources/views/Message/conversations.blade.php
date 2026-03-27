@@ -567,17 +567,25 @@
 
         {{-- Conversation List --}}
          <div class="overflow-auto flex-grow-1" id="msgConvoList">
-
                 @foreach($conversations as $conversation)
                     @php
                         $otherUser = $conversation->users->where('id', '!=', auth()->id())->first();
                         if(!$otherUser) continue;
                         $lastMsg = $conversation->latestMessage;
+                        $mediaCount = $lastMsg->media ? $lastMsg->media->count() : 0;
+                        if ($mediaCount > 0) {
+                            $previewText = $lastMsg->content 
+                                ? $lastMsg->content 
+                                : "📷 Đã gửi {$mediaCount} ảnh";
+                        } else {
+                            $previewText = $lastMsg->content;
+                        }
                     @endphp
-
                  <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item"
-                         onclick="openChat(this, '{{ $otherUser->name }}', '{{ $lastMsg->content ?? '' }}', false)">
-
+                         data-name="{{ $otherUser->profile->display_name ?? $otherUser->name }}"
+                         data-status="{{ $lastMsg->content ?? '' }}"
+                         data-online="false"
+                         data-user-id="{{ $otherUser->id }}">
                         <img src="{{ asset('storage/' . ($otherUser->profile->avatar ?? 'default-avatar.png')) }}"
                              class="rounded-circle" width="50" height="50">
 
@@ -588,7 +596,7 @@
 
                             <small class="text-muted">
                                 {{ $lastMsg && $lastMsg->sender_id == auth()->id() ? 'Bạn: ' : '' }}
-                                {{ Str::limit($lastMsg->content ?? 'Chưa có tin nhắn', 30) }}
+                                {{ Str::limit($previewText ?? 'Chưa có tin nhắn', 30) }}
                             </small>
                         </div>
 
@@ -608,7 +616,7 @@
         </div>
         <div class="msg-empty-title">Tin nhắn của bạn</div>
         <p class="msg-empty-desc">Gửi ảnh và tin nhắn riêng tư cho bạn bè hoặc nhóm</p>
-        <button class="msg-send-btn" onclick="showNewConvo()">Gửi tin nhắn</button>
+        <button class="msg-send-btn" id="msgNewConvoBtn">Gửi tin nhắn</button>
     </div>
 
     {{-- ===== ACTIVE CHAT PANEL ===== --}}
@@ -616,7 +624,7 @@
 
         {{-- Chat Header --}}
         <div class="msg-chat-header">
-            <button class="msg-icon-btn d-md-none me-2" onclick="closeChat()">
+            <button class="msg-icon-btn d-md-none me-2" id="msgBackBtn">
                 <i class="bi bi-arrow-left"></i>
             </button>
             <div class="msg-avatar-wrap">
@@ -635,114 +643,32 @@
         </div>
 
         {{-- Chat Body --}}
-                @include('Message.message')
+                <div class="msg-chat-body" id="msgChatBody">
+                @if(isset($messages) && $messages->count())
+                    @include('Message.message', ['messages' => $messages])
+                @endif
+            </div>
 
         {{-- Chat Footer --}}
-        <div class="msg-chat-footer">
-            <button class="msg-input-icon" title="Gửi ảnh"><i class="bi bi-image"></i></button>
+                <div class="chat-form">
+            <div class="preview-media d-flex gap-2 px-3 py-1 w-100" style="display:none;"></div></div>
+        <div class="msg-chat-footer chat-form">
+            <input type="file" id="msg-file-input" name="file" hidden accept="image/*,video/*" multiple onchange="previewCommentFiles(this)">
+            <button type="button" class="btn-image btn msg-input-icon" title="Gửi ảnh"
+                onclick="event.preventDefault(); document.getElementById('msg-file-input').click();">
+                <i class="bi bi-image fs-5"></i>
+            </button>
             <div class="msg-chat-input-wrap">
                 <textarea class="msg-chat-input" id="msgInput" placeholder="Nhắn tin..." rows="1"></textarea>
                 <span class="msg-input-icon" title="Emoji"><i class="bi bi-emoji-smile"></i></span>
             </div>
-            <button class="msg-send-icon-btn" id="msgSendBtn" onclick="sendMessage()" title="Gửi">
+            <button class="msg-send-icon-btn" id="msgSendBtn" title="Gửi">
                 <i class="bi bi-send-fill"></i>
             </button>
         </div>
     </div>
 
 </div>
-<script>
-     const emptyState = document.getElementById('msgEmptyState');
-    const chatPanel = document.getElementById('msgChatPanel');
-    const chatName  = document.getElementById('chatName');
-    const chatStatus = document.getElementById('chatStatus');
-    const chatOnlineDot = document.getElementById('chatOnlineDot');
-    const chatBody  = document.getElementById('msgChatBody');
-    const msgInput  = document.getElementById('msgInput');
-    let currentItem = null;
 
-    function openChat(el, name, status, online) {
-        // Remove active from all
-        document.querySelectorAll('.msg-convo-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-        currentItem = el;
-
-        // Update header
-        chatName.textContent = name;
-        chatStatus.textContent = online ? 'Đang hoạt động' : status;
-        chatOnlineDot.style.display = online ? 'block' : 'none';
-
-        // Show chat, hide empty
-        emptyState.style.display = 'none';
-        chatPanel.classList.add('open');
-
-        // Mobile
-        document.getElementById('msgPage').classList.add('show-chat');
-
-        // Scroll to bottom
-        setTimeout(() => { chatBody.scrollTop = chatBody.scrollHeight; }, 50);
-    }
-
-    function closeChat() {
-        document.getElementById('msgPage').classList.remove('show-chat');
-        chatPanel.classList.remove('open');
-        emptyState.style.display = 'flex';
-    }
-
-    function showNewConvo() {
-        alert('Tính năng tìm kiếm người dùng để nhắn tin sẽ được phát triển sau.');
-    }
-
-    function sendMessage() {
-        const text = msgInput.value.trim();
-        if (!text) return;
-
-        const row = document.createElement('div');
-        row.className = 'msg-bubble-row mine';
-
-        const bubble = document.createElement('div');
-        bubble.className = 'msg-bubble mine';
-        bubble.textContent = text;
-
-        row.appendChild(bubble);
-        chatBody.appendChild(row);
-
-        msgInput.value = '';
-        msgInput.style.height = 'auto';
-        chatBody.scrollTop = chatBody.scrollHeight;
-
-        // Update preview in conversation list
-        if (currentItem) {
-            const preview = currentItem.querySelector('.msg-convo-preview');
-            if (preview) {
-                preview.textContent = 'Bạn: ' + (text.length > 30 ? text.slice(0, 30) + '...' : text);
-                preview.classList.remove('unread');
-            }
-        }
-    }
-
-    // Auto-resize textarea
-    msgInput.addEventListener('input', function () {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-    });
-
-    // Enter to send (Shift+Enter for newline)
-    msgInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    // Search filter
-    document.getElementById('msgSearchInput').addEventListener('input', function () {
-        const q = this.value.toLowerCase();
-        document.querySelectorAll('.msg-convo-item').forEach(item => {
-            const name = item.querySelector('.msg-convo-name').textContent.toLowerCase();
-            item.style.display = name.includes(q) ? '' : 'none';
-        });
-    });
-</script>
 
 @endsection

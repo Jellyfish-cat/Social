@@ -44,7 +44,7 @@ foreach ($conversations as $conversation) {
     $randomUsers = $users->random(rand(2, 4));
 
     foreach ($randomUsers as $user) {
-        DB::table('conversation_user')->insertOrIgnore([
+        DB::table('conversation_users')->insertOrIgnore([
             'user_id' => $user->id,
             'conversation_id' => $conversation->id,
         ]);
@@ -54,7 +54,7 @@ foreach ($conversations as $conversation) {
 // Messages
 foreach ($conversations as $conversation) {
 
-    $userIds = DB::table('conversation_user')
+    $userIds = DB::table('conversation_users')
         ->where('conversation_id', $conversation->id)
         ->pluck('user_id');
 

@@ -19,13 +19,7 @@
                         Chỉnh sửa hồ sơ
                     </a>
                 @else
-                   @if($user->followers->contains(Auth::id()))
-                                    <button class="btn btn-light rounded-pill fw-semibold px-4 btn-sm follow-btn" 
-                                    data-id="{{$user->id}}">Đang Theo dõi</button>
-                                    @else
-                                    <button class="btn btn-primary rounded-pill fw-semibold px-4 btn-sm follow-btn" 
-                                    data-id="{{$user->id}}">Theo dõi</button>
-                                    @endif
+                   
                 @endif
             </div>
             {{-- Stats --}}
@@ -43,7 +37,20 @@
                 <span class="text-muted">
                     {{ $user->bio ?? 'Chưa có tiểu sử' }}
                 </span>
+                
             </div>
+            @if(Auth::id() !== $user->id)
+            <div class="mt-2">
+                @if($user->followers->contains(Auth::id()))
+                    <button class="btn btn-light rounded-3 fw-semibold px-4 w-25 btn-sm follow-btn" 
+                    data-id="{{$user->id}}">Đang Theo dõi</button>
+                                    @else
+                                    <button class="btn btn-primary rounded-3 w-25 fw-semibold px-4 btn-sm follow-btn" 
+                                    data-id="{{$user->id}}">Theo dõi</button>
+                                    @endif
+                 <button class="btn btn-dark rounded-3 w-25 fw-semibold px-4 btn-sm follow-btn" > Nhắn tin</button>
+            </div>
+            @endif
         </div>
     </div>
     {{-- GRID POSTS --}}

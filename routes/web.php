@@ -190,6 +190,9 @@ Route::middleware('auth')->group(function () {
 */
     Route::middleware('auth')->group(function () {
         Route::get('/message', [ConversationController::class,'index'])->name('conversations.index');
+        Route::get('/message/chat/{id}', [ConversationController::class,'messageTab'])->name('conversations.messageTab');
+        Route::post('/message/send/{id}', [MessageController::class,'store'])->name('message.store');
+
     });
 
 /*

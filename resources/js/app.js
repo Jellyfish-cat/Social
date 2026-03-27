@@ -21,5 +21,6 @@ import './modules/searchtopic';
 import './modules/follow';
 import './modules/suggestionsSearch';
 import './modules/convertation';
+import './modules/message';
 
 

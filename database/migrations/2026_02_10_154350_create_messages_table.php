@@ -22,9 +22,10 @@ return new class extends Migration
           ->constrained('users')
           ->cascadeOnDelete();
 
-    $table->text('content');
+    $table->text('content')->nullable();
 
     $table->timestamp('created_at')->useCurrent();
+    $table->timestamps();
 });
 
     }

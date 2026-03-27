@@ -13,7 +13,15 @@
                         <img src="{{ asset('storage/' . ($post->user->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
                         </a>
                         <div>
-                            <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }}</div>
+                            <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }}
+                                 @if($post->user->followers->contains(Auth::id()))
+                                    <button class=" mt-1 ms-3 btn btn-light rounded-3 fw-semibold px-3 btn-sm follow-btn" 
+                                    data-id="{{$post->user->id}}">Đang Theo dõi</button>
+                                    @else
+                                    <button class="mt-1 ms-3 btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn" 
+                                    data-id="{{$post->user->id}}">Theo dõi</button>
+                                    @endif
+                            </div>
                             <div class="text-muted" style="font-size: 13px;">
                             @if($post->topics->count())
                                 @foreach($post->topics as $topic)
@@ -89,7 +97,9 @@
                 </div>
                 <div class="p-3 pb-0">
                     <div class="post-caption small mb-1">
-                        <span class="fw-bold me-1">{{ $post->user->profile->display_name ?? $post->user->name }}</span>
+                        <span class="fw-bold me-1">{{ $post->user->profile->display_name ?? $post->user->name }}
+                            
+                        </span>
                         {!! nl2br(e($post->content)) !!}
                     </div>
                       <div class="d-flex justify-content-between mb-2">

@@ -15,6 +15,7 @@ return new class extends Migration
     $table->id();
     $table->string('type'); // private | group
     $table->timestamp('created_at')->useCurrent();
+    $table->timestamps();
 });
 
     }

@@ -11,11 +11,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
     <style>
 
         /* Loại bỏ giới hạn 600px để tràn màn hình */
         
     </style>
+        @if(Auth::check())
+        <meta name="auth-user-id" content="{{ Auth::id() }}">
+    @endif
+
 </head>
 <body>
 <div class="d-flex flex-column flex-md-row">
@@ -38,16 +43,42 @@
                     <span class="nav-text">Tạo bài viết</span>
                 </a>
             </li>
+                        @php
+                $globalUnreadMessages = 0;
+                if(Auth::check()){
+                    $globalUnreadMessages = \App\Models\Message::where('sender_id', '!=', auth()->id())
+                        ->whereNull('read_at')
+                        ->whereHas('conversation.users', function($q) {
+                            $q->where('users.id', auth()->id());
+                        })->count();
+                }
+            @endphp
             <li class="nav-item">
-                <a href="{{  route('conversations.index')}}" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
+                <a href="{{ route('conversations.index') }}" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
                     <i class="bi bi-chat-dots" style="min-width: 40px; text-align: center;"></i>
-                    <span class="nav-text">Nhắn tin</span>
+                    <span class="nav-text flex-grow-1">Nhắn tin</span>
+                    
+                    {{-- Gắn thẻ CSS Badge ở đây - Ẩn đi nếu count = 0 --}}
+                    <span id="global-msg-badge" class="badge msg-unread-count bg-danger rounded-pill {{ $globalUnreadMessages > 0 ? '' : 'd-none' }}" 
+                          style="font-size: 0.8rem; transition: transform 0.2s ease-in-out;">
+                        {{ $globalUnreadMessages }}
+                    </span>
                 </a>
             </li>
+            @php
+                $globalUnreadNotifications = 0;
+                if(Auth::check()){
+                    $globalUnreadNotifications = auth()->user()->notifications()->where('is_read', false)->count();
+                }
+            @endphp
             <li class="nav-item">
-                <a href="#" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
+                <a href="{{ route('notifications.index') }}" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
                     <i class="bi bi-heart" style="min-width: 40px; text-align: center;"></i>
-                    <span class="nav-text">Thông báo</span>
+                    <span class="nav-text flex-grow-1">Thông báo</span>
+                    <span id="global-noti-badge" class="badge bg-danger rounded-pill {{ $globalUnreadNotifications > 0 ? '' : 'd-none' }}" 
+                          style="font-size: 0.8rem; transition: transform 0.2s ease-in-out;">
+                        {{ $globalUnreadNotifications }}
+                    </span>
                 </a>
             </li>
         </ul>
@@ -120,6 +151,31 @@
     </div>
 </div>
 
+<script type="module">
+    document.addEventListener('DOMContentLoaded', function () {
+        const userId = document.querySelector('meta[name="auth-user-id"]')?.getAttribute('content');
+        if (userId && window.Echo) {
+            window.Echo.private(`notifications.${userId}`)
+                .listen('NotificationSent', (e) => {
+                    const badge = document.getElementById('global-noti-badge');
+                    if (badge) {
+                        badge.classList.remove('d-none');
+                        let count = parseInt(badge.innerText || 0);
+                        badge.innerText = count + 1;
+                        
+                        // Hiệu ứng nảy thu hút sự chú ý
+                        badge.style.transform = 'scale(1.5)';
+                        setTimeout(() => badge.style.transform = 'scale(1)', 300);
+                    }
+                    
+                    // Nếu người dùng đang mở trang danh sách thông báo, tự động reload để hiển thị thông báo mới
+                    if (window.location.pathname === '/notifications') {
+                        window.location.reload();
+                    }
+                });
+        }
+    });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 <footer>

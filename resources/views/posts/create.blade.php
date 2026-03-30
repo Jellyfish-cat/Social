@@ -45,7 +45,7 @@
                             <div class="mb-4">
                                 <div class="mb-4">
                                     <label class="form-label fw-bold text-secondary small text-uppercase">
-                                        Chủ đề:
+                                        Chủ đề: 
                                         <span id="selected-topics"></span>
                                     </label>
                                     <div class="d-flex gap-2">

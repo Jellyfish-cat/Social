@@ -512,7 +512,7 @@
     }
 </style>
 
-<div class="msg-page" id="msgPage">
+<div class="msg-page rounded-4" id="msgPage">
 
     {{-- ===== LEFT SIDEBAR ===== --}}
     <div class="msg-left">
@@ -532,32 +532,15 @@
         <div class="msg-search-wrap">
             <div class="msg-search">
                 <i class="bi bi-search"></i>
-                <input type="text" placeholder="Tìm kiếm" id="msgSearchInput">
+                <input type="text" id="user-input"
+                class="form-control form-control-sm"
+                placeholder="Tìm kiếm" autocomplete="off">
             </div>
+            <div id="suggestions-user" class="list-group mt-1 rounded-5 mt-2 mx-auto "></div>
         </div>
 
         {{-- Stories/Active --}}
-        <div class="msg-stories">
-            <div class="msg-story-item">
-                <div class="msg-story-ring seen">
-                    <div class="msg-story-inner">
-                        <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default-avatar.png')) }}" alt="Ghi chú">
-                    </div>
-                </div>
-                <span class="msg-story-label muted">Ghi chú<br>của bạn</span>
-            </div>
-            {{-- Placeholder story items --}}
-            @for($i = 0; $i < 3; $i++)
-            <div class="msg-story-item">
-                <div class="msg-story-ring">
-                    <div class="msg-story-inner">
-                        <img src="{{ asset('storage/default-avatar.png') }}" alt="User">
-                    </div>
-                </div>
-                <span class="msg-story-label">Người dùng {{ $i+1 }}</span>
-            </div>
-            @endfor
-        </div>
+       
 
         {{-- Section Header --}}
         <div class="msg-section-header">
@@ -567,6 +550,7 @@
 
         {{-- Conversation List --}}
          <div class="overflow-auto flex-grow-1" id="msgConvoList">
+            @if($conversations !== null)
                 @foreach($conversations as $conversation)
                     @php
                         $otherUser = $conversation->users->where('id', '!=', auth()->id())->first();
@@ -581,7 +565,7 @@
                             $previewText = $lastMsg->content;
                         }
                     @endphp
-                 <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item"
+                 <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item {{ $conversation->unread_count > 0 ? 'unread' : '' }}"
                          data-name="{{ $otherUser->profile->display_name ?? $otherUser->name }}"
                          data-status="{{ $lastMsg->content ?? '' }}"
                          data-online="false"
@@ -595,9 +579,18 @@
                             </div>
 
                             <small class="text-muted">
+                                @if($conversation->unread_count > 0) <strong> @endif
+                                
                                 {{ $lastMsg && $lastMsg->sender_id == auth()->id() ? 'Bạn: ' : '' }}
                                 {{ Str::limit($previewText ?? 'Chưa có tin nhắn', 30) }}
+                                
+                                @if($conversation->unread_count > 0) </strong> @endif
                             </small>
+                             @if($conversation->unread_count > 0)
+                                <span class="msg-unread-count badge bg-primary">
+                                    {{ $conversation->unread_count }}
+                                </span>
+                            @endif
                         </div>
 
                         <small class="text-muted">
@@ -605,7 +598,7 @@
                         </small>
                     </div>
                 @endforeach
-
+                @endif
             </div>
     </div>
 
@@ -616,7 +609,6 @@
         </div>
         <div class="msg-empty-title">Tin nhắn của bạn</div>
         <p class="msg-empty-desc">Gửi ảnh và tin nhắn riêng tư cho bạn bè hoặc nhóm</p>
-        <button class="msg-send-btn" id="msgNewConvoBtn">Gửi tin nhắn</button>
     </div>
 
     {{-- ===== ACTIVE CHAT PANEL ===== --}}
@@ -632,7 +624,7 @@
                 <span class="msg-online-dot" id="chatOnlineDot" style="display:none;"></span>
             </div>
             <div class="msg-chat-header-info">
-                <div class="msg-chat-header-name" id="chatName">Người dùng</div>
+                <div class="msg-chat-header-name" id="chatName">{{$otherUser->profile->display_name ?? ''}}</div>
                 <div class="msg-chat-header-status" id="chatStatus">Đang hoạt động</div>
             </div>
             <div class="msg-chat-actions">
@@ -643,24 +635,25 @@
         </div>
 
         {{-- Chat Body --}}
+                    <div id="msgHeader"></div>
                 <div class="msg-chat-body" id="msgChatBody">
-                @if(isset($messages) && $messages->count())
-                    @include('Message.message', ['messages' => $messages])
-                @endif
+                    
+
             </div>
 
         {{-- Chat Footer --}}
                 <div class="chat-form">
             <div class="preview-media d-flex gap-2 px-3 py-1 w-100" style="display:none;"></div></div>
-        <div class="msg-chat-footer chat-form">
+        <div class="msg-chat-footer chat-form constantIcon">
             <input type="file" id="msg-file-input" name="file" hidden accept="image/*,video/*" multiple onchange="previewCommentFiles(this)">
-            <button type="button" class="btn-image btn msg-input-icon" title="Gửi ảnh"
+            <button type="button" class="btn-image btn msg-input-icon constantIcon" title="Gửi ảnh"
                 onclick="event.preventDefault(); document.getElementById('msg-file-input').click();">
                 <i class="bi bi-image fs-5"></i>
             </button>
             <div class="msg-chat-input-wrap">
                 <textarea class="msg-chat-input" id="msgInput" placeholder="Nhắn tin..." rows="1"></textarea>
-                <span class="msg-input-icon" title="Emoji"><i class="bi bi-emoji-smile"></i></span>
+                <span class="msg-input-icon" title="Emoji" id="emojiBtn"><i class="bi bi-emoji-smile"></i></span>
+                <div class="mb-5 me-2" id="emojiPicker" style="position:absolute; bottom:60px; right:100px; display:none;"></div>
             </div>
             <button class="msg-send-icon-btn" id="msgSendBtn" title="Gửi">
                 <i class="bi bi-send-fill"></i>

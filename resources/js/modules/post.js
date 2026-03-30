@@ -95,5 +95,35 @@ window.addEventListener('popstate', function (event) {
         }
     }
 });
-
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('btn-delete')) {
+        const btn = e.target;
+        const postId = btn.dataset.id;
+        if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
+            return;
+        }
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        fetch(`/posts/destroy/${postId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // ✅ Xóa UI
+                const postItem = btn.closest('.post-item'); // class cha của bài viết
+                if (postItem) postItem.remove();
+            } else {
+                alert(data.error || 'Xóa thất bại');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Có lỗi xảy ra');
+        });
+    }
+});
 

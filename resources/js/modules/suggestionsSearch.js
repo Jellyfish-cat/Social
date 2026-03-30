@@ -1,20 +1,15 @@
 let cacheSearch = {}; // Bộ nhớ đệm (Cache) lưu kết quả đã tìm
 let searchTimeout = null; // Biến đánh dấu bộ đếm giờ (Debounce)
-
 // Dùng class thay vì ID
 const inputSearch = document.querySelector(".search-input");
-
 // DÙNG QUERYSELECTOR thay vì querySelectorAll để có thể nhét innerHTML
 const suggestionsContainer = document.querySelector(".search-wrapper #suggestions");
-
 if (inputSearch && suggestionsContainer) {
     // 1. NGHE SỰ KIỆN GÕ PHÍM
     inputSearch.addEventListener("input", () => {
         let q = inputSearch.value.trim().toLowerCase();
-
         // Xóa lệnh tìm kiếm cũ nếu người dùng vẫn đang gõ liên tục
         clearTimeout(searchTimeout);
-
         // Giấu bảng nếu người dùng xóa trắng thanh tìm kiếm
         if (!q) {
             suggestionsContainer.innerHTML = "";

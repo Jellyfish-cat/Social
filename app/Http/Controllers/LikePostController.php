@@ -6,6 +6,7 @@ use App\Models\LikePost;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
 
 class LikePostController extends Controller
 {
@@ -40,6 +41,16 @@ class LikePostController extends Controller
                 'user_id' => $user->id,
                 'post_id' => $id
             ]);
+
+            $post = Post::find($id);
+            if ($post && $post->user_id !== $user->id) {
+                $notification = Notification::create([
+                    'user_id' => $post->user_id,
+                    'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã thích bài viết của bạn. post:' . $post->id,
+                    'type' => 'like'
+                ]);
+                broadcast(new \App\Events\NotificationSent($notification))->toOthers();
+            }
         }
         else{   
             $like=likepost::where('user_id', $user->id)

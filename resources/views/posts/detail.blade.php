@@ -8,7 +8,7 @@
     <div class="container-fluid">
         <div class="post-modal">
             <div class="edit-main-content">
-                {{-- ================= LEFT MEDIA ================= --}}    
+                {{-- =================  MEDIA ================= --}}    
                 <div class="media-column">
                      <div class="media-top">
                         @if($post->media->count()==0)
@@ -281,16 +281,15 @@
                             <form class="d-flex flex-column comment-form">
                                 @csrf
                                 <div class="preview-media d-flex flex-wrap gap-2 mb-2"></div>
-                                <div class="d-flex align-items-center w-100">
-                                    <button class="btn-icon">
-                                        <i class="bi bi-emoji-smile fs-5"></i>
-                                    </button>
+                                <div class="d-flex align-items-center w-100 constantIcon">
+                                    <button class="msg-input-icon" title="Emoji" id="emojiBtn"><i class="bi bi-emoji-smile fs-5"></i></button>
+                                        <div class="mb-5 me-2" id="emojiPicker" style="position:absolute; bottom:60px; right:100px; display:none;"></div>
                                     <input type="file" id="comment-file-{{ $post->id }}" name="file" hidden onchange="previewCommentFiles(this)">
                                     <button type="button" class="btn-image btn"
                                          onclick="event.preventDefault(); document.getElementById('comment-file-{{ $post->id }}').click();">
                                         <i class="bi bi-image fs-5"></i>
                                         </button>
-                                    <textarea name="content"
+                                    <textarea name="content" id="msgInput"
                                     data-post-id="{{ $post->id }}"
                                         class="form-control border-0 shadow-none small comment-textarea"
                                         placeholder="Viết bình luận..."

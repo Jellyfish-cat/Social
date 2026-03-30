@@ -48,7 +48,10 @@
                                     <button class="btn btn-primary rounded-3 w-25 fw-semibold px-4 btn-sm follow-btn" 
                                     data-id="{{$user->id}}">Theo dõi</button>
                                     @endif
-                 <button class="btn btn-dark rounded-3 w-25 fw-semibold px-4 btn-sm follow-btn" > Nhắn tin</button>
+                        <a href="{{ route('conversations.index', ['chat' => $user->id]) }}"
+                            class="btn btn-dark rounded-3 w-25 fw-semibold px-4 btn-sm">
+                                Nhắn tin
+                            </a>
             </div>
             @endif
         </div>

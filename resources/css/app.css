@@ -117,9 +117,7 @@ body{
         .nav-item:hover{
             transform: scale(1.05);
         }
-        .dropdown:hover{
-             transform: scale(1.05);
-        }
+
 
         /* Search Navbar Styles */
         
@@ -177,7 +175,13 @@ body{
             color: #8e8e8e;
         }
 
-
+        /*icon*/
+            #emojiPicker {
+    z-index: 9999;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    }
+    
  .sidebar-sticky { position: sticky; top: 90px; } 
  :root { --f-backdrop-bg: rgba(93, 93, 93, 0.264) !important; } 
  .fancybox__backdrop { 
@@ -187,7 +191,12 @@ body{
 /* ===== POST MODAL ===== */
    .feed-container { max-width: 1160px; margin: auto; background-color:rgb(241, 241, 241)}
    .main-content {background-color:rgb(241, 241, 241);}
-.post-modal{
+
+   .modal-body {
+    overflow: visible !important;
+}
+
+   .post-modal{
     max-width:1290px;
     margin:2rem auto;
     background:#fff;

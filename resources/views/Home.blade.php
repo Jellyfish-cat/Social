@@ -19,7 +19,7 @@
                 </div>
             </div>
             @forelse($posts as $post)
-            <div class="card post-card shadow-none">
+            <div class="card post-card shadow-none post-item">
             <!-- <div class="card post-card shadow-none post-item" data-id="{{ $post->id }}"> -->
                 
                 <div class="p-3 d-flex align-items-center justify-content-between">
@@ -52,22 +52,14 @@
                     <div class="dropdown">
                         <i class="bi bi-three-dots cursor-pointer" data-bs-toggle="dropdown"></i>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            @if($post->user->id === Auth::id())
                             <li><a class="dropdown-item small" href="{{ route('posts.edit', $post->id) }}">Chỉnh sửa</a></li>
                             <li>
-                            <form
-                                action="{{ route('posts.destroy',$post->id) }}"
-                                method="POST"
-                                class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <a class="dropdown-item small">
-                                <button 
-                                    onclick="return confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')">
+                                <a class="dropdown-item small btn-delete" data-id="{{ $post->id }}">
                                     Xóa
-                                </button>
                             </a>
-                            </form>
-                        </li>
+                            </li>
+                            @endif
                             <li><hr class="dropdown-divider"></li>
                             <li><button class="dropdown-item small text-danger">Báo cáo</button></li>
                         </ul>

@@ -12,7 +12,8 @@ class NotificationController extends Controller
      */
     public function index()
     {
-        //
+        $notifications = auth()->user()->notifications()->orderBy('created_at', 'desc')->paginate(15);
+        return view('notification.notification-list', compact('notifications'));
     }
 
     /**
@@ -58,8 +59,23 @@ class NotificationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Notification $notification)
+    public function markAsRead($id)
     {
-        //
+        $notification = Notification::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if ($notification) {
+            $notification->update(['is_read' => true]);
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false], 404);
+    }
+
+    public function markAllAsRead()
+    {
+        auth()->user()->notifications()->where('is_read', 0)->update(['is_read' => 1]);
+        return back()->with('success', 'Đã đánh dấu tất cả là đã đọc.');
     }
 }

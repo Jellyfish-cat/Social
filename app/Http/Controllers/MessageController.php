@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\User;
 use App\Models\Conversation;
 use App\Models\MessageMedia;
 use Illuminate\Http\Request;
@@ -42,6 +43,7 @@ class MessageController extends Controller
         }
 
         $authId = auth()->id();
+        $user = User::findorfail($id);
 
         // Tìm conversation giữa 2 user
         $conversation = Conversation::whereHas('users', function ($q) use ($authId) {
@@ -63,6 +65,7 @@ class MessageController extends Controller
             'conversation_id' => $conversation->id,
             'sender_id'       => $authId,
             'content'         => $request->content ?? '',
+            'read_at' => null,
         ]);
 
         // Xử lý files nếu có
@@ -84,9 +87,26 @@ class MessageController extends Controller
                 ];
             }
         }
-
+                // Đóng gói payload gửi đi qua Websocket
+        $chatData = [
+            'id'          => $message->id,
+            'content'     => $message->content,
+            'sender_id'   => $message->sender_id,
+            'receiver_id' => $id, // ID người nhận (chính là $id từ tham số hàm)
+            'created_at'  => $message->created_at->format('H:i d/m'),
+            'media'       => $mediaList,
+            'sender_avatar' => auth()->user()->profile->avatar ?? null,
+        ];
+        // Bắn event
+        broadcast(new \App\Events\MessageSent((object) $chatData))->toOthers();
         return response()->json([
             'success' => true,
+            'user'=>[
+                'id' => $user->id,
+                'name' => $user->name,
+                'displayname' => $user->profile->display_name,
+                'avatar' => $user->profile->avatar,
+            ],
             'message' => [
                 'id'         => $message->id,
                 'content'    => $message->content,
@@ -95,8 +115,29 @@ class MessageController extends Controller
                 'media'      => $mediaList,
             ],
         ]);
-    }
+    }   
+    public function is_Read($id)
+    {
+        $authId = auth()->id();
+        $conversation = Conversation::whereHas('users', function ($q) use ($authId) {
+                $q->where('user_id', $authId);
+            })
+            ->whereHas('users', function ($q) use ($id) {
+                $q->where('user_id', $id);
+            })
+            ->first();
 
+        if ($conversation) {
+            Message::where('conversation_id', $conversation->id)
+                ->where('sender_id', $id)
+                ->whereNull('read_at')
+                ->update([
+                    'read_at' => now()
+                ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
     /**
      * Display the specified resource.
      */

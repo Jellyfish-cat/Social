@@ -1,6 +1,7 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
-
+import data from '@emoji-mart/data'
+import { Picker } from 'emoji-mart'
 window.Alpine = Alpine;
 Alpine.start();
 

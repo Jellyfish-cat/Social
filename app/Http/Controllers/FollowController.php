@@ -6,6 +6,7 @@ use App\Models\Follow;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
 
 class FollowController extends Controller
 {
@@ -41,6 +42,15 @@ class FollowController extends Controller
                 'follower_id' => $user->id,
                 'following_id' => $id
             ]);
+
+            if ($id != $user->id) {
+                $notification = Notification::create([
+                    'user_id' => $id,
+                    'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bắt đầu theo dõi bạn.',
+                    'type' => 'follow'
+                ]);
+                broadcast(new \App\Events\NotificationSent($notification))->toOthers();
+            }
          }else{   
             $follow=Follow::where('follower_id', $user->id)
                         ->where('following_id', $id);

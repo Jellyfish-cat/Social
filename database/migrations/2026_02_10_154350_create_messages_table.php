@@ -23,7 +23,7 @@ return new class extends Migration
           ->cascadeOnDelete();
 
     $table->text('content')->nullable();
-
+    $table->timestamp('read_at')->nullable();
     $table->timestamp('created_at')->useCurrent();
     $table->timestamps();
 });

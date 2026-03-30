@@ -3,6 +3,21 @@
 @section('content')
 
 <style>
+    /*const timeEl = currentItem.querySelectorAll('small.text-muted')[1];
+                    if (timeEl) timeEl.textContent = 'Vừa xong';
+                    const convoList = document.getElementById('msgConvoList');
+                    if (convoList && currentItem) convoList.prepend(currentItem);
+                } else {
+                    bubble.classList.add('text-danger');
+                    bubble.innerHTML += ' (Lỗi)';
+                }
+            })
+            .catch(() => {
+                bubble.classList.add('text-danger');
+                bubble.innerHTML += ' (Lỗi gửi)';
+            }).finally(() => {
+                finishLoading();
+            });*/
     /* ===== RESET MAIN LAYOUT FOR MESSAGES PAGE ===== */
     .main-content > .container-fluid {
         padding: 0 !important;

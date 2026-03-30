@@ -15,6 +15,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ConversationUserController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\SearchHistoryController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 
@@ -192,7 +193,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/message', [ConversationController::class,'index'])->name('conversations.index');
         Route::get('/message/chat/{id}', [ConversationController::class,'messageTab'])->name('conversations.messageTab');
         Route::post('/message/send/{id}', [MessageController::class,'store'])->name('message.store');
+        Route::get('/conversation/search', [ConversationController::class, 'search_user'])->name('search.user');
+        Route::post('/messages/read/{id}', [MessageController::class, 'is_Read']);
 
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Notification
+|--------------------------------------------------------------------------
+*/
+    Route::middleware('auth')->group(function () {
+        Route::get('/notifications', [NotificationController::class,'index'])->name('notifications.index');
+        Route::post('/notifications/read/{id}', [NotificationController::class,'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [NotificationController::class,'markAllAsRead'])->name('notifications.readAll');
     });
 
 /*

@@ -8,12 +8,14 @@
                         <img src="{{ asset('storage/' . ($post->user->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
                         </a><div>
                             <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }}
-                                 @if($post->user->followers->contains(Auth::id()))
+                                                     @if($post->user->id !== Auth::id()) 
+                                @if($post->user->followers->contains(Auth::id()))
                                     <button class=" mt-1 ms-3 btn btn-light rounded-3 fw-semibold px-3 btn-sm follow-btn" 
                                     data-id="{{$post->user->id}}">Đang Theo dõi</button>
                                     @else
                                     <button class="mt-1 ms-3 btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn" 
                                     data-id="{{$post->user->id}}">Theo dõi</button>
+                                    @endif
                                     @endif
                             </div>
                             <div class="text-muted" style="font-size: 13px;">

@@ -23,6 +23,8 @@ return new class extends Migration
     $table->boolean('is_read')->default(false);
 
     $table->timestamp('created_at')->useCurrent();
+    $table->timestamps();
+
 });
 
     }

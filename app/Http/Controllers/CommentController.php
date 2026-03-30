@@ -7,6 +7,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
 class CommentController extends Controller
 {
     /**
@@ -44,6 +45,16 @@ class CommentController extends Controller
                         'parent_comment_id'=> $request -> parent_id,
                         'status' => 1
                     ]);
+
+                    if ($post->user_id !== ($user->id ?? 1)) {
+                        $notification = Notification::create([
+                            'user_id' => $post->user_id,
+                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bình luận bài viết của bạn.',
+                            'type' => 'comment'
+                        ]);
+                        broadcast(new \App\Events\NotificationSent($notification))->toOthers();
+                    }
+
                     if ($request->hasFile('file')) {
                         $file = $request->file('file');
                         $fileName = time().'_'.$file->getClientOriginalName();
@@ -124,13 +135,24 @@ class CommentController extends Controller
     }
     public function reply(Request $request, $id)
     {   
-    $parentComment = Comment::findOrFail($id);
-    Comment::create([
-        'user_id' => auth()->id(),
-        'post_id' => $parentComment->post_id,
-        'parent_id' => $id,
-        'content' => $request->content
-    ]);
-    return back();
-}
+        $parentComment = Comment::findOrFail($id);
+        Comment::create([
+            'user_id' => auth()->id(),
+            'post_id' => $parentComment->post_id,
+            'parent_id' => $id,
+            'content' => $request->content
+        ]);
+        
+        $user = auth()->user();
+        if ($parentComment->user_id !== $user->id) {
+            $notification = Notification::create([
+                'user_id' => $parentComment->user_id,
+                'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã trả lời bình luận của bạn.',
+                'type' => 'comment'
+            ]);
+            broadcast(new \App\Events\NotificationSent($notification))->toOthers();
+        }
+        
+        return back();
+    }
 }

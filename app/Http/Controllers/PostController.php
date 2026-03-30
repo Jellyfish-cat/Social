@@ -199,14 +199,11 @@ class PostController extends Controller
             Storage::disk('public')->delete($m->file_path);
             $m->delete();
         }
-
         // Xóa các liên kết (Tương đương code cũ của bạn)
-        Comment::where('post_id', $id)->delete();
-        Favorite::where('post_id', $id)->delete();
-        
         $post->delete();
-
-        return redirect()->back()->with('success', 'Đã xóa bài viết');
+        return response()->json([
+        'success' => true
+    ]);
     }
 
     // 8. Hiển thị bài viết theo chủ đề (Topics)

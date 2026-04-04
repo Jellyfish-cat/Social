@@ -14,22 +14,23 @@ class ReportController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index($tab)
     {
         // Default to post reports for the initial page load
         $values = Report::with(['user.profile', 'target'])
-            ->where('target_type', 'App\Models\Post')->where('status','pending')
+            ->where('target_type', 'App\Models\Post')->where('status',$tab)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
         
         $type = 'post';
-        return view('admin.report', compact('values', 'type'));
-    }
-
+        
+        return view('admin.report', compact('values', 'type','tab'));
+        }
+    
     /**
      * Fetch reports by type for tabs (AJAX).
      */
-    public function reportTab(Request $request, $type)
+    public function reportTab(Request $request, $type, $tab)
     {
         $targetTypeMap = [
             'post' => 'App\Models\Post',
@@ -40,11 +41,11 @@ class ReportController extends Controller
         $targetType = $targetTypeMap[$type] ?? 'App\Models\Post';
 
         $values = Report::with(['user.profile', 'target'])
-            ->where('target_type', $targetType)->where('status','pending')
+            ->where('target_type', $targetType)->where('status',$tab)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('admin.partials.report-list', compact('values', 'type'));
+        return view('admin.partials.report-list', compact('values', 'type','tab'));
     }
 
     /**
@@ -118,7 +119,7 @@ class ReportController extends Controller
             'message' => 'Xóa thành công'
         ]);
     }
-        public function check( $id)
+        public function check( $id, $tab)
         {
             $report = Report::find($id);
             if (auth()->user()->role !== 'admin' && auth()->id() !== $report->user_id) {
@@ -130,23 +131,27 @@ class ReportController extends Controller
                     'message' => 'Không tìm thấy báo cáo'
                 ], 404);
             }
+            $reportlist='';
+            if($tab==='pending'){
             $report->update([
                 'status' => 'approved'
             ]);
             $target = $report->target;
-
             if ($target) {
-                if ($target instanceof Post) {
-                    $target->update(['status' => 'hidden']);
-                }
-                if ($target instanceof Comment) {
-                    $target->update(['status' => 'hidden']);
-                }
-                if ($target instanceof User) {
-                    $target->update(['status' => 'hidden']);
-                }
+                $target->status = 'hidden';
+                $target->save();
             }
-            $reportlist = Report::where('status','pending')->latest()->get();
+             $reportlist = Report::where('status','pending')->latest()->get();
+            }
+            elseif($tab==='approved'){
+                $report->delete();
+            $target = $report->target;
+            if ($target) {
+                $target->status = 'show';
+                $target->save();
+            }
+             $reportlist = Report::where('status','approved')->latest()->get();
+            }
             return response()->json([
                 'success' => true,
                 'data' => $reportlist,

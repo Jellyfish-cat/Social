@@ -150,7 +150,7 @@
         $totalReports = \App\Models\Report::where('status', 'pending')->count();
     @endphp
     <li class="nav-item">
-        <a  href="{{route("admin.reports")}}"
+        <a  href="{{route("admin.reports", "pending")}}"
            class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
             <i class="bi bi-flag" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text flex-grow-1">Báo cáo</span>
@@ -159,7 +159,20 @@
             </span>
         </a>
     </li>
-
+        {{-- đã xử lý --}}
+    @php
+        $totalReports = \App\Models\Report::where('status', 'approved')->count();
+    @endphp
+    <li class="nav-item">
+        <a  href="{{route("admin.reports", "approved")}}"
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+            <i class="bi bi-clipboard-check" style="min-width: 40px; text-align: center;"></i>
+            <span class="nav-text flex-grow-1">Đã xử lý</span>
+            <span class="badge bg-danger rounded-pill {{ $totalReports > 0 ? '' : 'd-none' }}">
+                {{ $totalReports }}
+            </span>
+        </a>
+    </li>
     {{-- Thông báo hệ thống --}}
     @php
         $adminNotifications = auth()->user()->notifications()->where('is_read', false)->count();
@@ -178,21 +191,6 @@
 </ul>
         @endif
         <hr>
-        
-        <!-- Ngôn ngữ -->
-        <div class="dropdown mb-3">
-            <a href="#" class="d-flex align-items-center text-dark text-decoration-none px-2 py-2 rounded-3 hover-bg-light" data-bs-toggle="dropdown" style="gap: 5px;">
-                <i class="bi bi-globe fs-5" style="min-width: 40px; text-align: center;"></i>
-                <span class="nav-text">Ngôn ngữ</span>
-            </a>
-            <ul class="dropdown-menu shadow-sm">
-                <li><a class="dropdown-item" href="{{ route('lang.switch','vi') }}">Tiếng Việt</a></li>
-                <li><a class="dropdown-item" href="{{ route('lang.switch','en') }}">English</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li class="px-3 small text-muted">Current: {{ app()->getLocale() }}</li>
-            </ul>
-        </div>
-
         <!-- Profile -->
         <div class="dropdown">
             <a href="#" class="d-flex align-items-center text-dark text-decoration-none px-2 py-2 rounded-3 hover-bg-light" data-bs-toggle="dropdown" aria-expanded="false" style="gap: 5px;">

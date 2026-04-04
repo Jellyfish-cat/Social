@@ -22,6 +22,9 @@ class ProfileController extends Controller
     public function detail($id)
     {
         $profile = profile::findorfail($id);
+        if ($profile->user->status === 'hidden'  && auth()->user()->role !== 'admin') {
+         abort(403, 'Tài khoản này đã bị khóa hoặc không tồn tại');
+        } 
         $user = $profile->user;
         $posts = $user->posts()->latest()->get();
         return view('profile.detail', compact('profile','user','posts'));

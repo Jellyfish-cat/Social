@@ -13,6 +13,7 @@ class Post extends Model
         'content',
         'is_comment_enabled',
         'pinned',
+        'status',
         'shared_post_id'
     ];
 

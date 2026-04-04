@@ -20,7 +20,7 @@ class UserController extends Controller
                     'followers',
                     'following'  
                 ])
-                ->orderBy('created_at', 'desc')
+                ->orderBy('created_at', 'desc')->where('status', 'show')
                 ->paginate(10);
         return view('admin.users', compact('users'));
     }

@@ -27,6 +27,7 @@ return new class extends Migration
 
     $table->boolean('is_comment_enabled')->default(true);
     $table->boolean('pinned')->default(false);
+    $table->string('status')->default('show');
 
     $table->foreignId('shared_post_id')
           ->nullable()

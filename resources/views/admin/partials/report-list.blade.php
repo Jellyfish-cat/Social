@@ -75,12 +75,23 @@
                             <a href="{{ route('profile.detail', $value->target->id) }}" class="btn  btn-info btn-sm" title="Xem trang cá nhân">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            @elseif($type === 'comment' && $value->target)
+                            <a  class="btn btn-info btn-sm open-post" data-id="{{$value->target->post_id}}"
+                                data-scroll-comment-id="{{$value->target->id}}" data-action="reply" title="Xem trang cá nhân">
+                                <i class="bi bi-eye"></i>
+                            </a>
                         @endif
                         <button class="btn btn-danger btn-sm btn-delete-report" data-id="{{ $value->id }}" title="Xóa báo cáo">
                             <i class="bi bi-trash"></i>
                         </button>
-                                  <button class="btn btn-success btn-sm btn-check-report" data-id="{{ $value->id }}" title="Xóa báo cáo">
-                             <i class="bi bi-check-circle-fill"></i>
+                                 
+                             @if($tab==='pending')
+                              <button class="btn btn-warning btn-sm btn-check-report" data-id="{{ $value->id }}" title="khóa báo cáo">
+                                    <i class="bi bi-lock"></i>
+                            @else
+                             <button class="btn btn-success btn-sm btn-check-report" data-id="{{ $value->id }}" title="duyệt báo cáo">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    @endif
                         </button>
                     </div>
                 </td>

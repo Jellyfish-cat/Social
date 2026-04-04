@@ -124,8 +124,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/conversations', [ConversationController::class,'adminIndex'])->name('admin.conversations');
     Route::get('/admin/conversations/{id}', [ConversationController::class,'show'])->name('admin.conversations.show');
     Route::delete('users/destroy/{id}', [UserController::class,'destroy'])->name('users.destroy');
-    Route::get('/admin/reports', [ReportController::class, 'index'])->name('admin.reports');
-    Route::get('/admin/reports/tab/{type}', [ReportController::class, 'reportTab']);
+    Route::get('/admin/reports/{tab}', [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/admin/reports/tab/{type}/{tab}', [ReportController::class, 'reportTab']);
 
 
 });
@@ -251,7 +251,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
     Route::post('/reports/store', [ReportController::class, 'store'])->name('reports.store');
     Route::delete('/reports/destroy/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
-    Route::post('/reports/check/{id}', [ReportController::class, 'check'])->name('reports.check');
+    Route::post('/reports/check/{id}/{tab}', [ReportController::class, 'check'])->name('reports.check');
        });
 /*
 |--------------------------------------------------------------------------

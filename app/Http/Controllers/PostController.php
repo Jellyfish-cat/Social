@@ -24,7 +24,7 @@ class PostController extends Controller
                     'likes',       // Tạo ra biến likes_count
                     'favorites'    // Tạo ra biến favorites_count
                 ])
-                ->orderBy('created_at', 'desc')
+                ->orderBy('created_at', 'desc')->where('status', 'show')
                 ->paginate(10);
 
     return view('admin.posts', compact('posts'));
@@ -121,9 +121,12 @@ class PostController extends Controller
         'comments' => function ($query) {
             $query->whereNull('parent_comment_id')
                   ->with(['user.profile', 'replies.user.profile'])
-                  ->latest()->where('status', 'show');
+                  ->latest();
         }
     ])->findOrFail($id);
+    if ($post->status !== 'show' && auth()->user()->role !== 'admin') {
+    abort(403, 'Bài viết đã khóa hoặc không tồn tại');
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -224,7 +227,7 @@ class PostController extends Controller
         $topic = Topic::findOrFail($topicId);
         $posts = Post::where('topic_id', $topicId)
                     ->with(['user.profile', 'media'])
-                    ->orderBy('created_at', 'desc')
+                    ->orderBy('created_at', 'desc')->where('status', 'show')
                     ->get();
         
         return view('posts.topic', compact('posts', 'topic'));
@@ -240,7 +243,7 @@ class PostController extends Controller
     }
 public function loadComments($id)
 {
-    $post = Post::with('comments.user')->findOrFail($id);
+    $post = Post::with('comments.user')->where('status', 'show')->findOrFail($id);
 
     return view('posts.comments', compact('post'));
 }

@@ -11,7 +11,7 @@ class HomeController extends Controller
     {
         // Lấy bài viết mới nhất kèm thông tin người dùng và topic
         $posts = Post::with(['user.profile', 'topic', 'comments.user','likes'])
-                    ->orderBy('created_at', 'desc')
+                    ->orderBy('created_at', 'desc')->where('status', 'show')
                     ->get();
         return view('home', compact('posts'));
     }

@@ -32,7 +32,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                    @forelse($posts as $value)
+                        @forelse($posts as $value)
                     <tr class="post-item">
                         <td class="text-center">
                             {{ $loop->iteration }}

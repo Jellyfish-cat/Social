@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid" >
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="text-primary">
             <i class="bi bi-file-earmark-text"></i> Quản lý báo cáo
@@ -20,7 +20,7 @@
                     </li>
                 </ul>
             </div>
-            <div class="card shadow-sm" id="report-results-container">
+            <div class="card shadow-sm" id="report-results-container" data-tab={{$tab}}>
             <!-- Tab Bài Viết (POSTS) -->
                 @include('admin.partials.report-list')
                 <!-- Tab Mọi Người (PEOPLE) (Preview Skeleton) -->

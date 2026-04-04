@@ -1,9 +1,9 @@
 let currentReportTab = "post";
-
+let tab = null;
 window.addEventListener("DOMContentLoaded", () => {
     const resultsContainer = document.getElementById("report-results-container");
     if (!resultsContainer) return;
-
+        tab = resultsContainer.dataset.tab; 
     const urlParams = new URLSearchParams(window.location.search);
     let currentType = urlParams.get('tab') || sessionStorage.getItem("currentReportTab") || "post";
 
@@ -16,8 +16,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (tabBtn) {
         setActiveReportTab(tabBtn);
-        // If the URL already has the tab, we don't necessarily need to reload if the initial PHP load matched
-        // But for consistency with search.js logic, we reload to ensure AJAX is working
         loadReportTab(currentType);
     }
 
@@ -66,7 +64,7 @@ function loadReportTab(type) {
 
     if (typeof startLoading === 'function') startLoading();
 
-    fetch(`/admin/reports/tab/${type}`)
+    fetch(`/admin/reports/tab/${type}/${tab}`)
         .then(res => res.text())
         .then(html => {
             container.innerHTML = html;
@@ -130,7 +128,7 @@ function loadReportPage(type, page) {
     const container = document.getElementById("report-results-container");
     if (typeof startLoading === 'function') startLoading();
 
-    fetch(`/admin/reports/tab/${type}?page=${page}`)
+    fetch(`/admin/reports/tab/${type}/${tab}?page=${page}`)
         .then(res => res.text())
         .then(html => {
             container.innerHTML = html;
@@ -193,7 +191,7 @@ document.addEventListener('click', function (e) {
             return;
         }
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(`/reports/check/${postId}`, {
+        fetch(`/reports/check/${postId}/${tab}`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,

@@ -20,7 +20,7 @@ class CommentController extends Controller
                     'replies',    // Tạo ra biến comments_count
                     'likes'    // Tạo ra biến likes_count
                 ])
-                ->orderBy('created_at', 'desc')
+                ->orderBy('created_at', 'desc')->where('status', 'show')
                 ->paginate(10);
         return view('admin.comments', compact('comments'));
     }

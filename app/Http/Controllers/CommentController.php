@@ -15,7 +15,14 @@ class CommentController extends Controller
      */
     public function index()
     {
-        //
+         $comments = Comment::with(['user.profile', 'post', 'likes', 'parent','replies']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
+                ->withCount([
+                    'replies',    // Tạo ra biến comments_count
+                    'likes'    // Tạo ra biến likes_count
+                ])
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        return view('admin.comments', compact('comments'));
     }
 
     /**
@@ -47,12 +54,39 @@ class CommentController extends Controller
                     ]);
 
                     if ($post->user_id !== ($user->id ?? 1)) {
+                        if($comment -> parent_comment_id === null){
                         $notification = Notification::create([
                             'user_id' => $post->user_id,
-                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bình luận bài viết của bạn.',
+                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bình luận bài viết của bạn. comment:' . $comment->id,
                             'type' => 'comment'
                         ]);
                         broadcast(new \App\Events\NotificationSent($notification))->toOthers();
+                       } else{
+                        $Parent_comment = Comment::findOrFail($comment->parent_comment_id);
+                        if($post->user_id !== $Parent_comment->user_id){
+                        $notification1 = Notification::create([
+                            'user_id' => $post->user_id,
+                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bình luận bài viết của bạn. comment:' . $comment->id,
+                            'type' => 'comment'
+                        ]);
+                        broadcast(new \App\Events\NotificationSent($notification1))->toOthers();
+                            
+                        $notification2 = Notification::create([
+                            'user_id' => $Parent_comment->user_id,
+                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã phản hồi bình luận của bạn. comment:' . $comment->id,
+                            'type' => 'comment'
+                        ]);
+                        broadcast(new \App\Events\NotificationSent($notification2))->toOthers();
+                        }
+                        else{
+                            $notification3 = Notification::create([
+                            'user_id' => $post->user_id,
+                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã phản hồi bình luận trong bài viết của bạn. comment:' . $comment->id,
+                            'type' => 'comment'
+                        ]);
+                        broadcast(new \App\Events\NotificationSent($notification3))->toOthers();
+                        }
+                        }
                     }
 
                     if ($request->hasFile('file')) {
@@ -76,6 +110,7 @@ class CommentController extends Controller
                     'media_path'=> $comment->media_path,
                     'is_image' => $comment->isImage(),
                     'is_video' => $comment->isVideo(),
+                    'role' => auth()->id() === $comment->user_id || auth()->user()->role === 'admin',
                     'created_at' => $comment->created_at->diffForHumans()
                     ]);
 
@@ -90,7 +125,7 @@ class CommentController extends Controller
     public function latest(Post $post)
 {
     $comments = Comment::where('post_id',$post->id)
-        ->latest()
+        ->latest()->where('status', 'show')
         ->take(5)
         ->get();
 
@@ -120,9 +155,27 @@ class CommentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Comment $comment)
+    public function destroy(Request $request, $id)
     {
-        //
+        $comment = Comment::find($id);
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $comment->user_id) {
+            abort(403, 'Bạn không có quyền');
+        }
+        if (!$comment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy comment'
+            ], 404);
+        }
+
+        $comment->delete();
+        $commentlist = Comment::latest()->get();
+        return response()->json([
+            'success' => true,
+            'data' => $commentlist,
+            'count' => Comment::count(),
+            'message' => 'Xóa thành công'
+        ]);
     }
     public function like($id)
     {
@@ -133,26 +186,5 @@ class CommentController extends Controller
 
     return back();
     }
-    public function reply(Request $request, $id)
-    {   
-        $parentComment = Comment::findOrFail($id);
-        Comment::create([
-            'user_id' => auth()->id(),
-            'post_id' => $parentComment->post_id,
-            'parent_id' => $id,
-            'content' => $request->content
-        ]);
-        
-        $user = auth()->user();
-        if ($parentComment->user_id !== $user->id) {
-            $notification = Notification::create([
-                'user_id' => $parentComment->user_id,
-                'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã trả lời bình luận của bạn.',
-                'type' => 'comment'
-            ]);
-            broadcast(new \App\Events\NotificationSent($notification))->toOthers();
-        }
-        
-        return back();
-    }
+    
 }

@@ -94,16 +94,40 @@
                     @endif
                         {{-- Comments --}}
                 @foreach($post->comments->where('parent_comment_id', null) as $comment)
-                <div class="comment-item d-flex" data-comment-id="{{ $comment->id }}">
+                <div class="comment-item position-relative d-flex" data-comment-id="{{ $comment->id }}">
                      <a href="{{ route('profile.detail', $comment->user->id) }}" >
                     <img src="{{ $comment->user->profile->avatar 
                     ? asset('storage/'.$comment->user->profile->avatar) 
                     : 'https://i.pravatar.cc/150' }}"
                     class="rounded-circle me-2"></a>
                 <div class="w-100" style="min-width:0;">
-                <div class="fw-bold small">
-                    {{ $comment->user->profile->display_name ?? $comment->user->email }}
+                   
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="fw-bold small">
+                        {{ $comment->user->profile->display_name ?? $comment->user->email }}
+                    </div>
+                    <div class="dropdown">
+                        <i class="bi bi-three-dots cursor-pointer text-muted"
+                        data-bs-toggle="dropdown"></i>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            @if($comment->user->id === Auth::id() || auth()->user()->role === 'admin')
+                            <li>
+                                <a class="dropdown-item small btn-delete-comment"
+                                data-id="{{ $comment->id }}">
+                                    Xóa
+                                </a>
+                            </li>
+                            @endif
+                            @if($comment->user->id !== Auth::id())
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item small text-danger open-report" data-type="comment" data-id="{{ $comment->id }}">Báo cáo</button></li>
+                            @endif
+                        </ul>
+                    </div>
+
                 </div>
+                
                 <div class="small ms-1 content">
                     {{ $comment->content }}
                 </div>
@@ -175,7 +199,7 @@
     </div>
     <div class="reply-list d-none" id="reply-{{ $comment->id }}">
         @foreach($replies as $reply)
-            <div class="comment-item d-flex mt-3 ms-1" data-comment-id="{{ $reply->id }}">
+            <div class="comment-item position-relative d-flex mt-3 ms-1" data-comment-id="{{ $reply->id }}">
                  <a href="{{ route('profile.detail', $reply->user->id) }}" >
                 <img src="{{ $reply->user->profile->avatar 
                             ? asset('storage/'.$reply->user->profile->avatar) 
@@ -183,9 +207,31 @@
                     class="rounded-circle me-2"
                     width="28" height="28"></a>
                 <div class="w-100 "style="min-width:0;">
+                    <div class="d-flex justify-content-between align-items-center">
                     <div class="fw-bold small">
                         {{ $reply->user->profile->display_name ?? $reply->user->email }}
                     </div>
+                    <div class="dropdown">
+                        <i class="bi bi-three-dots cursor-pointer text-muted"
+                        data-bs-toggle="dropdown"></i>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            @if($reply->user->id === Auth::id() || auth()->user()->role === 'admin')
+                            <li>
+                                <a class="dropdown-item small btn-delete-comment"
+                                data-id="{{ $reply->id }}">
+                                    Xóa
+                                </a>
+                            </li>
+                            @endif
+                            @if($reply->user->id !== Auth::id())
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item small text-danger open-report" data-type="comment" data-id="{{ $comment->id }}">Báo cáo</button></li>
+                            @endif
+                        </ul>
+                    </div>
+
+                </div>
                     <div class="small ms-1 content">
                         {{ $reply->content }}
                     </div>

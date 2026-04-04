@@ -3,7 +3,7 @@
 <div class="container-fluid">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <a href="{{ route('topics.index') }}" class="btn btn-secondary">
+        <a href="{{ route('admin.topics') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Về danh sách
         </a>
         <h3 class="text-warning me-3">
@@ -33,7 +33,7 @@
             </div>
             <!-- Footer -->
             <div class="card-footer d-flex justify-content-end gap-2">
-                <a href="{{ route('topics.index',['page' => $page]) }}"
+                <a href="{{ route('admin.topics',['page' => $page]) }}"
                    class="btn btn-outline-secondary">
                    Hủy
                 </a>

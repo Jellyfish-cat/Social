@@ -12,7 +12,17 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+                $users = User::with(['profile']) 
+                ->withCount([
+                    'posts',    
+                    'comments',
+                    'favorites',
+                    'followers',
+                    'following'  
+                ])
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        return view('admin.users', compact('users'));
     }
 
     /**
@@ -58,8 +68,26 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Topic $topic)
+    public function destroy($id)
     {
-        //
+        $users = User::find($id);
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $users->id ) {
+            abort(403, 'Bạn không có quyền');
+        }
+        if (!$users) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy topic'
+            ], 404);
+        }
+
+        $users->delete();
+        $userslist = User::latest()->get();
+        return response()->json([
+            'success' => true,
+            'data' => $userslist,
+            'count' => User::count(),
+            'message' => 'Xóa thành công'
+        ]);
     }
 }

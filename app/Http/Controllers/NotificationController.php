@@ -15,7 +15,16 @@ class NotificationController extends Controller
         $notifications = auth()->user()->notifications()->orderBy('created_at', 'desc')->paginate(15);
         return view('notification.notification-list', compact('notifications'));
     }
+    public function ajax()
+    {
+        $notifications = auth()->user()
+            ->notifications()
+            ->latest()
+            ->take(20)
+            ->get();
 
+        return view('notification.ajax_list', compact('notifications'));
+    }
     /**
      * Show the form for creating a new resource.
      */

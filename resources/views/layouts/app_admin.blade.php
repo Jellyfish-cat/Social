@@ -32,7 +32,6 @@
             <img src="{{ asset('storage/'.'logo.png') }}" class=" fs-3 text-primary" style="min-width: 50px; text-align: center;"></i> 
             <span class="nav-text ms-2">GUNPLA SOCIAL</span>
         </a>
-        @if(auth::user()?->role === "user")
         <ul class="nav nav-pills flex-column mb-auto gap-2">
             <li class="nav-item">
                 <a href="{{ route('home') }}" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
@@ -82,101 +81,6 @@
                 </a>
             </li>
         </ul>
-        @elseif(auth()->user()?->role === 'admin')
-    <ul class="nav nav-pills flex-column mb-auto gap-2">
-    {{-- Dashboard --}}
-    <li class="nav-item">
-        <a 
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-speedometer2" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">Dashboard</span>
-        </a>
-    </li>
-     {{-- Quản lý bài viết --}}
-    <li class="nav-item">
-        <a href="{{route("admin.topics")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-tags" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">chủ đề</span>
-        </a>
-    </li>
-    {{-- Quản lý bài viết --}}
-    <li class="nav-item">
-        <a href="{{route("admin.posts")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-file-earmark-text" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">Bài viết</span>
-        </a>
-    </li>
-    {{-- Quản lý user --}}
-    <li class="nav-item">
-        <a href="{{route("admin.users")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-person-circle" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">Người dùng</span>
-        </a>
-    </li>
-        {{-- Quản lý bài viết --}}
-    <li class="nav-item">
-        <a href="{{route("admin.comments")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-chat-left-text" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">Bình luận</span>
-        </a>
-    </li>
-        <li class="nav-item">
-        <a href="{{route("admin.conversations")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-people" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">Hộp thoại</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a href="{{route("admin.messages")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-chat-dots" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">Tin nhắn</span>
-        </a>
-    </li>
-                <li class="nav-item">
-        <a href="{{route("admin.searchs")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-clock-history" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text">Lịch sử tìm kiếm</span>
-        </a>
-    </li>
-    {{-- Báo cáo --}}
-    @php
-        $totalReports = \App\Models\Report::where('status', 'pending')->count();
-    @endphp
-    <li class="nav-item">
-        <a  href="{{route("admin.reports")}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-flag" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text flex-grow-1">Báo cáo</span>
-            <span class="badge bg-danger rounded-pill {{ $totalReports > 0 ? '' : 'd-none' }}">
-                {{ $totalReports }}
-            </span>
-        </a>
-    </li>
-
-    {{-- Thông báo hệ thống --}}
-    @php
-        $adminNotifications = auth()->user()->notifications()->where('is_read', false)->count();
-    @endphp
-    <li class="nav-item">
-        <a href="#" 
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-bell" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text flex-grow-1">Thông báo</span>
-            <span class="badge bg-danger rounded-pill {{ $adminNotifications > 0 ? '' : 'd-none' }}">
-                {{ $adminNotifications }}
-            </span>
-        </a>
-    </li>
-
-</ul>
-        @endif
         <hr>
         
         <!-- Ngôn ngữ -->
@@ -251,16 +155,6 @@
         <div class="modal-content">
             <div class="modal-body p-0" id="postDetailContent">
                 <!-- Nội dung chi tiết post sẽ load vào đây -->
-            </div>
-        </div>
-    </div>
-</div> 
-<!-- Modal xem chi tiết người theo dõi -->
-<div class="modal fade back-to-follow" id="reportModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 800px;">
-        <div class="modal-content">
-            <div class="modal-body p-0" id="reportContent">
-                <!-- Nội dung chi tiết report sẽ load vào đây -->
             </div>
         </div>
     </div>

@@ -15,7 +15,10 @@ class MessageController extends Controller
      */
     public function index()
     {
-        //
+         $messages = Message::with(['media','sender']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
+                ->orderBy('created_at', 'desc')->where('status', 'show')
+                ->paginate(10);
+        return view('admin.messages', compact('messages'));
     }
     
     /**
@@ -165,8 +168,26 @@ class MessageController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Message $message)
+    public function destroy($id)
     {
-        //
+        $message = Message::find($id);
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $message->sender_id) {
+            abort(403, 'Bạn không có quyền');
+        }
+        if (!$message) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy tin nhắn'
+            ], 404);
+        }
+
+        $message->delete();
+        $messagelist = Message::latest()->get();
+        return response()->json([
+            'success' => true,
+            'data' => $messagelist,
+            'count' => Message::count(),
+            'message' => 'Xóa thành công'
+        ]);
     }
 }

@@ -46,7 +46,8 @@ class FollowController extends Controller
             if ($id != $user->id) {
                 $notification = Notification::create([
                     'user_id' => $id,
-                    'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bắt đầu theo dõi bạn.',
+                    'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') 
+. '</strong> đã bắt đầu theo dõi bạn. follow:' . $user->id,
                     'type' => 'follow'
                 ]);
                 broadcast(new \App\Events\NotificationSent($notification))->toOthers();

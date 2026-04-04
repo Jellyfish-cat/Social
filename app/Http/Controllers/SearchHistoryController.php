@@ -15,7 +15,10 @@ class SearchHistoryController extends Controller
      */
     public function index()
     {
-        //
+    $searchHistorys = SearchHistory::with(['user.profile']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        return view('admin.searchs', compact('searchHistorys'));
     }
     public function search(Request $request)
     {
@@ -121,8 +124,26 @@ class SearchHistoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SearchHistory $searchHistory)
+    public function destroy($id)
     {
-        //
+        $searchHistory = SearchHistory::find($id);
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $searchHistory->user_id) {
+            abort(403, 'Bạn không có quyền');
+        }
+        if (!$searchHistory) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy từ khóa'
+            ], 404);
+        }
+
+        $searchHistory->delete();
+        $searchHistorylist = SearchHistory::latest()->get();
+        return response()->json([
+            'success' => true,
+            'data' => $searchHistorylist,
+            'count' => SearchHistory::count(),
+            'message' => 'Xóa thành công'
+        ]);
     }
 }

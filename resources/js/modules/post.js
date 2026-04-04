@@ -113,17 +113,29 @@ document.addEventListener('click', function (e) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // ✅ Xóa UI
-                const postItem = btn.closest('.post-item'); // class cha của bài viết
-                if (postItem) postItem.remove();
-            } else {
-                alert(data.error || 'Xóa thất bại');
+                const row = btn.closest(".post-item");
+            if (row) {
+                // Hiệu ứng mượt
+                row.style.transition = "all 0.3s ease";
+                row.style.opacity = "0";
+                setTimeout(() => {
+                    row.remove();
+                    document.querySelector(".count-post").innerText = 
+                    `Tổng bài viết: ${data.count}`;
+                    updateSTT();
+                }, 300);
             }
+            // Thông báo
+            console.log(data.message || "Xóa thành công");
+        }
         })
-        .catch(err => {
-            console.error(err);
-            alert('Có lỗi xảy ra');
+        .catch((err) => {
+            alert(err.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            finishLoading(); 
         });
     }
 });
-
+ 

@@ -86,9 +86,28 @@
                             <img src="${avatar}"
                             class="rounded-circle me-2">
                         <div class="w-100" style="min-width:0;">
+                        <div class="d-flex justify-content-between align-items-center">
                         <div class="fw-bold small">
                             ${data.user_name}
                         </div>
+                        <div class="dropdown">
+                            <i class="bi bi-three-dots text-muted"
+                            style="cursor:pointer"
+                            data-bs-toggle="dropdown"></i>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                ${data.role ? `
+                                    <li>
+                                        <a href="javascript:void(0)"
+                                        class="dropdown-item small text-danger btn-delete-comment"
+                                        data-id="${data.comment_id}">
+                                            <i class="bi bi-trash me-2"></i> Xóa
+                                        </a>
+                                    </li>
+                                    `
+                                    : ""}
+                            </ul>
+                        </div>
+                    </div>
                         <div class="small ms-1 content">
                             ${data.content}
                         </div>
@@ -364,5 +383,60 @@
     }
     reader.readAsDataURL(file);
     }
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".btn-delete-comment");
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (!id) {
+            console.error("Không có ID để xóa");
+            return;
+        }
+        if (!confirm("Bạn có chắc muốn xóa không?")) return;
+        // Disable nút để tránh spam click
+        btn.disabled = true;
+        startLoading();
+        fetch(`/comments/destroy/${id}`, {
+            method: "DELETE",
+            headers: {
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                "Accept": "application/json"
+            }
+        })
+        .then(async (res) => {
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (e) {
+                console.warn("Response không phải JSON");
+            }
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || "Xóa thất bại");
+            }
+            return data;
+        })
+        .then((data) => {
+            const row = btn.closest(".comment-item");
+            if (row) {
+                // Hiệu ứng mượt
+                row.style.transition = "all 0.3s ease";
+                row.style.opacity = "0";
+                setTimeout(() => {
+                    row.remove();
+                    document.querySelector(".comment-count").innerText = 
+                    `Tổng bình luận: ${data.count}`;
+                    updateSTT();
+                }, 300);
+            }
+            // Thông báo
+            console.log(data.message || "Xóa thành công");
+        })
+        .catch((err) => {
+            alert(err.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            finishLoading(); 
+        });
+    });
 
         

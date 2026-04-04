@@ -23,5 +23,9 @@ import './modules/follow';
 import './modules/suggestionsSearch';
 import './modules/convertation';
 import './modules/message';
+import './modules/notification';
+import './modules/user';
+import './modules/report';
+import './modules/actionReport';
 
 

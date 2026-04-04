@@ -16,10 +16,30 @@ use App\Http\Controllers\ConversationUserController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\SearchHistoryController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 
 
+Route::middleware(['auth','checkRole:admin'])->group(function () {
+    Route::patch('/posts/{id}/approve', [PostController::class,'approve'])
+        ->name('posts.approve');
+
+});
+Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
+Route::middleware(['auth', 'checkRole:admin'])->prefix('admin')->group(function () {
+    
+
+});
+Route::middleware(['auth', 'checkRole:admin,moderator'])->group(function () {
+    // quyền rộng hơn
+});
+Route::middleware(['auth', 'checkRole:user'])->group(function () {
+    // chỉ user thường
+});
 Route::get('/lang/{locale}', function ($locale) {
 
     if (! in_array($locale, ['en','vi'])) {
@@ -46,9 +66,7 @@ Route::get('/', [HomeController::class, 'index'])
 |--------------------------------------------------------------------------
 */
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth','verified'])->name('dashboard');
+
 
 
 /*
@@ -59,9 +77,6 @@ Route::get('/dashboard', function () {
 
 Route::middleware('auth')->group(function () {
 
-    Route::get('/profile', [ProfileController::class,'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class,'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class,'destroy'])->name('profile.destroy');
     Route::get('/profile/detail/{id}', [ProfileController::class,'detail'])->name('profile.detail');
     Route::get('/profile/posts/{id}', [ProfileController::class, 'posts']);
     Route::get('/profile/favorites/{id}', [ProfileController::class, 'favorites']);
@@ -84,7 +99,6 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('topics')->group(function () {
 
-    Route::get('/', [TopicController::class,'index'])->name('topics.index');
     Route::get('/search', [TopicController::class, 'search'])->name('topics.search');
     Route::get('/create', [TopicController::class,'create'])->name('topics.create');
     Route::post('/store', [TopicController::class,'store'])->name('topics.store');
@@ -95,7 +109,26 @@ Route::prefix('topics')->group(function () {
 
 });
 
+/*
+|--------------------------------------------------------------------------
+| users
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/topics', [TopicController::class,'index'])->name('admin.topics');
+    Route::get('/admin/users', [UserController::class,'index'])->name('admin.users');
+    Route::get('/admin/comments', [CommentController::class,'index'])->name('admin.comments');
+    Route::get('/admin/searchs', [SearchHistoryController::class, 'index'])->name('admin.searchs');
+    Route::get('/admin/posts', [PostController::class,'index'])->name('admin.posts');
+    Route::get('/admin/messages', [MessageController::class,'index'])->name('admin.messages');
+    Route::get('/admin/conversations', [ConversationController::class,'adminIndex'])->name('admin.conversations');
+    Route::get('/admin/conversations/{id}', [ConversationController::class,'show'])->name('admin.conversations.show');
+    Route::delete('users/destroy/{id}', [UserController::class,'destroy'])->name('users.destroy');
+    Route::get('/admin/reports', [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/admin/reports/tab/{type}', [ReportController::class, 'reportTab']);
 
+
+});
 /*
 |--------------------------------------------------------------------------
 | Posts
@@ -104,7 +137,6 @@ Route::prefix('topics')->group(function () {
 
 Route::prefix('posts')->group(function () {
 
-    Route::get('/', [PostController::class,'index'])->name('posts.index');
     Route::get('/detail/{id}', [PostController::class,'detail'])->name('posts.detail');
 
 });
@@ -150,14 +182,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/posts/comments/{id}', [PostController::class,'loadComments']);
 
     Route::post('/comments/create/{id}', [CommentController::class,'store'])->name('comments.create');
+
     Route::post('/comments/reply/{id}', [CommentController::class,'reply'])->name('comments.reply');
     Route::post('/comments/like/{id}', [CommentController::class,'like'])->name('comments.like');
+    Route::delete('/comments/destroy/{id}', [CommentController::class,'destroy'])->name('comments.destroy');
         /*
     | Search
     */
     Route::get('/search', [SearchHistoryController::class, 'search'])->name('search.result');
     Route::get('/search/suggestions', [SearchHistoryController::class, 'suggestions'])->name('search.suggestions');
     Route::get('/search/tab/{type}', [SearchHistoryController::class, 'searchTab']);
+    Route::delete('/search/destroy/{id}', [SearchHistoryController::class, 'destroy'])->name('search.destroy');
 
     /*
     | Admin duyệt bài
@@ -177,7 +212,7 @@ Route::middleware('auth')->group(function () {
 | follow
 |--------------------------------------------------------------------------
 
-*/
+*/ 
     Route::middleware('auth')->group(function () {
         Route::post('/follows/store/{id}', [FollowController::class,'store'])->name('follows.store');
         Route::get('/follows/detail/{id}', [FollowController::class,'detail'])->name('follows.detail');
@@ -195,6 +230,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/message/send/{id}', [MessageController::class,'store'])->name('message.store');
         Route::get('/conversation/search', [ConversationController::class, 'search_user'])->name('search.user');
         Route::post('/messages/read/{id}', [MessageController::class, 'is_Read']);
+         Route::delete('/message/destroy/{id}', [MessageController::class, 'destroy'])->name('message.destroy');
+         Route::delete('/conversation/destroy/{id}', [ConversationController::class, 'destroy'])->name('conversation.destroy');
+
 
     });
 
@@ -206,9 +244,15 @@ Route::middleware('auth')->group(function () {
     Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationController::class,'index'])->name('notifications.index');
         Route::post('/notifications/read/{id}', [NotificationController::class,'markAsRead'])->name('notifications.read');
+        Route::get('/notifications/ajax', [NotificationController::class, 'ajax']);
         Route::post('/notifications/read-all', [NotificationController::class,'markAllAsRead'])->name('notifications.readAll');
-    });
-
+ 
+    
+    Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
+    Route::post('/reports/store', [ReportController::class, 'store'])->name('reports.store');
+    Route::delete('/reports/destroy/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
+    Route::post('/reports/check/{id}', [ReportController::class, 'check'])->name('reports.check');
+       });
 /*
 |--------------------------------------------------------------------------
 | Auth

@@ -18,6 +18,10 @@ body{
     background:#fff;
 }
 /* ===== Navbar ====== */
+.text-start{
+    white-space: normal;
+    word-break: break-word;
+}
 .full-width-container {
             width: 100%;
             padding-left: 20px;

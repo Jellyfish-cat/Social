@@ -14,8 +14,10 @@
     <!-- Card -->
     <div class="card shadow-sm">
         <!-- Card header -->
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Quản lý chủ đề</h5>
+             <span class="badge bg-white text-primary count-topic">Tổng: {{ $topics->total() }}</span>
+
         </div>
         <!-- Card body -->
         <div class="card-body p-0">
@@ -77,9 +79,7 @@
         </div>
     </div>
 </div>
-        <div class="card-footer text-muted count-topic">
-            Tổng chủ đề: {{ $topics->total() }}
-        </div>
+
     </div>
 </div>
 @endsection

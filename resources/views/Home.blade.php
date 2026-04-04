@@ -61,7 +61,7 @@
                             </li>
                             @endif
                             <li><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item small text-danger">Báo cáo</button></li>
+                            <li><a class="dropdown-item small text-danger open-report" data-type="post" data-id="{{ $post->id }}">Báo cáo</a></li>
                         </ul>
                     </div>
                 </div>
@@ -179,16 +179,7 @@
         </div>
     </div>
 </div>
-<!-- Modal xem chi tiết bài viết -->
-<div class="modal fade back-to" id="postDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1290px;">
-        <div class="modal-content">
-            <div class="modal-body p-0" id="postDetailContent">
-                <!-- Nội dung chi tiết post sẽ load vào đây -->
-            </div>
-        </div>
-    </div>
-</div>      
+     
 <script>
 </script>       
 @endsection

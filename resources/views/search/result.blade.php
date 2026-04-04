@@ -63,18 +63,7 @@
 .drop-shadow { filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
 .object-fit-cover { object-fit: cover !important; }
 
-/* Tùy chỉnh Tab Navigation */
-.nav-pills .nav-link {
-    color: #6c757d;
-    transition: all 0.2s;
-}
-.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
-    background-color: #f1f2f5;
-    color: #000000 !important;
-}
-.nav-pills .nav-link.active i {
-    color: #000000 !important;
-}
+
 </style>
 
 @endsection

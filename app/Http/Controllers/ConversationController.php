@@ -17,7 +17,7 @@ class ConversationController extends Controller
     {
         $userId = Auth::id();
         $conversations = Conversation::whereHas('users', function ($q) use ($userId) {
-                $q->where('user_id', $userId);
+                $q->where('user_id', $userId)->where('status', 'show');
             })
             ->with([
                 'users.profile', // lấy thông tin user
@@ -38,7 +38,7 @@ class ConversationController extends Controller
         if ($conversations->isNotEmpty()) {
         $first = $conversations->first();
         $messages = Message::where('conversation_id', $first->id)
-            ->with(['sender.profile', 'media'])
+            ->with(['sender.profile', 'media'])->where('status', 'show')
             ->orderBy('created_at')
                 ->get();
         }
@@ -54,19 +54,20 @@ class ConversationController extends Controller
             $q->where('user_id', $id);
         })
         ->first();  // ← thêm lại ->first()
+            if (!$conversation) {
+        $otherUser = User::with('profile')->findOrFail($id);
+        return view('Message.empty_message', compact('otherUser'));
+    }
         Message::where('conversation_id', $conversation->id)
-        ->where('sender_id', $id)
+        ->where('sender_id', $id)->where('status', 'show')
         ->whereNull('read_at')
         ->update([
             'read_at' => now()
         ]);
 
-    if (!$conversation) {
-        $otherUser = User::with('profile')->findOrFail($id);
-        return view('Message.empty_message', compact('otherUser'));
-    }
+
     $messages = Message::where('conversation_id', $conversation->id)
-        ->with(['sender.profile', 'media'])
+        ->with(['sender.profile', 'media'])->where('status', 'show')
         ->orderBy('created_at')
         ->get();
     // Trả về partial view (chỉ HTML tin nhắn) cho fetch JS
@@ -100,9 +101,20 @@ class ConversationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Conversation $conversation)
+    public function adminIndex()
     {
-        //
+        $conversations = Conversation::with(['users.profile','messages'])
+        ->withCount('messages')
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        return view('admin.conversations', compact('conversations'));
+    }
+    public function show($id)
+    {
+        $messages = Message::where('conversation_id', $id)->with(['media','sender']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        return view('admin.messages', compact('messages'));
     }
 
     /**
@@ -124,8 +136,26 @@ class ConversationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Conversation $conversation)
+    public function destroy($id)
     {
-        //
+        $conversation = Conversation::find($id);
+        if (auth()->user()->role !== 'admin' && !$conversation->users->contains('id', auth()->id())) {
+            abort(403, 'Bạn không có quyền');
+        }
+        if (!$conversation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy conversation'
+            ], 404);
+        }
+
+        $conversation->delete();
+        $conversationlist = Conversation::latest()->get();
+        return response()->json([
+            'success' => true,
+            'data' => $conversationlist,
+            'count' => Conversation::count(),
+            'message' => 'Xóa thành công'
+        ]);
     }
 }

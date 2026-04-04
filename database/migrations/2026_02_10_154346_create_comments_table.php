@@ -29,6 +29,7 @@ return new class extends Migration
 
     $table->text('content');
     $table->string('media_path')->nullable();
+        $table->string('status')->default('show');
     $table->timestamps();
 });
 

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\LikeComment;
 use App\Models\Comment;
+use App\Models\Notification;
 use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Auth;
 
 class LikeCommentController extends Controller
@@ -40,6 +42,15 @@ class LikeCommentController extends Controller
                 'user_id' => $user->id,
                 'comment_id' => $id
             ]);
+            $comment = Comment::find($id);
+            if ($comment && $comment->user_id !== $user->id) {
+                $notification = Notification::create([
+                    'user_id' => $comment->user_id,
+                    'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã thích bình luận của bạn. likecomment:' . $id,
+                    'type' => 'likecomment'
+                ]);
+                broadcast(new \App\Events\NotificationSent($notification))->toOthers();
+            }
         }
         else{   
             LikeComment::where('user_id',$user->id)

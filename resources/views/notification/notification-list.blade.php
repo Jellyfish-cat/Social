@@ -1,6 +1,12 @@
-@extends('layouts.app')
+<div class="offcanvas offcanvas-start" tabindex="-1" id="notiCanvas" style="width: 380px;">
+    
+    <div class="offcanvas-header border-bottom">
+        <h5 class="fw-bold mb-0">Thông báo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
 
-@section('content')
+    <div class="offcanvas-body p-0">
+        {{-- 🔥 DÁN NGUYÊN CODE của bạn vào đây --}}
 <div class="row justify-content-center mt-4">
     <div class="col-md-8">
         <div class="card shadow-sm border-0 rounded-4">
@@ -48,6 +54,7 @@
                             @endphp
                             
                             <a href ="{{$href}}"class="list-group-item list-group-item-action p-3 {{ $bgClass }} notification-item" 
+                                 data-notification-id="{{ $notification->id }}"
                                  data-id="{{ $notification->id }}" 
                                  data-is-read="{{ $notification->is_read ? 'true' : 'false' }}"
                                  style="cursor: pointer; transition: background-color 0.2s;">
@@ -86,58 +93,3 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const notificationItems = document.querySelectorAll('.notification-item');
-    
-    notificationItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const isRead = this.getAttribute('data-is-read') === 'true';
-            
-            if (!isRead) {
-                fetch(`/notifications/read/${id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success) {
-                        // Mark visually as read
-                        this.classList.remove('bg-light');
-                        this.classList.add('bg-white');
-                        this.setAttribute('data-is-read', 'true');
-                        
-                        const textElem = this.querySelector('p');
-                        if(textElem) {
-                            textElem.classList.remove('fw-semibold', 'text-dark');
-                            textElem.classList.add('text-secondary');
-                        }
-                        
-                        const dot = this.querySelector('.unread-dot');
-                        if (dot) dot.remove();
-                        
-                        // Update badge
-                        const badge = document.getElementById('global-noti-badge');
-                        if (badge) {
-                            let count = parseInt(badge.textContent);
-                            if (count > 0) {
-                                count--;
-                                badge.textContent = count;
-                                if (count === 0) {
-                                    badge.classList.add('d-none');
-                                }
-                            }
-                        }
-                    }
-                })
-                .catch(error => console.error('Error marking notification as read:', error));
-            }
-        });
-    });
-});
-</script>
-@endsection

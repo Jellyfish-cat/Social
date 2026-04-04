@@ -25,6 +25,8 @@ return new class extends Migration
     $table->string('status')->default('pending');
 
     $table->timestamp('created_at')->useCurrent();
+    $table->timestamps();
+
 });
 
     }

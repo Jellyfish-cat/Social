@@ -1,7 +1,7 @@
 <div class="container-fluid mb-8">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-                <a href="{{ route('topics.index') }}" class="btn btn-secondary">
+                <a href="{{ route('admin.topics') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Về danh sách
         </a>
         <h3 class="text-primary me-3">
@@ -10,7 +10,7 @@
     </div>
     <!-- Card -->
     <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Thông tin chủ đề</h5>
         </div>
         <form id="topicForm" >
@@ -31,7 +31,7 @@
             </div>
             <!-- Footer -->
             <div class="card-footer d-flex justify-content-end gap-2">
-                <a href="{{ route('topics.index',['page' => request('page')]) }}"
+                <a href="{{ route('admin.topics',['page' => request('page')]) }}"
                    class="btn btn-outline-secondary">
                    Hủy
                 </a>

@@ -25,9 +25,9 @@ class PostController extends Controller
                     'favorites'    // Tạo ra biến favorites_count
                 ])
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->paginate(10);
 
-    return view('posts.index', compact('posts'));
+    return view('admin.posts', compact('posts'));
 }
     // 2. Giao diện tạo bài viết
     public function create()
@@ -121,7 +121,7 @@ class PostController extends Controller
         'comments' => function ($query) {
             $query->whereNull('parent_comment_id')
                   ->with(['user.profile', 'replies.user.profile'])
-                  ->latest();
+                  ->latest()->where('status', 'show');
         }
     ])->findOrFail($id);
 
@@ -139,8 +139,12 @@ class PostController extends Controller
     // 5. Giao diện chỉnh sửa
     public function edit($id)
     {
+        
         $topics = Topic::all();
         $post = Post::with('media')->findOrFail($id);
+            if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
+        abort(403, 'Bạn không có quyền');
+    }
         return view('posts.edit', compact('topics', 'post'));
     }
 
@@ -148,7 +152,9 @@ class PostController extends Controller
    public function update(Request $request, $id)
 {
     $post = Post::findOrFail($id);
-
+    if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
+        abort(403, 'Bạn không có quyền');
+    }
     $post->update([
         'content' => $request->content,
         'topic_id' => $request->topic_id,
@@ -192,7 +198,9 @@ class PostController extends Controller
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
-
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
+         abort(403, 'Bạn không có quyền');
+        }
         // Xóa file vật lý trong storage
         $medias = Media::where('post_id', $id)->get();
         foreach ($medias as $m) {
@@ -201,8 +209,12 @@ class PostController extends Controller
         }
         // Xóa các liên kết (Tương đương code cũ của bạn)
         $post->delete();
+        $postlist = Post::latest()->get();
         return response()->json([
-        'success' => true
+        'success' => true,
+            'data' => $postlist,
+            'count' => Post::count(),
+            'message' => 'Xóa thành công'
     ]);
     }
 

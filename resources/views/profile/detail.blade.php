@@ -15,12 +15,21 @@
             <div class="d-flex align-items-center gap-3 mb-3">
                 <h3 class="fw-light mb-0">{{ $user->name }}</h3>
                 @if(Auth::id() === $user->id)
-                    <a href="{{ route('profile.edit', $user->id) }}" class="btn btn-outline-dark btn-sm">
+                    <a  class="btn btn-outline-dark btn-sm">
                         Chỉnh sửa hồ sơ
                     </a>
-                @else
-                   
                 @endif
+                 <div class="dropdown">
+                        <i class="bi bi-three-dots cursor-pointer text-muted"
+                        data-bs-toggle="dropdown"></i>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            @if($user->id !== Auth::id())
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item small text-danger open-report" data-type="user" data-id="{{ $user->id }}">Báo cáo</button></li>
+                            @endif
+                        </ul>
+                    </div>
             </div>
             {{-- Stats --}}
             <div class="d-flex gap-4 mb-3">
@@ -106,16 +115,7 @@
         </div>
     </div>
 </div>
-<!-- Modal xem chi tiết bài viết -->
-<div class="modal fade back-to" id="postDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1290px;">
-        <div class="modal-content">
-            <div class="modal-body p-0" id="postDetailContent">
-                <!-- Nội dung chi tiết post sẽ load vào đây -->
-            </div>
-        </div>
-    </div>
-</div>      
+      
 <!-- Modal xem chi tiết người theo dõi -->
 <div class="modal fade back-to-follow" id="followDetailModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 800px;">

@@ -25,6 +25,7 @@
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                             @if($user->id !== Auth::id())
+                            <li><button class="dropdown-item small open-report" data-type="user" data-id="{{ $user->id }}">Chặn</button></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><button class="dropdown-item small text-danger open-report" data-type="user" data-id="{{ $user->id }}">Báo cáo</button></li>
                             @endif
@@ -34,11 +35,10 @@
             {{-- Stats --}}
             <div class="d-flex gap-4 mb-3">
                 <div><strong>{{ $user->posts->count() }}</strong> bài viết</div>
-                <button class="open-follow" data-type="follower" data-id="{{$user->id}}">
-                    <strong class="follow-count"  data-id="{{$user->id}}">{{ $user->followers->count() ?? 0 }}</strong> người theo dõi</button>
-                <button class="open-follow"  data-type="following" data-id="{{$user->id}}">
-                    <strong class="following-count" data-authid="{{$user->id}}">{{ $user->following->count() ?? 0 }}</strong>
-                     đang theo dõi</button>
+                <button class="open-follow follow-count" data-type="follower" data-id="{{$user->id}}">
+                   {{ $user->followers->count() ?? 0 }} người theo dõi</button>
+                <button class="open-follow following-count" data-authid="{{$user->id}}"  data-type="following" data-id="{{$user->id}}">
+                   {{ $user->following->count() ?? 0 }} đang theo dõi</button>
             </div>
             {{-- Bio --}}
             <div>

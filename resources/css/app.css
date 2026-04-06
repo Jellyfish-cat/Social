@@ -4,448 +4,528 @@
 
 /* ===== GLOBAL ===== */
 
-body{
-    background:#f0f2f5;
-               overflow-x: hidden;
+body {
+    background: #f0f2f5;
+    overflow-x: hidden;
 }
 
-.card{
-    border-radius:12px;
+.card {
+    border-radius: 12px;
 }
 
 .card-header,
-.card-footer{
-    background:#fff;
+.card-footer {
+    background: #fff;
 }
+
 /* ===== Navbar ====== */
-.text-start{
+.text-start {
     white-space: normal;
     word-break: break-word;
 }
+
 .full-width-container {
-            width: 100%;
-            padding-left: 20px;
-            padding-right: 20px;
-        }
-        .navbar {
-            padding: 0.5rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .post-card {
-            border: 1px solid #dbdbdb;
-            background: white;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-        }
-        .avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid #ddd;
-        }
-        /* Media hiển thị to và rõ */
-        .post-image {
-            width: 100%;
-            max-height: 80vh; /* Giới hạn chiều cao bằng 80% màn hình để không phải cuộn quá nhiều */
-            object-fit: contain; /* Giữ nguyên tỉ lệ ảnh không bị cắt */
-            background-color: #000;
-        }
-        #loading-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            height: 4px;
-            width: 0%;
-            background: linear-gradient(90deg, #0d6efd, #0dcaf0);
-            z-index: 9999;
-            transition: width 0.3s ease;
-        }
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+}
 
-        .search-wrapper {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
-            background-color: rgba(241, 241, 241);
-            padding: 8px 0;}
-        /* Sidebar Hover Effect */
-        .sidebar-hover {
-            position: fixed;   /* Cố định Sidebar hoàn toàn */
-            top: 0;
-            left: 0;
-            bottom: 0;
-            z-index: 1040;     /* Nổi lên trên nội dung khác */
-            width: 90px;
-            transition: width 0.3s ease !important;
-            overflow-x: hidden;
-            white-space: nowrap;
-        }
-        .sidebar-hover:hover {
-            width: 230px;
-        }
+.navbar {
+    padding: 0.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
 
-        /* Chuyển động content và navbar khi hover sidebar */
-        .main-content {
-            margin-left: 80px;
-            transition: margin-left 0.3s ease cubic-bezier(0.19, 1, 0.22, 1) !important;
-        }
-        .sidebar-hover:hover ~ .main-content {
-            margin-left: 230px;
-        }
-        .sidebar-hover:hover ~ .main-content .search-navbar {
-            margin-left: 50px;
-            margin-right: 50px;
-        }
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
 
-        .sidebar-hover .nav-text {
-            display: inline-block;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            vertical-align: middle;
-            font-size: 16px;
-        }
-        .sidebar-hover:hover .nav-text {
-            opacity: 1;
-            transition-delay: 0.1s;
-        }
+/* Ẩn scrollbar cho Firefox */
+.hide-scrollbar {
+    scrollbar-width: none;
+    overscroll-behavior: contain;
 
+}
 
-        .sidebar-hover:not(:hover) .dropdown-menu {
-            display: none ;
-        }
-        .hover-bg-light:hover {
-            background-color: #f0f2f5;
-        }
-        .nav-item:hover{
-            transform: scale(1.05);
-        }
+/* Ẩn scrollbar cho IE (hiếm dùng) */
+.hide-scrollbar {
+    -ms-overflow-style: none;
+}
 
+.post-card {
+    border: 1px solid #dbdbdb;
+    background: white;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+}
 
-        /* Search Navbar Styles */
-        
-        .search-navbar {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #efefef;
-            margin-left: 150px;
-            margin-right: 150px;
-            padding: 12px 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-        .search-input-wrapper {
-            position: relative;
-            max-width: 9    00px;
-            width: 100%;
-        }
-        .search-input-wrapper .search-icon {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #8e8e8e;
-            font-size: 1rem;
-        }
-        .search-input-wrapper input {
-            background-color: #f1f2f5;
-            border: 1px solid transparent;
-            border-radius: 50px;
-            padding: 10px 20px 10px 48px;
-            font-size: 0.95rem;
-            width: 100%;
-            transition: all 0.2s ease;
-        }
-        .search-icon-end {
-            position: absolute;
-            right: 12px; /* chuyển sang phải */
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-        }
-        .search-input-wrapper input:focus {
-            background-color: #fff;
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-            outline: none;
-        }
-        .search-input-wrapper input::placeholder {
-            color: #8e8e8e;
-        }
+.avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
 
-        /*icon*/
-            #emojiPicker {
+/* Media hiển thị to và rõ */
+.post-image {
+    width: 100%;
+    max-height: 80vh;
+    /* Giới hạn chiều cao bằng 80% màn hình để không phải cuộn quá nhiều */
+    object-fit: contain;
+    /* Giữ nguyên tỉ lệ ảnh không bị cắt */
+    background-color: #000;
+}
+
+#loading-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    width: 0%;
+    background: linear-gradient(90deg, #0d6efd, #0dcaf0);
     z-index: 9999;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    border-radius: 12px;
-    }
-    
- .sidebar-sticky { position: sticky; top: 90px; } 
- :root { --f-backdrop-bg: rgba(93, 93, 93, 0.264) !important; } 
- .fancybox__backdrop { 
-    background-color: rgba(112, 112, 112, 0.544) !important; 
-    backdrop-filter: blur(4px) !important; 
-    -webkit-backdrop-filter: blur(4px) !important; }
-/* ===== POST MODAL ===== */
-   .feed-container { max-width: 1160px; margin: auto; background-color:rgb(241, 241, 241)}
-   .main-content {background-color:rgb(241, 241, 241);}
+    transition: width 0.3s ease;
+}
 
-   .modal-body {
+.search-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background-color: rgba(241, 241, 241);
+    padding: 8px 0;
+}
+
+/* Sidebar Hover Effect */
+.sidebar-hover {
+    position: fixed;
+    /* Cố định Sidebar hoàn toàn */
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1040;
+    /* Nổi lên trên nội dung khác */
+    width: 130px;
+    transition: width 0.3s ease !important;
+    overflow-x: hidden;
+    white-space: nowrap;
+}
+
+.sidebar-hover:hover {
+    width: 230px;
+}
+
+.sidebar-hover:hover .nav-text {
+    margin-right: 5px;
+}
+
+/* Chuyển động content và navbar khi hover sidebar */
+.main-content {
+    margin-left: 80px;
+    transition: margin-left 0.3s ease cubic-bezier(0.19, 1, 0.22, 1) !important;
+}
+
+.sidebar-hover:hover~.main-content {
+    margin-left: 230px;
+}
+
+.sidebar-hover:hover~.main-content .search-navbar {
+    margin-left: 50px;
+    margin-right: 50px;
+}
+
+.sidebar-hover .nav-text {
+    display: inline-block;
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    vertical-align: middle;
+    font-size: 16px;
+    white-space: nowrap;
+}
+
+.sidebar-hover:hover .nav-text {
+    max-width: 150px;
+    opacity: 1;
+    transition-delay: 0.1s;
+}
+
+
+.sidebar-hover:not(:hover) .dropdown-menu {
+    display: none;
+}
+
+.hover-bg-light:hover {
+    background-color: #f0f2f5;
+}
+
+.nav-item:hover {
+    transform: scale(1.05);
+}
+
+
+/* Search Navbar Styles */
+
+.search-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #efefef;
+    margin-left: 150px;
+    margin-right: 150px;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.search-input-wrapper {
+    position: relative;
+    max-width: 9 00px;
+    width: 100%;
+}
+
+.search-input-wrapper .search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8e8e8e;
+    font-size: 1rem;
+}
+
+.search-input-wrapper input {
+    background-color: #f1f2f5;
+    border: 1px solid transparent;
+    border-radius: 50px;
+    padding: 10px 20px 10px 48px;
+    font-size: 0.95rem;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.search-icon-end {
+    position: absolute;
+    right: 12px;
+    /* chuyển sang phải */
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.search-input-wrapper input:focus {
+    background-color: #fff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+    outline: none;
+}
+
+.search-input-wrapper input::placeholder {
+    color: #8e8e8e;
+}
+
+/*icon*/
+#emojiPicker {
+    z-index: 9999;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+}
+
+.sidebar-sticky {
+    position: sticky;
+    top: 90px;
+}
+
+:root {
+    --f-backdrop-bg: rgba(93, 93, 93, 0.264) !important;
+}
+
+.fancybox__backdrop {
+    background-color: rgba(112, 112, 112, 0.544) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* ===== POST MODAL ===== */
+.feed-container {
+    max-width: 1160px;
+    margin: auto;
+    background-color: rgb(241, 241, 241)
+}
+
+.main-content {
+    background-color: rgb(241, 241, 241);
+}
+
+.modal-body {
     overflow: visible !important;
 }
 
-   .post-modal{
-    max-width:1290px;
-    margin:2rem auto;
-    background:#fff;
-    border-radius:12px;
-    border:1px solid rgba(0,0,0,.05);
-    box-shadow:0 10px 30px rgba(0,0,0,.08);
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    height:75vh;
+.post-modal {
+    max-width: 1290px;
+    margin: 2rem auto;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, .05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 75vh;
 }
 
-.modal-header{
-    padding:1rem 1.5rem;
-    border-bottom:8px solid #efefef;
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 8px solid #efefef;
 }
 
 /* ===== MAIN LAYOUT ===== */
 
-.edit-main-content{
-    display:flex;
-    height:100%;
+.edit-main-content {
+    display: flex;
+    height: 100%;
 }
 
 /* ===== MEDIA COLUMN ===== */
 
-.media-column{
-    flex:1;
-    min-width:600px;
-    background:#ffffff;
-    display:flex;
-    flex-direction:column;
+.media-column {
+    flex: 1;
+    min-width: 600px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
 }
 
-.media-top{
-    height:80%;
-    border-bottom:5px solid #efefef;
-    display:flex;
+.media-top {
+    height: 80%;
+    border-bottom: 5px solid #efefef;
+    display: flex;
 }
 
-.media-bottom{
-    height:90px;
-    overflow-y:auto;
-    scrollbar-width:none;
+.media-bottom {
+    height: 90px;
+    overflow-y: auto;
+    scrollbar-width: none;
 
 }
 
 .carousel-item img,
-.carousel-item video{
-    width:100%;
-    height:400px;
-    object-fit:contain;
+.carousel-item video {
+    width: 100%;
+    height: 400px;
+    object-fit: contain;
 
 }
-.placeholder-content{
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;   /* căn giữa dọc */
-    align-items:center;       /* căn giữa ngang */
-    text-align:center;
-    color:#8e8e8e;
+
+.placeholder-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* căn giữa dọc */
+    align-items: center;
+    /* căn giữa ngang */
+    text-align: center;
+    color: #8e8e8e;
 }
 
-.carousel-item{
-    height:400px; /* bằng chiều cao media */
-    
+.carousel-item {
+    height: 400px;
+    /* bằng chiều cao media */
+
 }
+
 /* ===== INFO COLUMN ===== */
 
-.info-column{
-    width:500px;
-    display:flex;
-    flex-direction:column;
-    border-left:8px solid #efefef;
+.info-column {
+    width: 500px;
+    display: flex;
+    flex-direction: column;
+    border-left: 8px solid #efefef;
 }
 
 /* ===== USER HEADER ===== */
 
-.user-header{
-    padding:1rem 1.5rem;
-    border-bottom:1px solid #efefef;
+.user-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #efefef;
 }
 
-.user-avatar{
-    width:32px;
-    height:32px;
-    border-radius:50%;
-    object-fit:cover;
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 /* ===== CONTENT TEXTAREA ===== */
 
-.content-area-wrapper{
-    min-height:150px;
-    border-top:2px solid #efefef;
-    border-bottom:5px solid #efefef;
-    overflow-y:auto;
+.content-area-wrapper {
+    min-height: 150px;
+    border-top: 2px solid #efefef;
+    border-bottom: 5px solid #efefef;
+    overflow-y: auto;
 }
 
-.content-area-wrapper textarea{
-    width:100%;
-    border:none;
-    outline:none;
-    resize:none;
-    padding:1.5rem;
-    line-height:1.6;
+.content-area-wrapper textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 1.5rem;
+    line-height: 1.6;
     height: 100%;
-    overflow-y:hidden;
-    
+    overflow-y: hidden;
+
 }
-.content-area-wrapper textarea:focus{
-    outline:none;
-    border:none;
-    box-shadow:none;
-}  
+
+.content-area-wrapper textarea:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
 
 /* ===== EXTRA SETTINGS ===== */
 
-.extra-settings-wrapper{
-    padding:1.5rem;
-    overflow-y:auto;
+.extra-settings-wrapper {
+    padding: 1.5rem;
+    overflow-y: auto;
     height: 40%;
 
 }
 
 /* ===== BUTTON ===== */
 
-.btn-update-fixed{
-    margin-top:1.5rem;
-    width:100%;
-    padding:.75rem;
-    border:none;
-    border-radius:8px;
-    color:#fff;
-    font-weight:600;
-    background:linear-gradient(45deg,#0095f6,#0074cc);
+.btn-update-fixed {
+    margin-top: 1.5rem;
+    width: 100%;
+    padding: .75rem;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    background: linear-gradient(45deg, #0095f6, #0074cc);
 }
 
-.btn-update-fixed:hover{
-    opacity:.9;
+.btn-update-fixed:hover {
+    opacity: .9;
 }
 
 /* ===== ADD MEDIA ===== */
 
-.btn-add-media{
-    border:1px dashed #dbdbdb;
-    border-radius:10px;
-    padding:1rem;
-    background:#fafafa;
-    text-decoration:none;
-    color:#8e8e8e;
-    transition:.2s;
+.btn-add-media {
+    border: 1px dashed #dbdbdb;
+    border-radius: 10px;
+    padding: 1rem;
+    background: #fafafa;
+    text-decoration: none;
+    color: #8e8e8e;
+    transition: .2s;
 }
 
-.btn-add-media:hover{
-    background:#f0f2f5;
-    color:#262626;
+.btn-add-media:hover {
+    background: #f0f2f5;
+    color: #262626;
 }
 
 /* ===== CAROUSEL ===== */
 
 .carousel-control-prev,
-.carousel-control-next{
-    width:10%;
-    height:60%;
-    top:50%;
-    transform:translateY(-50%);
-    opacity:.8;
+.carousel-control-next {
+    width: 10%;
+    height: 60%;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .8;
 }
 
 /* ===== DELETE MEDIA BUTTON ===== */
 
-.remove-single-media{
-    position:absolute;
-    top:20px;
-    right:20px;
-    width:40px;
-    height:40px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#fff;
-    backdrop-filter:blur(8px);
-    background:rgba(0,0,0,.4);
-    border:1px solid rgba(255,255,255,.5);
-    transition:.3s;
+.remove-single-media {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, .4);
+    border: 1px solid rgba(255, 255, 255, .5);
+    transition: .3s;
 }
-.remove-small{
+
+.remove-small {
     margin-top: 3px;
-    margin-right:3px;
-    width:25px;
-    height:25px;
+    margin-right: 3px;
+    width: 25px;
+    height: 25px;
 }
-.remove-single-media:hover{
-    background:#e4e2e2a8;
-    transform:scale(1.1);
+
+.remove-single-media:hover {
+    background: #e4e2e2a8;
+    transform: scale(1.1);
 }
-.remove-single-media:hover .bi-trash3-fill{
-    color:#000000a8;
+
+.remove-single-media:hover .bi-trash3-fill {
+    color: #000000a8;
 }
+
 /* ===== COMMENTS ===== */
 
-.comment-box{
-    flex:1;
-    padding:15px;
-    overflow-y:auto;
-    scrollbar-width:none;
+.comment-box {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    scrollbar-width: none;
 }
 
-.comment-textarea{
-    resize:none;
-    min-height:35px;
-    max-height:120px;
-    overflow-y:auto;
+.comment-textarea {
+    resize: none;
+    min-height: 35px;
+    max-height: 120px;
+    overflow-y: auto;
 }
 
-.comment-item{
-    margin-bottom:14px;
+.comment-item {
+    margin-bottom: 14px;
 }
 
-.comment-item img{
-    width:32px;
-    height:32px;
-    object-fit:cover;
+.comment-item img {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
 }
-.comment-media img{
+
+.comment-media img {
     width: auto !important;
     max-width: 70%;
     height: 200px;
     display: block;
 }
-.action-section{
-    border-top:5px solid #efefef;
-    padding:10px 15px;
+
+.action-section {
+    border-top: 5px solid #efefef;
+    padding: 10px 15px;
 }
 
-.comment-form input{
-    border:none;
-    outline:none;
+.comment-form input {
+    border: none;
+    outline: none;
 }
-.reply-list{
-    margin-left:3px;
+
+.reply-list {
+    margin-left: 3px;
 }
+
 .avatar-circle {
     width: 40px;
     height: 40px;
@@ -453,25 +533,38 @@ body{
     object-fit: cover;
 }
 
-.content{
+.content {
     overflow-wrap: break-word;
-    max-width:85%;
+    max-width: 85%;
 }
-.action-icon{
-    display:inline-block;
+
+.action-icon {
+    display: inline-block;
 }
-.action-icon:hover{
-     transform:scale(1.15);
+
+.action-icon:hover {
+    transform: scale(1.15);
 }
-.any-pop{
+
+.any-pop {
     animation: anyPop .4s ease;
-    display:inline-block;
+    display: inline-block;
 }
-@keyframes anyPop{
-    0%{ transform:scale(1); }
-    50%{ transform:scale(1.5); }
-    100%{ transform:scale(1); }
+
+@keyframes anyPop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.5);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
+
 /* Container phải có overflow hidden */
 /*amination tim*/
 
@@ -479,27 +572,35 @@ body{
 /* ===== RESPONSIVE (Tập trung toàn bộ CSS cho Mobile & Tablet) ===== */
 
 /* TABLET & SMALL DESKTOP */
-@media(max-width:992px){
-    .edit-main-content{
-        flex-direction:column;
+@media(max-width:992px) {
+    .edit-main-content {
+        flex-direction: column;
     }
-    .media-column{
-        min-width:100%;
-        min-height:450px;
+
+    .media-column {
+        min-width: 100%;
+        min-height: 450px;
     }
-    .info-column{
-        width:100%;
-        border-left:none;
-        border-top:1px solid #efefef;
+
+    .info-column {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #efefef;
     }
 }
 
 /* MOBILE PHONES */
 @media (max-width: 768px) {
+
     /* 1. Global & Navbar overrides */
-    .navbar { padding: 0.5rem; }
-    .full-width-container { padding: 0 !important; }
-    
+    .navbar {
+        padding: 0.5rem;
+    }
+
+    .full-width-container {
+        padding: 0 !important;
+    }
+
     /* 2. Sidebar Hover transformed to Bottom Navigation */
     .sidebar-hover {
         top: auto !important;
@@ -512,29 +613,35 @@ body{
         border-right: none !important;
         border-top: 1px solid #dee2e6 !important;
         padding: 0 !important;
-        z-index: 1050; 
+        z-index: 1050;
     }
+
     .sidebar-hover .navbar-brand,
     .sidebar-hover .nav-text,
     .sidebar-hover hr {
         display: none !important;
     }
+
     .sidebar-hover ul.nav {
         flex-direction: row !important;
         width: 100%;
         justify-content: space-around;
         margin-bottom: 0 !important;
     }
+
     .sidebar-hover ul.nav .nav-item {
         margin: 0 !important;
     }
+
     .sidebar-hover ul.nav .nav-link {
         padding: 10px !important;
     }
+
     .sidebar-hover .dropdown {
         margin-bottom: 0 !important;
         display: flex;
     }
+
     .sidebar-hover .dropdown .dropdown-menu {
         bottom: 100% !important;
         top: auto !important;
@@ -542,37 +649,43 @@ body{
 
     /* 3. Main Content & Search Wrapper */
     .main-content {
-        margin-left: 0 !important; 
-        padding-bottom: 70px !important; 
+        margin-left: 0 !important;
+        padding-bottom: 70px !important;
         transition: none !important;
         width: 100% !important;
     }
-    .sidebar-hover:hover ~ .main-content {
-        margin-left: 0 !important; 
+
+    .sidebar-hover:hover~.main-content {
+        margin-left: 0 !important;
     }
+
     .search-navbar,
-    .sidebar-hover:hover ~ .main-content .search-navbar {
-        margin: 0 10px !important; 
+    .sidebar-hover:hover~.main-content .search-navbar {
+        margin: 0 10px !important;
         padding: 10px !important;
     }
-    
+
     /* 4. Feed & Post Layout */
     .feed-container {
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
+
     .feed-container .row {
         margin: 0 !important;
     }
+
     .feed-container .col-lg-8 {
         padding: 0 !important;
     }
-    .post-card { 
-        border-radius: 0 !important; 
-        border-left: none !important; 
-        border-right: none !important; 
-        margin-bottom: 1rem !important; 
+
+    .post-card {
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        margin-bottom: 1rem !important;
     }
+
     .post-image {
         max-height: 60vh !important;
     }
@@ -585,30 +698,35 @@ body{
         max-width: 100% !important;
         border: none !important;
     }
+
     .modal-dialog {
         margin: 0 !important;
         max-width: 100% !important;
     }
+
     .modal-content {
         border-radius: 0 !important;
         height: 100vh !important;
         border: none !important;
     }
+
     .modal-header {
         padding: 0.75rem 1rem !important;
         border-bottom: 4px solid #efefef !important;
     }
-    
+
     /* 6. Media Section Inside Modal */
     .media-column {
         min-height: 300px !important;
         max-height: 40vh !important;
     }
-    .carousel-item img, 
+
+    .carousel-item img,
     .carousel-item video,
     .carousel-item {
         height: 300px !important;
     }
+
     .carousel-control-prev,
     .carousel-control-next {
         width: 15% !important;
@@ -619,23 +737,29 @@ body{
         height: 60vh !important;
         overflow-y: auto !important;
     }
+
     .content-area-wrapper {
         min-height: 100px !important;
     }
+
     .content-area-wrapper textarea {
         padding: 1rem !important;
     }
+
     .user-header {
         padding: 0.75rem 1rem !important;
     }
+
     .extra-settings-wrapper {
         padding: 1rem !important;
         height: auto !important;
     }
+
     .btn-update-fixed {
         margin-top: 1rem !important;
         padding: 0.5rem !important;
     }
+
     .btn-add-media {
         padding: 0.75rem !important;
     }
@@ -644,13 +768,16 @@ body{
     .comment-box {
         padding: 10px !important;
     }
+
     .comment-item {
         margin-bottom: 10px !important;
     }
+
     .comment-media img {
         max-width: 100% !important;
         height: 150px !important;
     }
+
     .action-section {
         padding: 8px 10px !important;
         position: sticky !important;
@@ -658,6 +785,7 @@ body{
         background: #fff !important;
         z-index: 10 !important;
     }
+
     .comment-textarea {
         max-height: 80px !important;
     }

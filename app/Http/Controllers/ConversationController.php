@@ -17,7 +17,7 @@ class ConversationController extends Controller
     {
         $userId = Auth::id();
         $conversations = Conversation::whereHas('users', function ($q) use ($userId) {
-                $q->where('user_id', $userId)->where('status', 'show');
+                $q->where('user_id', $userId);
             })
             ->with([
                 'users.profile', // lấy thông tin user
@@ -38,7 +38,7 @@ class ConversationController extends Controller
         if ($conversations->isNotEmpty()) {
         $first = $conversations->first();
         $messages = Message::where('conversation_id', $first->id)
-            ->with(['sender.profile', 'media'])->where('status', 'show')
+            ->with(['sender.profile', 'media'])
             ->orderBy('created_at')
                 ->get();
         }
@@ -59,7 +59,7 @@ class ConversationController extends Controller
         return view('Message.empty_message', compact('otherUser'));
     }
         Message::where('conversation_id', $conversation->id)
-        ->where('sender_id', $id)->where('status', 'show')
+        ->where('sender_id', $id)
         ->whereNull('read_at')
         ->update([
             'read_at' => now()
@@ -67,7 +67,7 @@ class ConversationController extends Controller
 
 
     $messages = Message::where('conversation_id', $conversation->id)
-        ->with(['sender.profile', 'media'])->where('status', 'show')
+        ->with(['sender.profile', 'media'])
         ->orderBy('created_at')
         ->get();
     // Trả về partial view (chỉ HTML tin nhắn) cho fetch JS

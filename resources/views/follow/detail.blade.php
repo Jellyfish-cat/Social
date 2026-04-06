@@ -46,23 +46,23 @@
     <!-- Danh sách -->
     <div class="follower-list" style="overflow-y: auto; flex-grow: 1;">
         <div class="p-3">
-            @forelse($follow as $fl)
+            @forelse($values as $value)
             <div class="d-flex align-items-center justify-content-between mb-3 follower-item">
                 <!-- Avatar & Tên -->
                 <div class="d-flex align-items-center gap-3">
-                    <a href="{{ route('profile.detail', $fl->id) }}" class="text-decoration-none">
-                        <img src="{{ asset('storage/' . ($fl->profile->avatar ?? 'default-avatar.png')) }}" 
+                    <a href="{{ route('profile.detail', $value->id) }}" class="text-decoration-none">
+                        <img src="{{ asset('storage/' . ($value->profile->avatar ?? 'default-avatar.png')) }}" 
                              class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover; border: 1px solid #ddd;">
                     </a>
                     <div class="d-flex flex-column justify-content-center">
                         <div class="d-flex align-items-center gap-1">
-                            <a href="{{ route('profile.detail', $fl->id) }}" class="text-decoration-none text-dark fw-bold" style="font-size: 14px; line-height: 1;">
-                                {{ $fl->name }}
+                            <a href="{{ route('profile.detail', $value->id) }}" class="text-decoration-none text-dark fw-bold" style="font-size: 14px; line-height: 1;">
+                                {{ $value->name }}
                             </a>
                             <!-- Nếu là đang xem bản thân thì k cần hiện thêm chữ "Theo dõi" bên cạnh tên user giống trong ảnh -->
                         </div>
                         <div class="text-muted" style="font-size: 13px; line-height: 1.2; margin-top: 4px;">
-                            {{ $fl->profile->display_name ?? $fl->name }}
+                            {{ $value->profile->display_name ?? $value->name }}
                         </div>
                     </div>
                 </div>
@@ -70,21 +70,21 @@
                 <!-- Nút hành động -->
                 <div>
                     @if(Auth::check() && Auth::id() === $user->id)
-                        {{-- Mình đang xem danh sách của chính mình -> Hiện Xóa --}}
+                        {{--xem danh sách của chính mình --}}
                         <button 
                             class="follow-btn btn btn-sm fw-semibold px-4 rounded-pill 
-                            {{ $user->following->contains($fl->id) ? 'btn-light' : 'btn-primary' }}"
-                            data-id="{{ $fl->id }}"  data-authid="{{Auth::id()}}">
-                            {{ $user->following->contains($fl->id) ? 'Đang Theo dõi' : 'Theo dõi' }}
+                            {{ $user->following->contains($value->id) ? 'btn-light' : 'btn-primary' }}"
+                            data-id="{{ $value->id }}"  data-authid="{{Auth::id()}}">
+                            {{ $user->following->contains($value->id) ? 'Đang Theo dõi' : 'Theo dõi' }}
                         </button>
                                             @else
-                        {{-- Mình đang xem danh sách của người khác -> Hiện Theo dõi / Đang theo dõi --}}
-                        @if(Auth::check() && Auth::id() !== $fl->id)
+                        {{-- xem danh sách của người khác Hiện Theo dõi / Đang theo dõi --}}
+                        @if(Auth::check() && Auth::id() !== $value->id)
                             @php
-                                $isFollowing = Auth::user()->following->contains('id', $fl->id);
+                                $isFollowing = Auth::user()->following->contains('id', $value->id);
                             @endphp
                             <button  data-authid="{{Auth::id()}}" class="btn {{ $isFollowing ? 'btn-light' : 'btn-primary' }} fw-semibold px-3 py-1 btn-sm follow-btn shadow-none" 
-                                    data-id="{{$fl->id}}" style="font-size: 14px; border-radius: 8px; {{ $isFollowing ? 'background-color: #efefef;' : '' }}">
+                                    data-id="{{$value->id}}" style="font-size: 14px; border-radius: 8px; {{ $isFollowing ? 'background-color: #efefef;' : '' }}">
                                 {{ $isFollowing ? 'Đang theo dõi' : 'Theo dõi' }}
                             </button>
                         @endif

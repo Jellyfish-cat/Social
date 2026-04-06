@@ -47,7 +47,7 @@ class FollowController extends Controller
                 $notification = Notification::create([
                     'user_id' => $id,
                     'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') 
-. '</strong> đã bắt đầu theo dõi bạn. follow:' . $user->id,
+                    . '</strong> đã bắt đầu theo dõi bạn. follow:' . $user->id,
                     'type' => 'follow'
                 ]);
                 broadcast(new \App\Events\NotificationSent($notification))->toOthers();
@@ -79,18 +79,18 @@ class FollowController extends Controller
     public function detail(request $request,$id)
        {
         $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
-        $type = request()->header('X-Type');
-        $follow=collect();
+        $type = request()->header('X-Type') ?: 'follower';
+        $values=collect();
         $user=null;
         if($type == "follower"){
             $user = User::with('followers.profile')->findOrFail($id);
-            $follow = $user->followers;
+            $values = $user->followers;
         }
         else if($type == "following"){
             $user = User::with('following.profile')->findOrFail($id);
-            $follow = $user->following;
+            $values = $user->following;
         }
-        return view('follow.detail', compact('follow', 'user', 'layout'));
+        return view('follow.detail', compact('values', 'user', 'layout'));
     }
 
     /**

@@ -152,11 +152,10 @@
                     {{ $comment->created_at?->diffForHumans() }}
                 </span>
                 {{-- Like comment list --}}
-                <button class="btn-reply-list like-comment-count me-3" style="font-size:13px;"
-                    data-comment-id="{{ $comment->id }}"
-                    data-username="{{ $comment->user->profile->display_name }}"
-                    data-post-id="{{ $post->id }}">
-                    {{ $comment->likes->count() }} lượt thích
+                 <button class="open-like-comment small like-count like-comment-count me-3" style="font-size:13px;"
+                                data-authid="{{$comment->user->id}}"
+                                data-comment-id="{{ $comment->id }}">
+                            {{ number_format($comment->likes->count() ?? 0) }} lượt thích
                 </button>
                 {{-- Reply button --}}
                 <button class="btn-reply" style="font-size:13px;"
@@ -315,9 +314,11 @@
                             <i class="bi bi-share fs-5 me-3"></i>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                        <div class="fw-bold small like-count" data-post-id="{{ $post->id }}">
+                        <button class="open-like fw-bold small like-count"
+                                data-authid="{{$post->user->id}}"
+                                data-post-id="{{ $post->id }}">
                             {{ number_format($post->likes->count() ?? 0) }} lượt thích
-                        </div>
+                    </button>
                         <div class="fw-bold small comment-count" data-post-id="{{ $post->id }}">
                             {{ number_format($post->comments->count() ?? 0) }} bình luận
                         </div>

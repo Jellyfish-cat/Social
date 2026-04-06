@@ -55,5 +55,9 @@ class Post extends Model
     {
         return $this->belongsTo(Post::class, 'shared_post_id');
     }
+    public function likedUsers()
+    {
+        return $this->belongsToMany(User::class, 'like_posts', 'post_id', 'user_id');
+    }
 }
 

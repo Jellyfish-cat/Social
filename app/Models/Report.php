@@ -11,9 +11,17 @@ class Report extends Model
         'user_id',
         'target_id',
         'target_type',
+        'category',
         'reason',
-        'status'
+        'status',
+        'admin_note',
+        'resolved_by',
+        'resolved_at'
     ];
+
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_RESOLVED = 'resolved';
+    public const STATUS_DISMISSED = 'dismissed';
 
     public function user()
     {
@@ -23,6 +31,11 @@ class Report extends Model
     public function target()
     {
         return $this->morphTo();
+    }
+
+    public function resolver()
+    {
+        return $this->belongsTo(User::class, 'resolved_by');
     }
 }
 

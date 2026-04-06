@@ -63,14 +63,19 @@
                         <td class="text-start"> 
                             {{ Str::limit($value->profile->bio ?? "không có" , 20) }}
                         </td>
-                         <td class="text-center">
+
+                        <td class="text-center">
+                            <button class="open-follow"  data-type="follower" data-id="{{$value->id}}">
+                    <a class="follow-count" data-authid="{{$value->id}}">{{ $value->followers_count   ?? 0 }}</a>
+                   </button>
+                        </td>
+                        <td class="text-center">
+                            <button class="open-follow"  data-type="following" data-id="{{$value->id}}">
+                    <a class="following-count" data-authid="{{$value->id}}">{{ $value->following_count   ?? 0 }}</a>
+                   </button>
+                        <td class="text-center">
                             {{ $value->role   ?? 'user' }}
                         </td>
-                        <td class="text-center">
-                            {{ $value->followers_count   ?? 0 }}
-                        </td>
-                        <td class="text-center">
-                            {{ $value->following_count   ?? 0 }}
                         </td>
                         <td class="text-center">
                             <a 

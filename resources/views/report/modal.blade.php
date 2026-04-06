@@ -9,8 +9,21 @@
         <input type="hidden" name="target_type" id="report_target_type" value="{{ $target_type ?? 'post' }}">
         
         <div class="mb-3">
-            <label for="report_reason" class="form-label text-muted">{{ __('Tại sao bạn báo cáo nội dung này?') }}</label>
-            <textarea class="form-control" id="report_reason" name="reason" rows="4" required placeholder="{{ __('Vui lòng cung cấp thêm thông tin chi tiết...') }}"></textarea>
+            <label for="report_category" class="form-label text-muted">{{ __('Danh mục vi phạm') }}</label>
+            <select class="form-select mb-3" id="report_category" name="category" required>
+                <option value="">{{ __('-- Chọn lý do --') }}</option>
+                <option value="Spam">{{ __('Nội dung rác (Spam)') }}</option>
+                <option value="Violence">{{ __('Tính bạo lực / Kích động') }}</option>
+                <option value="Nudity">{{ __('Ảnh khỏa thân hoặc khiêu dâm') }}</option>
+                <option value="Harassment">{{ __('Quấy rối hoặc bắt nạt') }}</option>
+                <option value="FakeNews">{{ __('Thông tin sai sự thật') }}</option>
+                <option value="Other">{{ __('Khác...') }}</option>
+            </select>
+            
+            <div id="report_reason_container" style="display: none;">
+                <label for="report_reason" class="form-label text-muted">{{ __('Tại sao bạn báo cáo nội dung này?') }}</label>
+                <textarea class="form-control" id="report_reason" name="reason" rows="3" placeholder="{{ __('Vui lòng cung cấp thêm thông tin chi tiết...') }}"></textarea>
+            </div>
         </div>
     </form>
 </div>

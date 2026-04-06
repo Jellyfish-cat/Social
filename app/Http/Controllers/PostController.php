@@ -241,11 +241,18 @@ class PostController extends Controller
 
         return redirect()->back()->with('success', 'Duyệt bài thành công!');
     }
-public function loadComments($id)
-{
-    $post = Post::with('comments.user')->where('status', 'show')->findOrFail($id);
+    public function loadComments($id)
+    {
+        $post = Post::with('comments.user')->where('status', 'show')->findOrFail($id);
 
-    return view('posts.comments', compact('post'));
-}
+        return view('posts.comments', compact('post'));
+    }
+    public function like_list(Request $request, $id)
+    {
+        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        $item = Post::with(['likedUsers.profile'])->findOrFail($id);
+        $values = $item->likedUsers; 
+        return view('like.like-list', compact('values', 'item', 'layout'));
+    } 
 
 }

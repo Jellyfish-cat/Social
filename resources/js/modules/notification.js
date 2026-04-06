@@ -46,6 +46,7 @@ if (userId && window.Echo) {
     window.Echo.private(`notifications.${userId}`)
         .listen('NotificationSent', (e) => {
             const badge = document.getElementById('global-noti-badge');
+            const notidot = document.getElementById('noti-dot');
             if (badge) {
                 badge.classList.remove('d-none');
                 let count = parseInt(badge.innerText || 0);
@@ -55,7 +56,12 @@ if (userId && window.Echo) {
                 badge.style.transform = 'scale(1.5)';
                 setTimeout(() => badge.style.transform = 'scale(1)', 300);
             }
-
+            if (notidot) {
+                notidot.classList.remove('d-none');
+                // Hiệu ứng nảy thu hút sự chú ý
+                notidot.style.transform = 'scale(2)';
+                setTimeout(() => notidot.style.transform = 'scale(1)', 300);
+            }
             // Nếu người dùng đang mở trang danh sách thông báo, tự động reload để hiển thị thông báo mới
             if (window.location.pathname === '/notifications') {
                 window.location.reload();

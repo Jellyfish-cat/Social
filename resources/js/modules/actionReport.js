@@ -42,11 +42,24 @@ document.addEventListener("click", function (e) {
     if (submitBtn) {
         e.preventDefault();
 
+        const categoryInput = document.getElementById('report_category');
         const reasonInput = document.getElementById('report_reason');
-        if (!reasonInput) return;
+        if (!categoryInput) return;
 
-        const reason = reasonInput.value.trim();
-        if (!reason) {
+        const category = categoryInput.value;
+        let reason = reasonInput ? reasonInput.value.trim() : '';
+
+        // Tự động gán bằng tên Danh mục phổ biến nếu người dùng không tự gõ lý do
+        if (!reason && category && category !== 'Other') {
+            reason = categoryInput.options[categoryInput.selectedIndex].text;
+        }
+        
+        if (!category) {
+            alert('Vui lòng chọn danh mục báo cáo.');
+            return;
+        }
+
+        if (category === 'Other' && !reason) {
             alert('Vui lòng nhập lý do báo cáo.');
             return;
         }
@@ -54,6 +67,7 @@ document.addEventListener("click", function (e) {
         const formData = {
             target_id: document.getElementById('report_target_id').value,
             target_type: document.getElementById('report_target_type').value,
+            category: category,
             reason: reason
         };
 
@@ -85,6 +99,24 @@ document.addEventListener("click", function (e) {
                 });
         } else {
             console.error("Axios chưa được load!");
+        }
+    }
+});
+
+// Event delegation cho trường hợp thay đổi chọn danh mục (vì modal được load qua AJAX)
+document.addEventListener("change", function (e) {
+    if (e.target.id === 'report_category') {
+        const val = e.target.value;
+        const container = document.getElementById('report_reason_container');
+        const reasonInput = document.getElementById('report_reason');
+        
+        if (container && reasonInput) {
+            container.style.display = 'block';
+            if (val === 'Other') {
+                reasonInput.setAttribute('required', 'required');
+            } else {
+                reasonInput.removeAttribute('required');
+            }
         }
     }
 });

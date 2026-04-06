@@ -16,7 +16,7 @@ class MessageController extends Controller
     public function index()
     {
          $messages = Message::with(['media','sender']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
-                ->orderBy('created_at', 'desc')->where('status', 'show')
+                ->orderBy('created_at', 'desc')
                 ->paginate(10);
         return view('admin.messages', compact('messages'));
     }

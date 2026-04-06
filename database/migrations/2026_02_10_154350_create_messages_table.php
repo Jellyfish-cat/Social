@@ -25,6 +25,8 @@ return new class extends Migration
     $table->text('content')->nullable();
     $table->timestamp('read_at')->nullable();
     $table->timestamp('created_at')->useCurrent();
+    $table->string('status')->default('show');
+
     $table->timestamps();
 });
 

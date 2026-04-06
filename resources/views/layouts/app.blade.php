@@ -27,11 +27,13 @@
 <body>
 <div class="d-flex flex-column flex-md-row">
     <!-- Sidebar -->
-    <nav class="bg-white border-end shadow-sm  d-flex flex-column p-3 flex-shrink-0 sidebar-hover" style="overflow-y: auto; overflow-x: hidden;">
+    <nav class="bg-white border-end shadow-sm  d-flex flex-column p-3 flex-shrink-0 sidebar-hover"  style="height: 100vh; overflow: hidden;">
         <a class="navbar-brand fw-bold fs-4 mb-4 mt-2 d-flex align-items-center text-dark text-decoration-none" href="{{ route('home') }}" style="letter-spacing: -1px; padding-left: 0.2rem;">
-            <img src="{{ asset('storage/'.'logo.png') }}" class=" fs-3 text-primary" style="min-width: 50px; text-align: center;"></i> 
+            <img src="{{ asset('storage/'.'logo.png') }}" class=" fs-3 text-primary" style="max-width: 70px; text-align: center;"></i> 
             <span class="nav-text ms-2">GUNPLA SOCIAL</span>
         </a>
+    <hr>
+        <div class="flex-grow-1 overflow-auto hide-scrollbar d-flex justify-content-center" >
         @if(auth::user()?->role === "user")
         <ul class="nav nav-pills flex-column mb-auto gap-2">
             <li class="nav-item">
@@ -72,7 +74,7 @@
                 }
             @endphp
             <li class="nav-item">
-                <a href="#" onclick="event.preventDefault(); window.openNoti();" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
+                <a href="#" onclick="event.preventDefault(); window.openNoti();" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
                     <i class="bi bi-heart" style="min-width: 40px; text-align: center;"></i>
                     <span class="nav-text flex-grow-1">Thông báo</span>
                     <span id="global-noti-badge" class="badge bg-danger rounded-pill {{ $globalUnreadNotifications > 0 ? '' : 'd-none' }}" 
@@ -145,6 +147,20 @@
             <span class="nav-text">Lịch sử tìm kiếm</span>
         </a>
     </li>
+    {{-- Thông báo hệ thống --}}
+    @php
+        $adminNotifications = auth()->user()->notifications()->where('is_read', false)->count();
+    @endphp
+    <li class="nav-item">
+        <a href="#" 
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+            <i class="bi bi-bell" style="min-width: 40px; text-align: center;"></i>
+            <span class="nav-text flex-grow-1 ">Thông báo </span>
+            <span class="badge bg-danger rounded-pill {{ $adminNotifications > 0 ? '' : 'd-none' }}">
+                {{ $adminNotifications }}
+            </span>
+        </a>
+    </li>
     {{-- Báo cáo --}}
     @php
         $totalReports = \App\Models\Report::where('status', 'pending')->count();
@@ -161,10 +177,10 @@
     </li>
         {{-- đã xử lý --}}
     @php
-        $totalReports = \App\Models\Report::where('status', 'approved')->count();
+        $totalReports = \App\Models\Report::where('status', 'resolved')->count();
     @endphp
     <li class="nav-item">
-        <a  href="{{route("admin.reports", "approved")}}"
+        <a  href="{{route("admin.reports", "resolved")}}"
            class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
             <i class="bi bi-clipboard-check" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text flex-grow-1">Đã xử lý</span>
@@ -173,23 +189,11 @@
             </span>
         </a>
     </li>
-    {{-- Thông báo hệ thống --}}
-    @php
-        $adminNotifications = auth()->user()->notifications()->where('is_read', false)->count();
-    @endphp
-    <li class="nav-item">
-        <a href="#" 
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-bell" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text flex-grow-1">Thông báo</span>
-            <span class="badge bg-danger rounded-pill {{ $adminNotifications > 0 ? '' : 'd-none' }}">
-                {{ $adminNotifications }}
-            </span>
-        </a>
-    </li>
+    
 
 </ul>
         @endif
+        </div>
         <hr>
         <!-- Profile -->
         <div class="dropdown">
@@ -253,6 +257,16 @@
         </div>
     </div>
 </div> 
+<!-- Modal xem chi tiết người theo dõi -->
+<div class="modal fade back-to-follow" id="followDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 800px;">
+        <div class="modal-content">
+            <div class="modal-body p-0 border rounded" id="followDetailContent">
+                <!-- Nội dung chi tiết follow sẽ load vào đây -->
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Modal xem chi tiết người theo dõi -->
 <div class="modal fade back-to-follow" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 800px;">

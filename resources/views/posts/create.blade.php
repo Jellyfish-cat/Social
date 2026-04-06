@@ -54,7 +54,7 @@
                                             placeholder="Nhập chủ đề..." autocomplete="off">
                                         <button type="button" id="add-topic-btn" class="btn btn-sm btn-primary">+</button>
                                     </div>
-                                    <div id="suggestions" class="list-group mt-1"></div>
+                                    <div id="topic-suggestions" class="list-group mt-1"></div>
                                     <input type="hidden" name="topic_ids" id="topic-ids">
                                     <input type="hidden" name="new_topics" id="new-topics">
                                 </div>

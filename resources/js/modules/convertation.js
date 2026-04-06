@@ -421,10 +421,13 @@ setTimeout(() => {
                     // --- 3. Gắn giao diện theo thứ tự: Avatar trước -> Bong bóng sau ---
                     row.appendChild(avatarImg);
                     row.appendChild(bubble);
-                    chatBody.appendChild(row);
-
-                    // Tự động cuộn xuống dưới cùng
-                    chatBody.scrollTop = chatBody.scrollHeight;
+                    
+                    const localChatBody = document.getElementById('msgChatBody');
+                    if (localChatBody) {
+                        localChatBody.appendChild(row);
+                        // Tự động cuộn xuống dưới cùng
+                        localChatBody.scrollTop = localChatBody.scrollHeight;
+                    }
 
                     // --- 4. Cập nhật Sidebar Preview và đẩy lên đầu tiên ---
                     const activeConvoItem = document.querySelector(`.convo-item[data-user-id="${incomingMsg.sender_id}"]`);

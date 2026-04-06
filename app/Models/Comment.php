@@ -51,5 +51,9 @@ class Comment extends Model
         $ext = strtolower(pathinfo($this->media_path, PATHINFO_EXTENSION));
         return in_array($ext, ['mp4', 'webm', 'ogg']);
     }
+    public function likedUsers()
+    {
+        return $this->belongsToMany(User::class, 'like_comments', 'comment_id', 'user_id');
+    }
 }
 

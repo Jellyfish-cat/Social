@@ -2,7 +2,7 @@ let selectedTopics = []; // {id, name}
 let newTopics = []; // chỉ name
 let suggestedTopics = []; // cache search
 const input = document.getElementById("topic-input");
-const suggestions = document.getElementById("suggestions");
+const suggestions = document.getElementById("topic-suggestions");
 if (input) {
     input.addEventListener("input", async () => {
         let q = input.value.trim().toLowerCase();

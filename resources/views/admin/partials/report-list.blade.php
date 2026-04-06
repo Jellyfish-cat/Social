@@ -12,8 +12,12 @@
                 <tr>
                     <th width="5%">#</th>
                     <th width="30%">Nội dung báo cáo</th>
-                    <th width="20%">Lý do</th>
+                    <th width="20%">Lý do phổ biến</th>
+                    @if($tab === 'pending')
+                    <th width="15%">Số lượt</th>
+                    @else
                     <th width="15%">Người báo cáo</th>
+                    @endif
                     <th width="15%">Trạng thái</th>
                     <th width="15%">Hành động</th>
                 </tr>
@@ -48,13 +52,24 @@
                     @endif
                 </td>
                 <td>
-                    {{ $value->reason }}
+                    @if($value->category)
+                        <span class="badge bg-danger">{{ $value->category }}</span>
+                        @if($value->reason)
+                            <div class="text-muted mt-1" style="font-size: 0.85em;">{{ $value->reason }}</div>
+                        @endif
+                    @else
+                        {{ $value->reason }}
+                    @endif
                 </td>
                 <td>
-                    <div class="d-flex align-items-center">
-                        <img src="{{ $value->user->profile->avatar ?? asset('assets/images/default-avatar.png') }}" class="rounded-circle me-2" width="25" height="25">
-                        <span>{{ $value->user->profile->display_name ?? $value->user->name }}</span>
-                    </div>
+                    @if($tab === 'pending')
+                        <span class="badge bg-secondary mb-1">{{ __('Có ' . $value->total_reports . ' người đã báo cáo') }}</span>
+                    @else
+                        <div class="d-flex align-items-center">
+                            <img src="{{ $value->user->profile->avatar ?? asset('assets/images/default-avatar.png') }}" class="rounded-circle me-2" width="25" height="25">
+                            <span>{{ $value->user->profile->display_name ?? $value->user->name }}</span>
+                        </div>
+                    @endif
                 </td>
                 <td class="text-center">
                     @if($value->status === 'pending')
@@ -81,18 +96,26 @@
                                 <i class="bi bi-eye"></i>
                             </a>
                         @endif
-                        <button class="btn btn-danger btn-sm btn-delete-report" data-id="{{ $value->id }}" title="Xóa báo cáo">
-                            <i class="bi bi-trash"></i>
-                        </button>
+
                                  
                              @if($tab==='pending')
-                              <button class="btn btn-warning btn-sm btn-check-report" data-id="{{ $value->id }}" title="khóa báo cáo">
-                                    <i class="bi bi-lock"></i>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-warning btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Xử lý báo cáo">
+                                        <i class="bi bi-shield-exclamation"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li><a class="dropdown-item btn-check-report cursor-pointer text-danger" data-id="{{ $value->id }}" data-action="hide"><i class="bi bi-eye-slash me-2"></i>Ẩn nội dung</a></li>
+                                        <li><a class="dropdown-item btn-check-report cursor-pointer text-success" data-id="{{ $value->id }}" data-action="dismiss"><i class="bi bi-check-circle me-2"></i>Bỏ qua (Không VP)</a></li>
+                                    </ul>
+                                </div>
                             @else
-                             <button class="btn btn-success btn-sm btn-check-report" data-id="{{ $value->id }}" title="duyệt báo cáo">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    @endif
+                             <button class="btn btn-danger btn-sm btn-delete-report" data-id="{{ $value->id }}" title="Xóa báo cáo">
+                            <i class="bi bi-trash"></i>
                         </button>
+                                <button class="btn btn-success btn-sm btn-check-report" data-id="{{ $value->id }}" data-action="restore" title="Khôi phục trạng thái chờ duyệt báo cáo">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            @endif
                     </div>
                 </td>
             </tr>

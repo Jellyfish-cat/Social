@@ -35,3 +35,41 @@ document.addEventListener("click", function(e){
         });
 
 });
+
+document.addEventListener("click", function (e) {
+    if (window.Fancybox && Fancybox.getInstance()) return;
+    const btn = e.target.closest(".open-like");
+    if (!btn) return;
+    const postID = btn.dataset.postId;
+    if (window.matchMedia("(max-width: 992px)").matches) {
+        window.location.href = `/posts/like_list/${postID}`;
+        return;
+    }
+    const action = btn.dataset.action;
+    startLoading();
+    fetch(`/posts/like_list/${postID}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("followDetailContent").innerHTML = html;
+            const modalEl = document.getElementById("followDetailModal");
+            const modal = new bootstrap.Modal(modalEl);
+            // 1. Lưu lại URL hiện tại (URL của profile) trước khi đổi
+            const originalUrl = window.location.href;
+            modal.show();
+            history.pushState({ modaluserId: postID }, '', `/posts/like_list/${postID}`);
+            // 2. Thêm đoạn này để trả lại URL cũ khi đóng Modal
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                // Chỉ set lại nếu URL vẫn đang là trang chi tiết bài viết
+                if (window.location.pathname.includes('/posts/like_list/')) {
+                    history.pushState(null, '', originalUrl);
+                }
+            }, { once: true });
+        })
+        .finally(() => {
+            finishLoading();
+        });
+});

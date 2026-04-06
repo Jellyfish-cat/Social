@@ -133,9 +133,11 @@
                         </button>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <div class="fw-bold small like-count" data-post-id="{{ $post->id }}">
+                        <button class="open-like fw-bold small like-count"
+                                data-authid="{{$post->user->id}}"
+                                data-post-id="{{ $post->id }}">
                             {{ number_format($post->likes->count() ?? 0) }} lượt thích
-                        </div>
+                    </button>
                         <div class="fw-bold small comment-count" data-post-id="{{ $post->id }}">
                             {{ number_format($post->comments->count() ?? 0) }} bình luận
                         </div>

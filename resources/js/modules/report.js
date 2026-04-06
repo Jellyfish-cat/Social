@@ -184,23 +184,34 @@ document.addEventListener('click', function (e) {
 });
 
 document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('btn-check-report')) {
-        const btn = e.target;
+    const btn = e.target.closest('.btn-check-report');
+    if (btn) {
+        e.preventDefault(); // In case of 'a' tag
         const postId = btn.dataset.id;
-        if (!confirm('Duyệt tin này. Bạn chắc chứ?')) {
+        const action = btn.dataset.action || 'hide';
+        
+        let confirmMsg = 'Duyệt xử lý tin này. Bạn chắc chắn chứ?';
+        if (action === 'hide') confirmMsg = 'Ẩn toàn bộ nội dung này. Bạn chắc chứ?';
+        if (action === 'dismiss') confirmMsg = 'Bỏ qua báo cáo do nội dung không vi phạm?';
+        if (action === 'restore') confirmMsg = 'Khôi phục lại nội dung và trạng thái báo cáo?';
+        if (!confirm(confirmMsg)) {
             return;
         }
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(`/reports/check/${postId}/${tab}`, {
+        if (typeof startLoading === 'function') startLoading();
+        fetch(`/reports/check/${postId}`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
                 'Accept': 'application/json'
-            }
+            },
+            body: JSON.stringify({ action: action })
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                // If it's the dropdown link, we need to hide the row
                 const row = btn.closest(".report-item");
             if (row) {
                 // Hiệu ứng mượt

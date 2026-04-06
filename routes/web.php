@@ -158,7 +158,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/posts/update/{id}', [PostController::class,'update'])->name('posts.update');
     Route::delete('/posts/destroy/{id}', [PostController::class,'destroy'])->name('posts.destroy');
     Route::post('/ckeditor-upload', [PostController::class,'uploadImage'])->name('ckeditor.upload');
-
+    Route::get('/posts/like_list/{id}', [PostController::class,'like_list'])->name('posts.like_list');
 
     /*
     | Like Post
@@ -186,6 +186,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/comments/reply/{id}', [CommentController::class,'reply'])->name('comments.reply');
     Route::post('/comments/like/{id}', [CommentController::class,'like'])->name('comments.like');
     Route::delete('/comments/destroy/{id}', [CommentController::class,'destroy'])->name('comments.destroy');
+    Route::get('/comments/like_list/{id}', [CommentController::class,'like_list'])->name('comments.like_list');
+
         /*
     | Search
     */
@@ -251,7 +253,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
     Route::post('/reports/store', [ReportController::class, 'store'])->name('reports.store');
     Route::delete('/reports/destroy/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
-    Route::post('/reports/check/{id}/{tab}', [ReportController::class, 'check'])->name('reports.check');
+    Route::post('/reports/check/{id}', [ReportController::class, 'check'])->name('reports.check');
        });
 /*
 |--------------------------------------------------------------------------

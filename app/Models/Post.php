@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Scout\Searchable;
+
 class Post extends Model
 {
-    use HasFactory;
+    use HasFactory, Searchable;
+
     protected $fillable = [
         'user_id',
         'topic_id',
@@ -58,6 +61,20 @@ class Post extends Model
     public function likedUsers()
     {
         return $this->belongsToMany(User::class, 'like_posts', 'post_id', 'user_id');
+    }
+
+    public function toSearchableArray()
+    {
+        return [
+            'id' => $this->id,
+            'topic_id' => $this->topic_id,
+            'user_id' => $this->user_id,
+            'content' => $this->content,
+            'user' => [
+                'name' => $this->user->name ?? '',
+            ],
+            'topics' => $this->topics->pluck('name')->toArray(),
+        ];
     }
 }
 

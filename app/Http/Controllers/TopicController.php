@@ -116,8 +116,8 @@ class TopicController extends Controller
     public function search(Request $request)
     {
         $q = $request->q;
-        return Topic::where('name', 'like', "%$q%")
-            ->limit(5)
+        return Topic::search($q)
+            ->take(5)
             ->get();
     }
 }

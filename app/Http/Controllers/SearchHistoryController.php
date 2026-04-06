@@ -35,13 +35,10 @@ class SearchHistoryController extends Controller
                 'keyword' => $keyword
             ]);
         }
-        $posts = Post::with(['user.profile', 'media', 'likes', 'comments', 'favorites'])
-            ->where('content', 'LIKE', "%{$keyword}%")
-            ->orWhereHas('user.profile', function ($q) use ($keyword) {
-                $q->where('display_name', 'LIKE', "%{$keyword}%");
-            })
-            ->latest()
+        $posts = Post::search($keyword)
+            ->query(fn($query) => $query->with(['user.profile', 'media', 'likes', 'comments', 'favorites']))
             ->get();
+
         $checktopic=false;
         return view('search.result', compact('posts', 'keyword','checktopic'));
     }    
@@ -49,27 +46,16 @@ class SearchHistoryController extends Controller
     {
          $keyword = $request->input('q');
         if ($type === 'post') {
-            $posts = Post::where('content', 'LIKE', "%{$keyword}%")
-                        ->orWhereHas('user.profile', function($q) use ($keyword) {
-                            $q->where('display_name', 'LIKE', "%{$keyword}%");
-                        })->latest()->get();
-            $checktopic =false;
-            return view('search.partials.post-list', compact('posts', 'keyword','checktopic'));
+            $posts = Post::search($keyword)->get();
+            $checktopic = false;
+            return view('search.partials.post-list', compact('posts', 'keyword', 'checktopic'));
         } 
         elseif ($type === 'people') {
-            // Đã sửa lại truy vấn dùng bảng User
-            $users = User::where('name', 'LIKE', "%{$keyword}%")
-                        ->orWhereHas('profile', function($q) use ($keyword) {
-                            $q->where('display_name', 'LIKE', "%{$keyword}%");
-                        })->get();
+            $users = User::search($keyword)->get();
             return view('search.partials.people-list', compact('users'));
         }
         elseif ($type === 'topic') {
-            // Đã sửa lại truy vấn dùng bảng User
-            $topics = Topic::where('name', 'LIKE', "%{$keyword}%")
-                    ->withCount('posts') 
-                    ->latest()    
-                    ->get();
+            $topics = Topic::search($keyword)->get();
             return view('search.partials.topic-list', compact('topics'));
         } 
 
@@ -77,9 +63,21 @@ class SearchHistoryController extends Controller
     public function suggestions(Request $request)
     {
         $q = $request->q;
-        return SearchHistory::where('keyword', 'like', "%$q%")
-            ->limit(5)
-            ->get();
+        $topics = [];
+        $users = [];
+
+        try {
+            $topics = Topic::search($q)->take(5)->get();
+            $users = User::search($q)->take(5)->get();
+        } catch (\Exception $e) {
+            $topics = Topic::where('name', 'LIKE', "%$q%")->take(5)->get();
+            $users = User::where('name', 'LIKE', "%$q%")->take(5)->get();
+        }
+        
+        return response()->json([
+            'topics' => $topics,
+            'users' => $users
+        ]);
     }
     /**
      * Show the form for creating a new resource.

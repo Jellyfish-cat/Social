@@ -74,7 +74,10 @@ if (inputSearch && suggestionsContainer) {
 
 // Hàm hỗ trợ vẽ HTML (Tách riêng hàm cho dễ quản lý)
 function renderSuggestions(data) {
-    if (!data || data.length === 0) {
+    const hasTopics = data.topics && data.topics.length > 0;
+    const hasUsers = data.users && data.users.length > 0;
+
+    if (!hasTopics && !hasUsers) {
         suggestionsContainer.innerHTML = `
             <div class="list-group-item text-center text-muted border-0">
                 Không tìm thấy dữ liệu nào phù hợp.
@@ -84,17 +87,41 @@ function renderSuggestions(data) {
         return;
     }
 
-    // Hiển thị dải button - Bạn có thể đổi hình/icon tùy ý
-    suggestionsContainer.innerHTML = data.map(t => `
-        <button type="button" class="list-group-item list-group-item-action d-flex align-items-center border-0"
-            onclick="selectSearchItem(${t.id}, '${t.keyword}')">
-            <div class="bg-light rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width:35px;height:35px">
-                 <i class="bi bi-search text-muted"></i>
-            </div>
-            <span class="fw-semibold">${t.keyword}</span>
-        </button>
-    `).join("");
+    let html = '';
 
+    // 1. Vẽ phần Chủ đề (Topics)
+    if (hasTopics) {
+        html += `<div class="list-group-item disabled bg-light fw-bold py-1 small text-uppercase">Chủ đề</div>`;
+        data.topics.forEach(t => {
+            html += `
+                <button type="button" class="list-group-item list-group-item-action d-flex align-items-center border-0"
+                    onclick="selectSearchItem(null, '${t.name}')">
+                    <div class="bg-light rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width:30px;height:30px">
+                         <i class="bi bi-hash text-primary"></i>
+                    </div>
+                    <span class="fw-semibold">${t.name}</span>
+                </button>
+            `;
+        });
+    }
+
+    // 2. Vẽ phần Người dùng (Users)
+    if (hasUsers) {
+        html += `<div class="list-group-item disabled bg-light fw-bold py-1 mt-2 small text-uppercase">Người dùng</div>`;
+        data.users.forEach(u => {
+            html += `
+                <button type="button" class="list-group-item list-group-item-action d-flex align-items-center border-0"
+                    onclick="selectSearchItem(null, '${u.name}')">
+                    <div class="bg-light rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width:30px;height:30px">
+                         <i class="bi bi-person text-success"></i>
+                    </div>
+                    <span class="fw-semibold">${u.name}</span>
+                </button>
+            `;
+        });
+    }
+
+    suggestionsContainer.innerHTML = html;
     suggestionsContainer.style.display = 'block';
 }
 

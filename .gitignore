@@ -19,6 +19,9 @@
 /storage/*.key
 /storage/pail
 /vendor
+data.ms/
+*.sql
+*.exe
 Homestead.json
 Homestead.yaml
 Thumbs.db

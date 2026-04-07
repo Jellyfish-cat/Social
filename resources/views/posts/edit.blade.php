@@ -53,7 +53,7 @@
                 <div class="info-column">
                     <div class="user-header d-flex align-items-center">
                         <img src="{{ Auth::user()->profile->avatar ? asset('storage/'.Auth::user()->profile->avatar) : 'https://i.pravatar.cc/150' }}" class="user-avatar border me-3">
-                        <span class="fw-bold text-dark small">{{ Auth::user()->profile->display_name ?? Auth::user()->email }}</span>
+                        <span class="fw-bold text-dark small">{{ $post->user->profile->display_name ?? Auth::user()->email }}</span>
                     </div>
 
                     <div class="content-area-wrapper">
@@ -63,16 +63,20 @@
                     <div class="extra-settings-wrapper d-flex flex-column justify-content-between">
                         <div>
                             <div class="mb-4">
-                                <label class="form-label mb-2 fw-bold text-secondary small text-uppercase">Chủ đề</label>
-                                <select name="topic_id" class="form-select form-select-sm shadow-none" required>
-                                    @foreach($topics as $value)
-                                        <option value="{{ $value->id }}" {{ $post->topic_id == $value->id ? 'selected' : '' }}>
-                                            {{ $value->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
+                                    <label class="form-label fw-bold text-secondary small text-uppercase">
+                                        Chủ đề: 
+                                        <span id="selected-topics" data-initial="{{ $post->topics->map(fn($t) => ['id' => $t->id, 'name' => $t->name])->toJson() }}"></span>
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <input type="text" id="topic-input"
+                                            class="form-control form-control-sm"
+                                            placeholder="Nhập chủ đề..." autocomplete="off">
+                                        <button type="button" id="add-topic-btn" class="btn btn-sm btn-primary">+</button>
+                                    </div>
+                                    <div id="topic-suggestions" class="list-group mt-1"></div>
+                                    <input type="hidden" name="topic_ids" id="topic-ids">
+                                    <input type="hidden" name="new_topics" id="new-topics">
+                                </div>
                             <div class="mb-4 border-top pt-3">
                                 <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-3">
                                     <label class="form-check-label small fw-bold text-dark" for="pinned">Ghim bài viết này</label>
@@ -91,9 +95,10 @@
                             <input type="file" class="d-none" id="file" name="file[]" multiple accept="image/*,video/*" onchange="previewEditFiles()">
                         </div>
 
-                        <button type="submit" class="btn-update-fixed shadow-sm">
-                            Cập nhật bài viết
-                        </button>
+                       <form id="editPostForm">
+                            <textarea name="content" id="content"></textarea>
+                            <button type="submit">Cập nhật bài viết</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -101,7 +106,4 @@
     </div>
 </div>
 
-<script>
-
-</script>
 @endsection

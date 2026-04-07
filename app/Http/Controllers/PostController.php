@@ -144,7 +144,7 @@ class PostController extends Controller
     {
         
         $topics = Topic::all();
-        $post = Post::with('media')->findOrFail($id);
+        $post = Post::with('media', 'topics')->findOrFail($id);
             if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
         abort(403, 'Bạn không có quyền');
     }
@@ -152,41 +152,33 @@ class PostController extends Controller
     }
 
     // 6. Cập nhật bài viết
-   public function update(Request $request, $id)
+  public function update(Request $request, $id)
 {
     $post = Post::findOrFail($id);
-    if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
-        abort(403, 'Bạn không có quyền');
-    }
     $post->update([
         'content' => $request->content,
-        'topic_id' => $request->topic_id,
         'pinned' => $request->has('pinned'),
         'is_comment_enabled' => $request->has('is_comment_enabled'),
     ]);
+    $topicIds = array_filter(explode(',', $request->topic_ids ?? ''));
+    foreach (array_filter(explode(',', $request->new_topics ?? '')) as $name) {
+        $topicIds[] = Topic::firstOrCreate(['name' => strtolower(trim($name))])->id;
+    }
+    $post->topics()->sync(array_slice(array_unique($topicIds), 0, 3));
+    $post->update(['topic_id' => $topicIds[0] ?? null]);
 
-    // Xóa media
     if ($request->deleted_media_ids) {
-
         $ids = explode(',', $request->deleted_media_ids);
-
         $medias = $post->media()->whereIn('id', $ids)->get();
-
         foreach ($medias as $media) {
             Storage::disk('public')->delete($media->file_path);
             $media->delete();
         }
     }
-
-    
     if ($request->hasFile('file')) {
-
         foreach ($request->file('file') as $file) {
-
             $path = $file->store('posts', 'public');
-
             $type = str_contains($file->getMimeType(), 'video') ? 'video' : 'image';
-
             Media::create([
                 'post_id' => $post->id,
                 'file_path' => $path,
@@ -196,8 +188,8 @@ class PostController extends Controller
     }
 
     return redirect()->route('home')->with('success', 'Cập nhật thành công');
-}
-    // 7. Xóa bài viết (Xóa luôn comment, favorite và media liên quan)
+    }
+
     public function destroy($id)
     {
         $post = Post::findOrFail($id);

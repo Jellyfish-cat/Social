@@ -138,4 +138,20 @@ document.addEventListener('click', function (e) {
         });
     }
 });
- 
+
+// Khởi tạo topic cho trang edit
+document.addEventListener('DOMContentLoaded', function () {
+    const topicBox = document.getElementById('selected-topics');
+    if (topicBox && topicBox.dataset.initial) {
+        try {
+            const initialTopics = JSON.parse(topicBox.dataset.initial);
+            initialTopics.forEach(t => {
+                if (window.selectTopic) {
+                    window.selectTopic(t.id, t.name);
+                }
+            });
+        } catch (err) {
+            console.error("Lỗi khởi tạo chủ đề:", err);
+        }
+    }
+});

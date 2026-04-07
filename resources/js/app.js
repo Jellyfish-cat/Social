@@ -1,7 +1,5 @@
 import './bootstrap';
 import Alpine from 'alpinejs';
-import data from '@emoji-mart/data'
-import { Picker } from 'emoji-mart'
 window.Alpine = Alpine;
 Alpine.start();
 
@@ -27,5 +25,4 @@ import './modules/notification';
 import './modules/user';
 import './modules/report';
 import './modules/actionReport';
-
 

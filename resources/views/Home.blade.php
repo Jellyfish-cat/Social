@@ -13,15 +13,13 @@
             <div class="card post-card p-3 mb-4">
                 <div class="d-flex align-items-center gap-3">
                     <img  src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
-                    <a href="{{ route('posts.create') }}" class="btn btn-light rounded-pill flex-grow-1 text-start text-muted border-0 bg-light py-2 px-3">
+                    <a href="{{ route('posts.create') }}" class="btn btn-light rounded-pill flex-grow-1 text-start text-muted border-0 bg-light py-2 px-3 nav-ajax">
                         {{ auth()->user()->profile->display_name ?? 'Bạn' }} ơi, bạn {{ __('Like') }} nghĩ gì thế?
                     </a>
                 </div>
             </div>
             @forelse($posts as $post)
             <div class="card post-card shadow-none post-item">
-            <!-- <div class="card post-card shadow-none post-item" data-id="{{ $post->id }}"> -->
-                
                 <div class="p-3 d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
                         <a href="{{ route('profile.detail', $post->user->id) }}" >
@@ -52,8 +50,8 @@
                     <div class="dropdown">
                         <i class="bi bi-three-dots cursor-pointer" data-bs-toggle="dropdown"></i>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                            @if($post->user->id === Auth::id())
-                            <li><a class="dropdown-item small" href="{{ route('posts.edit', $post->id) }}">Chỉnh sửa</a></li>
+                            @if($post->user->id === Auth::id() || auth()->user()->role === 'admin')
+                            <li><a class="dropdown-item small nav-ajax" href="{{ route('posts.edit', $post->id) }}">Chỉnh sửa</a></li>
                             <li>
                                 <a class="dropdown-item small btn-delete" data-id="{{ $post->id }}">
                                     Xóa
@@ -121,7 +119,6 @@
                             <button class="open-post" data-id="{{ $post->id }}">
                                 <i class="bi bi-chat action-icon fs-5"></i>
                             </button>
-                            <!-- <i class="bi bi-chat action-icon btn-comment" data-id="{{ $post->id }}"></i> -->
                             <i class="bi bi-share action-icon fs-5"></i>
                         </div>
                         <button class="btn-favorite" data-id="{{ $post->id }}">

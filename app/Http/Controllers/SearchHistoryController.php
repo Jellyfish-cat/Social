@@ -58,25 +58,110 @@ class SearchHistoryController extends Controller
             $topics = Topic::search($keyword)->get();
             return view('search.partials.topic-list', compact('topics'));
         } 
-
     }
     public function suggestions(Request $request)
     {
-        $q = $request->q;
-        $topics = [];
-        $users = [];
+        $q = trim($request->q);
+        $user = auth()->user();
+
+        $topics = collect();
+        $users = collect();
+        $posts = collect();
+
+        // Luôn lấy lịch sử tìm kiếm bằng get()
+        $histories = SearchHistory::where('user_id', auth()->id())
+            ->latest('updated_at')
+            ->limit(5)
+            ->get();
+
+        if (!$q) {
+            return response()->json([
+                'history' => $histories,
+                'topics' => [],
+                'users' => [],
+                'posts' => []
+            ]);
+        }
 
         try {
+            // =========================
+            // 1. CONTEXT USER
+            // =========================
+            $followingIds = $user->following()->pluck('users.id')->toArray();
+            $interestedTopicIds = \App\Models\LikePost::where('user_id', $user->id)
+                ->with(['post.topic', 'post.topics'])
+                ->get()
+                ->flatMap(function ($like) {
+                    $ids = [];
+                    if ($like->post && $like->post->topic_id) $ids[] = $like->post->topic_id;
+                    if ($like->post && $like->post->topics) {
+                        $ids = array_merge($ids, $like->post->topics->pluck('id')->toArray());
+                    }
+                    return $ids;
+                })
+                ->unique()
+                ->toArray();
+
+            // =========================
+            // 2. TOPICS (SEARCH)
+            // =========================
             $topics = Topic::search($q)->take(5)->get();
-            $users = User::search($q)->take(5)->get();
+
+            // =========================
+            // 3. USERS (ƯU TIÊN FOLLOW)
+            // =========================
+            $users = User::search($q)
+                ->query(fn($query) => $query->with('profile'))
+                ->take(10)
+                ->get();
+            $users = $users->sortByDesc(fn($u) => in_array($u->id, $followingIds))
+                           ->take(5)
+                           ->values();
+
+            // =========================
+            // 4. POSTS (SEARCH + ƯU TIÊN)
+            // =========================
+            $results = collect();
+            $excludeIds = [];
+            if (!empty($followingIds)) {
+                $followingPosts = Post::search($q)
+                    ->whereIn('user_id', $followingIds)
+                    ->orderBy('created_at', 'desc')
+                    ->query(fn($query) => $query->with(['user.profile', 'topic'])->where('status', 'show'))
+                    ->take(5)
+                    ->get();
+                $results = $results->merge($followingPosts);
+                $excludeIds = $followingPosts->pluck('id')->toArray();
+            }
+
+            if (!empty($interestedTopicIds)) {
+                $topicPosts = Post::search($q)
+                    ->whereIn('topic_id', $interestedTopicIds)
+                    ->orderBy('created_at', 'desc')
+                    ->query(fn($query) => $query->with(['user.profile', 'topic'])->where('status', 'show')->whereNotIn('id', $excludeIds))
+                    ->take(5)
+                    ->get();
+                $results = $results->merge($topicPosts);
+                $excludeIds = array_merge($excludeIds, $topicPosts->pluck('id')->toArray());
+            }
+
+            $otherPosts = Post::search($q)
+                ->query(fn($query) => $query->with(['user.profile', 'topic'])->where('status', 'show')->whereNotIn('id', $excludeIds))
+                ->take(5)
+                ->get();
+
+            $posts = $results->merge($otherPosts)->take(5);
+
         } catch (\Exception $e) {
             $topics = Topic::where('name', 'LIKE', "%$q%")->take(5)->get();
-            $users = User::where('name', 'LIKE', "%$q%")->take(5)->get();
+            $users = User::where('name', 'LIKE', "%$q%")->with('profile')->take(5)->get();
+            $posts = Post::where('content', 'LIKE', "%$q%")->where('status', 'show')->take(5)->get();
         }
-        
         return response()->json([
+            'history' => $histories,
             'topics' => $topics,
-            'users' => $users
+            'users' => $users,
+            'posts' => $posts
         ]);
     }
     /**

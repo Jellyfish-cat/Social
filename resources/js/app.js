@@ -9,7 +9,7 @@ import './modules/post';
 import './modules/like';
 import './modules/comment';
 import './modules/createpost';
-import './modules/editPost';
+import './modules/editpost';
 import './modules/createtopic';
 import './modules/deleteTopic';
 import './modules/indextopic';

@@ -603,8 +603,9 @@ setTimeout(() => {
     }
 }, 3000);
 document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('btn-delete-conversation')) {
-        const btn = e.target;
+
+    const btn = e.target.closest('.btn-delete-conversation');
+       if(btn){
         const postId = btn.dataset.id;
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;

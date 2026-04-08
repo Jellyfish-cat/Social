@@ -20,9 +20,6 @@ return new class extends Migration
 
     $table->string('type'); // image | video
     $table->string('file_path');
-    $table->string('thumbnail')->nullable();
-    $table->integer('duration')->nullable(); // video (seconds)
-
     $table->timestamps();
 });
 

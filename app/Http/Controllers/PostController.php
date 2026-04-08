@@ -148,6 +148,9 @@ class PostController extends Controller
             if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
         abort(403, 'Bạn không có quyền');
     }
+        if (request()->ajax()) {
+            return view('posts.edit', compact('topics', 'post'))->renderSections()['content'];
+        }
         return view('posts.edit', compact('topics', 'post'));
     }
 
@@ -187,8 +190,16 @@ class PostController extends Controller
         }
     }
 
-    return redirect()->route('home')->with('success', 'Cập nhật thành công');
+    if ($request->ajax()) {
+        $post->load(['topics', 'media']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật thành công',
+            'html' => view('posts.post_item', compact('post'))->render()
+        ]);
     }
+    return redirect()->route('home')->with('success', 'Cập nhật thành công');
+}
 
     public function destroy($id)
     {

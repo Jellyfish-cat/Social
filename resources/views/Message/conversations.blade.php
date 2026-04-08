@@ -645,7 +645,7 @@
                 <div class="chat-form">
             <div class="preview-media d-flex gap-2 px-3 py-1 w-100" style="display:none;"></div></div>
         <div class="msg-chat-footer chat-form constantIcon">
-            <input type="file" id="msg-file-input" name="file" hidden accept="image/*,video/*" multiple onchange="previewCommentFiles(this)">
+            <input type="file" id="msg-file-input" name="file" hidden accept="image/*,video/*" multiple onchange="previewMessageFiles(this)">
             <button type="button" class="btn-image btn msg-input-icon constantIcon" title="Gửi ảnh"
                 onclick="event.preventDefault(); document.getElementById('msg-file-input').click();">
                 <i class="bi bi-image fs-5"></i>

@@ -1,18 +1,18 @@
-window.startLoading = function() {
+window.startLoading = function () {
     const bar = document.getElementById("loading-bar");
-    if(bar) bar.style.width = "30%";
-    setTimeout(() => { if(bar) bar.style.width = "60%"; }, 200);
-    setTimeout(() => { if(bar) bar.style.width = "85%"; }, 500);
+    if (bar) bar.style.width = "30%";
+    setTimeout(() => { if (bar) bar.style.width = "60%"; }, 200);
+    setTimeout(() => { if (bar) bar.style.width = "85%"; }, 500);
 }
-window.finishLoading = function() {
+window.finishLoading = function () {
     const bar = document.getElementById("loading-bar");
-    if(bar) bar.style.width = "100%";
+    if (bar) bar.style.width = "100%";
     setTimeout(() => {
-        if(bar) bar.style.width = "0%";
+        if (bar) bar.style.width = "0%";
     }, 300);
 }
 document.addEventListener("DOMContentLoaded", () => {
-    
+
 
     document.querySelectorAll('.video-link').forEach(link => {
         const video = document.createElement('video');
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const video = entry.target;
 
             if (entry.isIntersecting) {
-                video.play().catch(()=>{});
+                video.play().catch(() => { });
             } else {
                 video.pause();
                 video.currentTime = 0;

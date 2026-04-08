@@ -94,11 +94,9 @@
                             </a>
                             <input type="file" class="d-none" id="file" name="file[]" multiple accept="image/*,video/*" onchange="previewEditFiles()">
                         </div>
-
-                       <form id="editPostForm">
-                            <textarea name="content" id="content"></textarea>
-                            <button type="submit">Cập nhật bài viết</button>
-                        </form>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">Cập nhật bài viết</button>
+                        </div>
                     </div>
                 </div>
             </div>

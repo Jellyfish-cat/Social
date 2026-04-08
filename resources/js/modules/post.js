@@ -2,7 +2,7 @@ document.addEventListener("click", function (e) {
     if (window.Fancybox && Fancybox.getInstance()) return;
     const btn = e.target.closest(".open-post");
     if (!btn) return;
-
+    
     const postId = btn.dataset.id;
     if (window.matchMedia("(max-width: 992px)").matches) {
         window.location.href = `/posts/detail/${postId}`;
@@ -96,8 +96,8 @@ window.addEventListener('popstate', function (event) {
     }
 });
 document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('btn-delete')) {
-        const btn = e.target;
+                       const btn = e.target.closest('.btn-delete');
+       if(btn){
         const postId = btn.dataset.id;
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;

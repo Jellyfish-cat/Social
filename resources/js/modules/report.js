@@ -140,12 +140,15 @@ function loadReportPage(type, page) {
 }
 
 document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('btn-delete-report')) {
-        const btn = e.target;
+       const btn = e.target.closest('.btn-delete-report');
+       if(btn){
+        e.stopPropagation();
+        e.preventDefault();
         const postId = btn.dataset.id;
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;
         }
+        
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         fetch(`/reports/destroy/${postId}`, {
             method: 'DELETE',
@@ -186,6 +189,7 @@ document.addEventListener('click', function (e) {
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.btn-check-report');
     if (btn) {
+            e.stopPropagation();
         e.preventDefault(); // In case of 'a' tag
         const postId = btn.dataset.id;
         const action = btn.dataset.action || 'hide';

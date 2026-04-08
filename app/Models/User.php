@@ -76,7 +76,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email,
+            'display_name' => $this->profile->display_name ?? '',
         ];
     }
 }

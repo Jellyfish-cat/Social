@@ -76,6 +76,7 @@
         <button class="text-muted me-4 fav-profile"><i class="bi bi-bookmark"></i> Đã lưu</button>
         <button class="text-muted  like-profile"><i class="bi bi-heart"></i> Yêu thích</button>
             </div>
+            @if(auth::id() === $user->id )
             <div class="card post-card p-3 mb-4">
                 <div class="d-flex align-items-center gap-3">
                     <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
@@ -84,6 +85,7 @@
                     </a>
                 </div>
             </div>
+           @endif
             <div id="post-list">
                 @include('profile.partials.post-list', ['posts' => $posts])
             </div>

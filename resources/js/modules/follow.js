@@ -18,6 +18,11 @@ document.addEventListener("click", function (e) {
                 console.error("Lỗi:", data.message || "Không thể thực hiện follow");
                 return;
             }
+
+            // Xóa cache tìm kiếm để cập nhật lại thứ tự ưu tiên
+            if (typeof window.clearSearchCache === 'function') {
+                window.clearSearchCache();
+            }
             const followCounts = document.querySelectorAll(`.follow-count[data-id="${userId}"]`);
             followCounts.forEach(el => {
                 el.innerText = data.following_count + " đang theo dõi";

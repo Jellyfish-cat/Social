@@ -8,6 +8,8 @@ use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
+use App\Events\NotificationSent;
 
 class ReportController extends Controller
 {
@@ -129,6 +131,23 @@ class ReportController extends Controller
             'reason' => $request->reason,
             'status' => 'pending',
         ]);
+
+        // Thông báo đến role=admin khi có report đến
+        $admins = User::where('role', 'admin')->get();
+        $reporterName = Auth::user()->name ?? 'Người dùng';
+        $targetName = 'nội dung';
+        if ($mapKey === 'post') $targetName = 'bài viết';
+        if ($mapKey === 'comment') $targetName = 'bình luận';
+        if ($mapKey === 'user') $targetName = 'người dùng';
+
+        foreach ($admins as $admin) {
+            $notification = Notification::create([
+                'user_id' => $admin->id,
+                'content' => "<strong>{$reporterName}</strong> đã gửi một báo cáo mới về {$targetName}. report:{$mapKey}:{$request->target_id}",
+                'type' => 'report'
+            ]);
+            broadcast(new NotificationSent($notification))->toOthers();
+        }
 
         return response()->json([
             'success' => true,

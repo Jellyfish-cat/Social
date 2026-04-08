@@ -74,6 +74,29 @@
                             }
                         }
                     }
+                } elseif($notification->type === 'report' && auth()->user()->role === 'admin') {
+                    $icon = 'bi-flag-fill';
+                    $iconColor = 'text-danger';
+                    $displayContent = preg_replace('/report:([a-z]+:)?\d+/', '', $notification->content);
+                    if (str_contains($notification->content, 'report:')) {
+                        preg_match('/report:(?:([a-z]+):)?(\d+)/', $notification->content, $matches);
+                        $type = $matches[1] ?: 'comment';
+                        $targetId = $matches[2] ?? null;
+                        if ($targetId) {
+                            if ($type === 'comment') {
+                                $commentObj = \App\Models\Comment::find($targetId);
+                                if ($commentObj) {
+                                    $href = '#';
+                                    $openPostClass = 'open-post';
+                                    $openPostAttrs = 'data-id="' . $commentObj->post_id . '" data-scroll-comment-id="' . $targetId . '" data-action="reply"';
+                                }
+                            } elseif ($type === 'post') {
+                                $href = route('posts.detail', $targetId);
+                            } elseif ($type === 'user') {
+                                $href = route('profile.detail', $targetId);
+                            }
+                        }
+                    }
                 }
             @endphp
             

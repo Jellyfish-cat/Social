@@ -67,22 +67,7 @@
                     </span>
                 </a>
             </li>
-            @php
-                $globalUnreadNotifications = 0;
-                if(Auth::check()){
-                    $globalUnreadNotifications = auth()->user()->notifications()->where('is_read', false)->count();
-                }
-            @endphp
-            <li class="nav-item">
-                <a href="#" onclick="event.preventDefault(); window.openNoti();" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-                    <i class="bi bi-heart" style="min-width: 40px; text-align: center;"></i>
-                    <span class="nav-text flex-grow-1">Thông báo</span>
-                    <span id="global-noti-badge" class="badge bg-danger rounded-pill {{ $globalUnreadNotifications > 0 ? '' : 'd-none' }}" 
-                          style="font-size: 0.8rem; transition: transform 0.2s ease-in-out;">
-                        {{ $globalUnreadNotifications }}
-                    </span>
-                </a>
-            </li>
+            
         </ul>
         @elseif(auth()->user()?->role === 'admin')
     <ul class="nav nav-pills flex-column mb-auto gap-2">
@@ -147,20 +132,8 @@
             <span class="nav-text">Lịch sử tìm kiếm</span>
         </a>
     </li>
-    {{-- Thông báo hệ thống --}}
-    @php
-        $adminNotifications = auth()->user()->notifications()->where('is_read', false)->count();
-    @endphp
-    <li class="nav-item">
-        <a href="#" 
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
-            <i class="bi bi-bell" style="min-width: 40px; text-align: center;"></i>
-            <span class="nav-text flex-grow-1 ">Thông báo </span>
-            <span class="badge bg-danger rounded-pill {{ $adminNotifications > 0 ? '' : 'd-none' }}">
-                {{ $adminNotifications }}
-            </span>
-        </a>
-    </li>
+
+
     {{-- Báo cáo --}}
     @php
         $totalReports = \App\Models\Report::where('status', 'pending')->count();
@@ -189,11 +162,25 @@
             </span>
         </a>
     </li>
-    
-
 </ul>
         @endif
         </div>
+        <hr>
+            {{-- Thông báo hệ thống --}}
+        @php
+                $globalUnreadNotifications = 0;
+                if(Auth::check()){
+                    $globalUnreadNotifications = auth()->user()->notifications()->where('is_read', false)->count();
+                }
+            @endphp
+                <a href="#" onclick="event.preventDefault(); window.openNoti();" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+                    <i class="bi bi-heart" style="min-width: 40px; text-align: center;"></i>
+                    <span class="nav-text flex-grow-1">Thông báo</span>
+                    <span id="global-noti-badge" class="badge bg-danger rounded-pill {{ $globalUnreadNotifications > 0 ? '' : 'd-none' }}" 
+                          style="font-size: 0.8rem; transition: transform 0.2s ease-in-out;">
+                        {{ $globalUnreadNotifications }}
+                    </span>
+                </a>
         <hr>
         <!-- Profile -->
         <div class="dropdown">
@@ -234,13 +221,13 @@
             </div>
             
         </nav>
-            <div id="suggestions" class="list-group mt-1 rounded-5 mt-2 mx-auto " style="width:1020px"></div>
+            <div id="suggestions" class="list-group mt-1 rounded-5 mt-2 mx-auto " style=" overscroll-behavior: contain; width:1020px; max-height: 400px; overflow-y: auto; "></div>
     </div>
 </form>
 
         <div class="container-fluid">
             <div class="row justify-content-center">
-                <div class="col-12 col-lg-10 col-xl-9"> 
+                <div id="content-area" class="col-12 col-lg-10 col-xl-9"> 
                      @yield('content')
                 </div>
             </div>
@@ -273,6 +260,16 @@
         <div class="modal-content">
             <div class="modal-body p-0" id="reportContent">
                 <!-- Nội dung chi tiết report sẽ load vào đây -->
+            </div>
+        </div>
+    </div>
+</div> 
+<!-- Modal chỉnh sửa bài viết -->
+<div class="modal fade back-to" id="editPostModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1290px;">
+        <div class="modal-content">
+            <div class="modal-body p-0" id="editPostContent">
+                <!-- Nội dung edit post sẽ load vào đây -->
             </div>
         </div>
     </div>

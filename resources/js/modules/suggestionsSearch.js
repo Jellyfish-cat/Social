@@ -1,50 +1,37 @@
-let cacheSearch = {}; // Bộ nhớ đệm (Cache) lưu kết quả đã tìm
-let searchTimeout = null; // Biến đánh dấu bộ đếm giờ (Debounce)
-// Dùng class thay vì ID
-const inputSearch = document.querySelector(".search-input");
-// DÙNG QUERYSELECTOR thay vì querySelectorAll để có thể nhét innerHTML
-const suggestionsContainer = document.querySelector(".search-wrapper #suggestions");
-if (inputSearch && suggestionsContainer) {
-    // 1. NGHE SỰ KIỆN GÕ PHÍM
-    inputSearch.addEventListener("input", () => {
-        let q = inputSearch.value.trim().toLowerCase();
-        // Xóa lệnh tìm kiếm cũ nếu người dùng vẫn đang gõ liên tục
-        clearTimeout(searchTimeout);
-        // Giấu bảng nếu người dùng xóa trắng thanh tìm kiếm
-        if (!q) {
-            suggestionsContainer.innerHTML = "";
-            suggestionsContainer.style.display = 'none';
-            return;
-        }
+let cacheSearch = {};
+let searchTimeout = null;
 
-        // 2. DEBOUNCE - CHỜ 300ms SAU KHI DỪNG GÕ MỚI GỌI API
-        searchTimeout = setTimeout(async () => {
+// Hàm để các module khác (như Follow) có thể xóa cache khi dữ liệu thay đổi
+window.clearSearchCache = function () {
+    cacheSearch = {};
+};
 
-            // 3. CACHE: Kiểm tra xem từ gõ này đã từng tìm chưa?
-            if (cacheSearch[q]) {
-                renderSuggestions(cacheSearch[q]); // Nhả luôn kết quả lưu trong RAM, không gọi rườm rà
+document.addEventListener("click", function (e) {
+    const inputSearch = document.querySelector(".search-input");
+    const suggestionsContainer = document.querySelector(".search-wrapper #suggestions");
+
+    if (inputSearch && suggestionsContainer) {
+        // Hàm gọi API và vẽ kết quả
+        const fetchSuggestions = async (q = "") => {
+            if (q && cacheSearch[q]) {
+                renderSuggestions(cacheSearch[q]);
                 return;
             }
 
-            // Hiển thị vòng xoay trạng thái đang tìm (Loading mượt mà)
             suggestionsContainer.innerHTML = `
                 <div class="list-group-item text-center text-muted py-3 border-0">
                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div> 
-                    <span class="ms-2">Đang tìm...</span>
+                    <span class="ms-2">Đang tải...</span>
                 </div>
             `;
             suggestionsContainer.style.display = 'block';
 
-            // 4. GỌI API TÍCH HỢP TRY-CATCH XỬ LÝ LỖI
             try {
-                let res = await fetch(`/search/suggestions?q=${q}`);
-                if (!res.ok) throw new Error("Mạng lỗi !");
+                let res = await fetch(`/search/suggestions?q=${encodeURIComponent(q)}`);
+                if (!res.ok) throw new Error("Mạng lỗi!");
                 let data = await res.json();
-                // Lưu thành qủa vào bộ nhớ đệm (Cache) để xài cho lần sau
-                cacheSearch[q] = data;
-                // Vẽ nội dung
+                if (q) cacheSearch[q] = data;
                 renderSuggestions(data);
-
             } catch (error) {
                 console.error("Lỗi hệ thống Search:", error);
                 suggestionsContainer.innerHTML = `
@@ -53,86 +40,176 @@ if (inputSearch && suggestionsContainer) {
                     </div>
                 `;
             }
-        }, 300); // Con số 300 lý tưởng: Tức là ngưng gõ 0.3 giây máy tự động search
-    });
+        };
 
-    // 5. TÍNH NĂNG ĐÓNG BẢNG: Khi click chuột nhầm ra ngoài khoảng trắng
-    document.addEventListener("click", function (event) {
-        // Nếu click không nằm trong thanh input và cũng không nằm trong cái bảng gợi ý
-        if (!inputSearch.contains(event.target) && !suggestionsContainer.contains(event.target)) {
-            suggestionsContainer.style.display = 'none';
-        }
-    });
+        // 1. Lắng nghe khi gõ phím
+        inputSearch.addEventListener("input", () => {
+            let q = inputSearch.value.trim().toLowerCase();
+            clearTimeout(searchTimeout);
 
-    // TÍNH NĂNG MỞ BẢNG LẠI: Khi người dùng click lại vào thanh tìm kiếm và trong đó đang có sẵn chữ
-    inputSearch.addEventListener("focus", function () {
-        if (inputSearch.value.trim() !== "" && suggestionsContainer.innerHTML.trim() !== "") {
+            if (!q) {
+                fetchSuggestions("");
+                return;
+            }
+
+            searchTimeout = setTimeout(() => fetchSuggestions(q), 300);
+        });
+
+        // 2. Lắng nghe khi focus vào ô tìm kiếm
+        inputSearch.addEventListener("focus", () => {
+            let q = inputSearch.value.trim().toLowerCase();
+            fetchSuggestions(q);
+        });
+
+        // 3. Đóng bảng khi click ra ngoài
+        document.addEventListener("click", function (event) {
+            if (!inputSearch.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        // 4. Xử lý xóa lịch sử tìm kiếm (Event Delegation)
+        suggestionsContainer.addEventListener("click", async function (event) {
+            const deleteBtn = event.target.closest(".btn-delete-search");
+            if (deleteBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const id = deleteBtn.getAttribute("data-id");
+                try {
+                    const response = await fetch(`/search/destroy/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (response.ok) {
+                        // Xóa sạch cache để đảm bảo lần sau lấy dữ liệu mới
+                        cacheSearch = {};
+                        // Cập nhật lại danh sách gợi ý
+                        let q = inputSearch.value.trim().toLowerCase();
+                        fetchSuggestions(q);
+                    } else {
+                        console.error("Xóa thất bại");
+                    }
+                } catch (error) {
+                    console.error("Lỗi xóa history:", error);
+                }
+            }
+        });
+    }
+
+    function renderSuggestions(data) {
+        const hasHistory = data.history && data.history.length > 0;
+        const hasTopics = data.topics && data.topics.length > 0;
+        const hasUsers = data.users && data.users.length > 0;
+        const hasPosts = data.posts && data.posts.length > 0;
+
+        if (!hasHistory && !hasTopics && !hasUsers && !hasPosts) {
+            suggestionsContainer.innerHTML = `
+                <div class="list-group-item text-center text-muted border-0">
+                    Không có gợi ý nào.
+                </div>
+            `;
             suggestionsContainer.style.display = 'block';
+            return;
         }
-    });
-}
 
-// Hàm hỗ trợ vẽ HTML (Tách riêng hàm cho dễ quản lý)
-function renderSuggestions(data) {
-    const hasTopics = data.topics && data.topics.length > 0;
-    const hasUsers = data.users && data.users.length > 0;
+        let html = '';
 
-    if (!hasTopics && !hasUsers) {
-        suggestionsContainer.innerHTML = `
-            <div class="list-group-item text-center text-muted border-0">
-                Không tìm thấy dữ liệu nào phù hợp.
-            </div>
-        `;
+        // 1. Gợi ý (Người dùng + Bài viết) - Đưa lên trên cùng
+        let suggestions = [];
+        // thêm users
+        if (hasUsers) {
+            data.users.forEach(u => {
+                const dName = (u.profile && u.profile.display_name) ? u.profile.display_name : (u.display_name || "");
+                const displayText = dName ? `${dName} (@${u.name})` : u.name;
+                suggestions.push({
+                    type: 'user',
+                    text: displayText,
+                    action: `selectSearchItem(null, '${u.name.replace(/'/g, "\\'")}')`
+                });
+            });
+        }
+
+        // thêm posts
+        if (hasPosts) {
+            data.posts.forEach(p => {
+                let contentSnippet = p.content ? p.content.substring(0, 50) + "..." : "Bài viết";
+                suggestions.push({
+                    type: 'post',
+                    text: contentSnippet,
+                    action: `window.location.href='/posts/detail/${p.id}'`
+                });
+            });
+        }
+        if (suggestions.length > 0) {
+            html += `<div class="list-group-item disabled bg-light fw-bold py-1 small text-uppercase">Gợi ý</div>`;
+
+            suggestions.forEach(item => {
+                html += `
+                    <button type="button"
+                        class="list-group-item list-group-item-action d-flex align-items-center border-0"
+                        onclick="${item.action}">
+                        
+                        <i class="bi bi-search me-3 text-muted"></i>
+                        <span class="text-truncate">${item.text}</span>
+
+                    </button>
+                `;
+            });
+        }
+        // 2. Chủ đề
+        if (hasTopics) {
+            html += `<div class="list-group-item disabled bg-light fw-bold py-1 mt-2 small text-uppercase">Chủ đề</div>`;
+            data.topics.forEach(t => {
+                html += `
+                    <button type="button" class="list-group-item list-group-item-action d-flex align-items-center border-0"
+                        onclick="selectSearchItem(null, '${t.name.replace(/'/g, "\\'")}')">
+                        <div class="bg-light rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width:30px;height:30px">
+                             <i class="bi bi-hash text-primary"></i>
+                        </div>
+                        <span class="fw-semibold">${t.name}</span>
+                    </button>
+                `;
+            });
+        }
+
+        // 3. Lịch sử tìm kiếm (Dưới cùng)
+        if (hasHistory) {
+            html += `<div class="list-group-item disabled bg-light fw-bold py-1 mt-2 small text-uppercase">Tìm kiếm gần đây</div>`;
+            data.history.forEach(item => {
+                const id = item.id;
+                const keyword = item.keyword;
+                html += `
+                    <div class="list-group-item list-group-item-action d-flex align-items-center justify-content-between border-0">
+                    <div class="d-flex align-items-center flex-grow-1"
+                        onclick="selectSearchItem(null, '${keyword.replace(/'/g, "\\'")}')"
+                        style="cursor: pointer;">
+                        <i class="bi bi-clock-history me-3 text-muted"></i>
+                        <span class="text-truncate">${keyword}</span>
+                    </div>
+                    <a class="btn btn-sm btn-delete-search ms-2 text-muted"
+                    data-id="${id}"
+                    style="font-size: 18px; line-height: 1; cursor: pointer;">
+                        &times;
+                    </a>
+                </div>
+                `;
+            });
+        }
+
+        suggestionsContainer.innerHTML = html;
         suggestionsContainer.style.display = 'block';
-        return;
     }
 
-    let html = '';
-
-    // 1. Vẽ phần Chủ đề (Topics)
-    if (hasTopics) {
-        html += `<div class="list-group-item disabled bg-light fw-bold py-1 small text-uppercase">Chủ đề</div>`;
-        data.topics.forEach(t => {
-            html += `
-                <button type="button" class="list-group-item list-group-item-action d-flex align-items-center border-0"
-                    onclick="selectSearchItem(null, '${t.name}')">
-                    <div class="bg-light rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width:30px;height:30px">
-                         <i class="bi bi-hash text-primary"></i>
-                    </div>
-                    <span class="fw-semibold">${t.name}</span>
-                </button>
-            `;
-        });
+    window.selectSearchItem = function (id, keyword) {
+        const inputSearch = document.querySelector(".search-input");
+        const suggestionsContainer = document.querySelector(".search-wrapper #suggestions");
+        if (inputSearch) inputSearch.value = keyword;
+        if (suggestionsContainer) suggestionsContainer.style.display = 'none';
+        const form = document.querySelector(".search-wrapper.search-form");
+        if (form) form.submit();
     }
-
-    // 2. Vẽ phần Người dùng (Users)
-    if (hasUsers) {
-        html += `<div class="list-group-item disabled bg-light fw-bold py-1 mt-2 small text-uppercase">Người dùng</div>`;
-        data.users.forEach(u => {
-            html += `
-                <button type="button" class="list-group-item list-group-item-action d-flex align-items-center border-0"
-                    onclick="selectSearchItem(null, '${u.name}')">
-                    <div class="bg-light rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width:30px;height:30px">
-                         <i class="bi bi-person text-success"></i>
-                    </div>
-                    <span class="fw-semibold">${u.name}</span>
-                </button>
-            `;
-        });
-    }
-
-    suggestionsContainer.innerHTML = html;
-    suggestionsContainer.style.display = 'block';
-}
-
-// 6. TÍNH NĂNG CHỌN KẾT QUẢ (Xử lý khi người dùng Click vào gợi ý)
-window.selectSearchItem = function (id, keyword) {
-    // Phục hồi và điền tên vừa chọn lên thanh input cho đẹp
-    inputSearch.value = keyword;
-
-    // Đóng bảng gợi ý
-    suggestionsContainer.style.display = 'none';
-
-    // Tùy nhu cầu của bạn, VD tự động chuyển hướng sang trang tìm kiếm người ta vừa bấm vào:
-    // window.location.href = `/search?q=` + encodeURIComponent(keyword);
-}
+});

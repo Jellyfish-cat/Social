@@ -3,7 +3,7 @@
 window.msgSelectedFiles = [];
 
 // Xóa 1 ảnh theo index
-window.deleteCommentMedia = function (index) {
+window.deleteMessageMedia = function (index) {
     window.msgSelectedFiles.splice(index, 1);
     renderAllPreviews();
 };
@@ -13,9 +13,7 @@ function renderAllPreviews() {
     const previewContainer = document.querySelector('.chat-form .preview-media');
     if (!previewContainer) return;
     previewContainer.innerHTML = '';
-
     if (window.msgSelectedFiles.length === 0) return;
-
     window.msgSelectedFiles.forEach((file, i) => {
         const url = URL.createObjectURL(file);
         let mediaHtml = '';
@@ -28,7 +26,7 @@ function renderAllPreviews() {
             <div class="position-relative d-inline-block">
                 ${mediaHtml}
                 <button type="button"
-                    onclick="deleteCommentMedia(${i})"
+                    onclick="deleteMessageMedia(${i})"
                     class="btn btn-sm btn-danger position-absolute top-0 end-0 rounded-circle"
                     style="width:20px;height:20px;padding:0;line-height:1;font-size:11px;">
                     <i class="bi bi-x"></i>
@@ -39,7 +37,7 @@ function renderAllPreviews() {
 }
 
 // Chọn file → thêm vào mảng và preview
-window.previewCommentFiles = function (input) {
+window.previewMessageFiles = function (input) {
     const files = Array.from(input.files);
     if (!files.length) return;
 
@@ -63,8 +61,8 @@ window.previewCommentFiles = function (input) {
 };
 
 document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('btn-delete-message')) {
-        const btn = e.target;
+                       const btn = e.target.closest('.btn-delete-message');
+       if(btn){
         const postId = btn.dataset.id;
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;

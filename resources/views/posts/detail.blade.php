@@ -225,7 +225,7 @@
                             @endif
                             @if($reply->user->id !== Auth::id())
                             <li><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item small text-danger open-report" data-type="comment" data-id="{{ $comment->id }}">Báo cáo</button></li>
+                            <li><button class="dropdown-item small text-danger open-report" data-type="comment" data-id="{{ $reply->id }}">Báo cáo</button></li>
                             @endif
                         </ul>
                     </div>
@@ -253,8 +253,8 @@
                 </button>
                 {{-- Reply button --}}
                 <button class="btn-reply " style="font-size:13px;"
-                    data-comment-id="{{ $reply->parent_comment_id }}"
-                    data-username="{{ $reply->user->profile->display_name }}"  
+                    data-comment-id="{{ $reply->id }}"  
+                    data-username="{{ $reply->user->profile->display_name }}"
                     data-post-id="{{ $post->id }}">
                     Trả lời
                 </button>

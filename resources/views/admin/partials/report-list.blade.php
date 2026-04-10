@@ -24,7 +24,7 @@
             </thead>
             <tbody>
             @forelse($values as $value)
-            <tr class="report-item">
+            <tr class="{{$item}}">
                 <td class="text-center">
                     {{ $loop->iteration + ($values->currentPage() - 1) * $values->perPage() }}
                 </td>
@@ -109,7 +109,7 @@
                                     </ul>
                                 </div>
                             @else
-                             <button class="btn btn-danger btn-sm btn-delete-report" data-id="{{ $value->id }}" title="Xóa báo cáo">
+                             <button class="btn btn-danger btn-sm {{$delete}}" data-id="{{ $tab === 'pending' ? $value->id : $value->target_id }}" title="Xóa {{ $tab === 'pending' ? 'báo cáo' : 'nội dung' }}">
                             <i class="bi bi-trash"></i>
                         </button>
                                 <button class="btn btn-success btn-sm btn-check-report" data-id="{{ $value->id }}" data-action="restore" title="Khôi phục trạng thái chờ duyệt báo cáo">

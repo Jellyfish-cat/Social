@@ -120,6 +120,13 @@ body{
             <hr>
         </div>
 
+        <div class="mb-3">
+            <a href="{{ route('google.login') }}" style="text-decoration: none; display: flex; align-items: center; justify-content: center; color: #385185; font-weight: 600; font-size: 14px;">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="18" class="me-2">
+                Đăng nhập bằng Google
+            </a>
+        </div>
+
         @if (Route::has('password.request'))
         <div class="text-center">
             <a href="{{ route('password.request') }}" class="text-sm text-blue-500">
@@ -141,7 +148,6 @@ body{
         </a>
 
     </div>
-
 </div>
 
 </x-guest-layout>

@@ -1,76 +1,77 @@
- document.addEventListener("input", function(e) {
-            if (e.target.classList.contains("comment-textarea")) {
-                e.target.style.height = "auto";
-                e.target.style.height = e.target.scrollHeight + "px";
-            }
-        });
-        //json gửi comment post
-                document.addEventListener("click", function(e){
-                const button = e.target.closest(".comment-submit");
-                if(!button) return;
-                e.preventDefault();
-                const postId = button.dataset.postId;
-                const sendIcons = document.querySelectorAll(`.comment-submit[data-post-id="${postId}"] i`);
-                 const NoComent = document.querySelector(`.comment-box[data-post-id="${postId}"] .no-comment`);
-                const form = button.closest(".comment-form");
-                const input = form.querySelector(".comment-textarea");
-                const parentInput = input.closest("form").querySelector(".parent-id");
-                const parentId = parentInput.value;
-                if(!input) return;
-                if(!input.value.trim()){
-                    input.setCustomValidity("Hãy nhập nội dung bình luận!");
-                    input.reportValidity();
-                    return; 
-                }
-                const content = input.value.trim();
-                if (!content) return;
-                button.disabled = true;
-                const fileInput = form.querySelector("input[type='file']");
-                const formData = new FormData();
-                formData.append("content", content);
-                formData.append("parent_id", parentId);
+document.addEventListener("input", function (e) {
+    if (e.target.classList.contains("comment-textarea")) {
+        e.target.style.height = "auto";
+        e.target.style.height = e.target.scrollHeight + "px";
+    }
+});
+//json gửi comment post
+document.addEventListener("click", function (e) {
+    const button = e.target.closest(".comment-submit");
+    if (!button) return;
+    e.preventDefault();
+    const postId = button.dataset.postId;
+    const sendIcons = document.querySelectorAll(`.comment-submit[data-post-id="${postId}"] i`);
+    const NoComent = document.querySelector(`.comment-box[data-post-id="${postId}"] .no-comment`);
+    const form = button.closest(".comment-form");
+    const input = form.querySelector(".comment-textarea");
+    const parentInput = input.closest("form").querySelector(".parent-id");
+    const parentId = parentInput.value;
+    if (!input) return;
+    if (!input.value.trim()) {
+        input.setCustomValidity("Hãy nhập nội dung bình luận!");
+        input.reportValidity();
+        return;
+    }
+    const content = input.value.trim();
+    if (!content) return;
+    button.disabled = true;
+    const fileInput = form.querySelector("input[type='file']");
+    const formData = new FormData();
+    formData.append("content", content);
+    formData.append("parent_id", parentId);
 
-                // 👉 THÊM FILE
-                if(fileInput && fileInput.files.length > 0){
-                    formData.append("file", fileInput.files[0]);
-                }
-                startLoading();
-                fetch(`/comments/create/${postId}`, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: formData
-})
-                .then(res => res.json())
-                .then(data => {console.log(data);
-                    if (data.success) {
-                            sendIcons.forEach(icon=>{
-                                icon.classList.remove("any-pop"); 
-                                void icon.offsetWidth; // reset animation
-                                icon.classList.add("any-pop");
-                            });
-                        const avatar = data.avatar
-                            ? `/storage/${data.avatar}`
-                            : "https://i.pravatar.cc/150";
-                        const CommentCounts = document.querySelectorAll(`.comment-count[data-post-id="${postId}"]`); //tăng lượt comment hiện thị trên 2 trang
-                            CommentCounts.forEach(el => {
-                                el.innerText = data.comment_count + " Bình luận";
-                            });
-                            let mediaHtml = "";
-                            if (data.media_path) {
-                                const url = `/storage/${data.media_path}`;
-                                if (data.is_image) {
-                                    mediaHtml = `
+    // 👉 THÊM FILE
+    if (fileInput && fileInput.files.length > 0) {
+        formData.append("file", fileInput.files[0]);
+    }
+    startLoading();
+    fetch(`/comments/create/${postId}`, {
+        method: "POST",
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: formData
+    })
+        .then(res => res.json())
+        .then(data => {
+            console.log(data);
+            if (data.success) {
+                sendIcons.forEach(icon => {
+                    icon.classList.remove("any-pop");
+                    void icon.offsetWidth; // reset animation
+                    icon.classList.add("any-pop");
+                });
+                const avatar = data.avatar
+                    ? `/storage/${data.avatar}`
+                    : "https://i.pravatar.cc/150";
+                const CommentCounts = document.querySelectorAll(`.comment-count[data-post-id="${postId}"]`); //tăng lượt comment hiện thị trên 2 trang
+                CommentCounts.forEach(el => {
+                    el.innerText = data.comment_count + " Bình luận";
+                });
+                let mediaHtml = "";
+                if (data.media_path) {
+                    const url = `/storage/${data.media_path}`;
+                    if (data.is_image) {
+                        mediaHtml = `
                                         <div class="mt-1 comment-media">
                                             <a href="${url}" data-fancybox="gallery-${data.comment_id}">
                                                 <img src="${url}" width="100" class="rounded">
                                             </a>
                                         </div>
                                     `;
-                                } 
-                                else if (data.is_video) {
-                                    mediaHtml = `
+                    }
+                    else if (data.is_video) {
+                        mediaHtml = `
                                         <div class="mt-1 comment-media">
                                             <a href="${url}" data-fancybox="gallery-${data.comment_id}" data-type="video">
                                                 <video width="260" controls class="rounded">
@@ -79,9 +80,9 @@
                                             </a>
                                         </div>
                                     `;
-                                }
-                            }
-                        const commentHtml = `
+                    }
+                }
+                const commentHtml = `
                         <div class="comment-item d-flex mt-2" data-comment-id="${data.comment_id}">
                             <img src="${avatar}"
                             class="rounded-circle me-2">
@@ -104,7 +105,7 @@
                             ${data.like_count} lượt thích
                         </button>
                         <button class="btn-reply" style="font-size:13px;"
-                            data-comment-id="${parentId || data.comment_id}"
+                            data-comment-id="${data.comment_id}"
                             data-username="${data.user_name}"
                             data-post-id="${postId}">
                             Trả lời
@@ -129,20 +130,20 @@
                         </div>
                         </div>
                         `;
-                if(!parentId){
+                if (!parentId) {
                     const commentBox = document.querySelector(
                         `.comment-box[data-post-id="${postId}"]`
                     );
                     commentBox.insertAdjacentHTML("afterbegin", commentHtml);
-                }else{
-                   let replyList = document.querySelector(`#reply-${parentId}`);
-                    if(replyList){
+                } else {
+                    let replyList = document.querySelector(`#reply-${parentId}`);
+                    if (replyList) {
                         replyList.classList.remove("d-none");
-                    }else{
+                    } else {
                         const parentComment = document.querySelector(
                             `.comment-item[data-comment-id="${parentId}"] .w-100`
                         );
-                        if(parentComment){
+                        if (parentComment) {
                             parentComment.insertAdjacentHTML(
                                 "beforeend",
                                 `<div class="view-replies text-black small mt-1 mb-2" style="cursor:pointer" data-comment-id="${parentId}">
@@ -153,10 +154,10 @@
                             replyList = document.querySelector(`#reply-${parentId}`);
                         }
                     }
-                    if(replyList){
+                    if (replyList) {
                         replyList.insertAdjacentHTML("afterbegin", commentHtml);
                     }
-                    const replyBox = document.getElementById("reply-"+parentId);
+                    const replyBox = document.getElementById("reply-" + parentId);
                     const btn = document.querySelector(`.view-replies`);
                     btn.innerHTML = '&mdash;&ndash; Ẩn phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
                     replyBox.appendChild(btn);
@@ -172,27 +173,27 @@
                 fileInput.value = "";
                 // clear preview UI đúng form
                 const previewContainer = form.querySelector('.preview-media');
-                if(previewContainer){
+                if (previewContainer) {
                     previewContainer.innerHTML = '';
                 }
             }
             button.disabled = false;
             parentInput.value = null;
         })
-        
+
         .catch(() => {
-        button.disabled = false;
-    })
-    .finally(() => {
-        finishLoading();
-    });
-        
-    });
-    
-    //hủy bình luận
-    document.addEventListener("click", function(e){
+            button.disabled = false;
+        })
+        .finally(() => {
+            finishLoading();
+        });
+
+});
+
+//hủy bình luận
+document.addEventListener("click", function (e) {
     const btn = e.target.closest(".btn-cancel-comment");
-    if(!btn) return;
+    if (!btn) return;
     const form = btn.closest(".comment-form");
     const textarea = form.querySelector(".comment-textarea");
     const parentInput = form.querySelector(".parent-id");
@@ -201,122 +202,122 @@
     parentInput.value = "";
 });
 
-    //js reply
-    document.addEventListener("click", function(e){
+//js reply
+document.addEventListener("click", function (e) {
 
-        const btn = e.target.closest(".btn-reply");
-        if(!btn) return;
-        const username = btn.dataset.username;
-        const commentId = btn.dataset.commentId;
-        const parentId = btn.dataset.Parent_
-        const postId = btn.dataset.postId;
-        // Tìm container gần nhất: modal detail hoặc post card trên home
-        const container = btn.closest('.post-modal, .card.post-card, #postDetailContent, #postDetailModal');
-    
-        // Tìm textarea TRONG container đó thay vì toàn document
-        const textarea = container
+    const btn = e.target.closest(".btn-reply");
+    if (!btn) return;
+    const username = btn.dataset.username;
+    const commentId = btn.dataset.commentId;
+    const parentId = btn.dataset.Parent_
+    const postId = btn.dataset.postId;
+    // Tìm container gần nhất: modal detail hoặc post card trên home
+    const container = btn.closest('.post-modal, .card.post-card, #postDetailContent, #postDetailModal');
+
+    // Tìm textarea TRONG container đó thay vì toàn document
+    const textarea = container
         ? container.querySelector(`.comment-textarea[data-post-id="${postId}"]`)
         : document.querySelector(`.comment-textarea[data-post-id="${postId}"]`);
-        if(!textarea) return;
-        const parentInput = textarea.closest("form").querySelector(".parent-id");
-        textarea.value = `@${username} `;
-        parentInput.value = commentId;
-        textarea.focus();
-        textarea.scrollIntoView({
-            behavior:"smooth",
-            block:"center"
+    if (!textarea) return;
+    const parentInput = textarea.closest("form").querySelector(".parent-id");
+    textarea.value = `@${username} `;
+    parentInput.value = commentId;
+    textarea.focus();
+    textarea.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+});
+//xem comment phản hồi
+document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".view-replies");
+    if (!btn) return;
+
+    const id = btn.dataset.commentId;
+    const replyBox = document.getElementById("reply-" + id);
+    replyBox.classList.toggle("d-none");
+    if (replyBox.classList.contains("d-none")) {
+        const count = replyBox.querySelectorAll(".comment-item").length;
+        btn.innerHTML = '&mdash;&ndash; Xem ' + count + ' phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
+        replyBox.before(btn);
+        btn.closest(".comment-item").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
         });
 
-    });
-    //xem comment phản hồi
-    document.addEventListener("click", function(e){
-        const btn = e.target.closest(".view-replies");
-        if(!btn) return;
-   
-        const id = btn.dataset.commentId;
-        const replyBox = document.getElementById("reply-"+id);
-        replyBox.classList.toggle("d-none");
-        if(replyBox.classList.contains("d-none")){
-            const count = replyBox.querySelectorAll(".comment-item").length;
-            btn.innerHTML = '&mdash;&ndash; Xem ' + count + ' phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
-             replyBox.before(btn);
-              btn.closest(".comment-item").scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
+    } else {
+        btn.innerHTML = '&mdash;&ndash; Ẩn phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
+        replyBox.appendChild(btn);
+    }
 
-        }else{
-            btn.innerHTML = '&mdash;&ndash; Ẩn phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
-             replyBox.appendChild(btn);
+});
+//like comment
+document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".btn-comment-like");
+    if (!btn) return;
+    const commentId = btn.dataset.commentId;
+    const likeIcons = document.querySelectorAll(`.btn-comment-like[data-comment-id="${commentId}"] i`);
+    startLoading();
+    fetch(`/comment/like/${commentId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
         }
-
-    });
-    //like comment
-        document.addEventListener("click", function(e){
-        const btn = e.target.closest(".btn-comment-like");
-        if(!btn) return;
-        const commentId = btn.dataset.commentId;
-        const likeIcons = document.querySelectorAll(`.btn-comment-like[data-comment-id="${commentId}"] i`);
-        startLoading();
-        fetch(`/comment/like/${commentId}`, {
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json",
-                "X-CSRF-TOKEN":document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(res=>res.json())
-        .then(data=>{
-            if(data.success){
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
                 const likeCounts = document.querySelectorAll(`.like-comment-count[data-comment-id="${commentId}"]`); //tăng lượt thích hiện thị trên 2 trang
-                    likeCounts.forEach(el => {
-                        el.innerText = data.likeComment_count + " lượt thích";
-                    });
-                    likeIcons.forEach(icon=>{
-                    icon.classList.remove("any-pop"); 
+                likeCounts.forEach(el => {
+                    el.innerText = data.likeComment_count + " lượt thích";
+                });
+                likeIcons.forEach(icon => {
+                    icon.classList.remove("any-pop");
                     void icon.offsetWidth; // reset animation
                     icon.classList.add("any-pop");
                 });
                 //đổi màu tim thành đỏ
                 likeIcons.forEach(icon => {
-                icon.classList.toggle("text-danger");
-                if(icon.classList.contains("text-danger")){
-                    icon.classList.replace("bi-heart","bi-heart-fill");
-                }else{
-                    icon.classList.replace("bi-heart-fill","bi-heart");
-                }
-                            icon.classList.remove("any-pop"); 
-                void icon.offsetWidth; // reset animation
-                icon.classList.add("any-pop");
+                    icon.classList.toggle("text-danger");
+                    if (icon.classList.contains("text-danger")) {
+                        icon.classList.replace("bi-heart", "bi-heart-fill");
+                    } else {
+                        icon.classList.replace("bi-heart-fill", "bi-heart");
+                    }
+                    icon.classList.remove("any-pop");
+                    void icon.offsetWidth; // reset animation
+                    icon.classList.add("any-pop");
                 });
             }
         })
-            .finally(() => {
-        finishLoading();
-    });
-    });
-    //comment ảnh
-    let commentFile = null;
-    // xóa ảnh
-    window.deleteCommentMedia = function() {
-        if (!confirm('Bạn có chắc muốn xóa tệp này?')) return;
-        commentFile = null;
-        renderCommentPreview();
-    }
-    // render preview
-    function renderCommentPreview() {
-        const previewContainer = document.querySelector('.preview-media');
-        previewContainer.innerHTML = '';
-        if (!commentFile) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            let mediaHtml = '';
-            if (commentFile.type.includes('image')) {
-                mediaHtml = `<img src="${e.target.result}" width="80" class="rounded">`;
-            } else if (commentFile.type.includes('video')) {
-                mediaHtml = `<video src="${e.target.result}" width="80" controls></video>`;
-            }
-            previewContainer.innerHTML = `
+        .finally(() => {
+            finishLoading();
+        });
+});
+//comment ảnh
+let commentFile = null;
+// xóa ảnh
+window.deleteCommentMedia = function () {
+    if (!confirm('Bạn có chắc muốn xóa tệp này?')) return;
+    commentFile = null;
+    renderCommentPreview();
+}
+// render preview
+function renderCommentPreview() {
+    const previewContainer = document.querySelector('.preview-media');
+    previewContainer.innerHTML = '';
+    if (!commentFile) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        let mediaHtml = '';
+        if (commentFile.type.includes('image')) {
+            mediaHtml = `<img src="${e.target.result}" width="80" class="rounded">`;
+        } else if (commentFile.type.includes('video')) {
+            mediaHtml = `<video src="${e.target.result}" width="80" controls></video>`;
+        }
+        previewContainer.innerHTML = `
                 <div class="position-relative">
                     ${mediaHtml}
                     <button type="button"
@@ -326,20 +327,20 @@
                     </button>
                 </div>
             `;
-        }
-        reader.readAsDataURL(commentFile);
     }
-    // chọn file (ghi đè luôn)
-    window.previewCommentFiles = function(input) {
+    reader.readAsDataURL(commentFile);
+}
+// chọn file (ghi đè luôn)
+window.previewCommentFiles = function (input) {
     const previewContainer = input.closest(".comment-form").querySelector(".preview-media");
     previewContainer.innerHTML = '';
     const file = input.files[0];
-    if(!file) return;
+    if (!file) return;
     commentFile = file; //shoc
     const reader = new FileReader();
-    reader.onload = function(e){
+    reader.onload = function (e) {
         if (file.type.includes('image')) {
-        previewContainer.innerHTML = `
+            previewContainer.innerHTML = `
             <div class="position-relative">
                 <img src="${e.target.result}" width="150" class="rounded">
                 <button type="button"
@@ -349,8 +350,8 @@
                 </button>
             </div>
         `;
-    } else if (file.type.includes('video')) {
-        previewContainer.innerHTML = `
+        } else if (file.type.includes('video')) {
+            previewContainer.innerHTML = `
             <div class="position-relative">
                 <video src="${e.target.result}" width="200" controls class="rounded"></video>
                <button type="button"
@@ -360,10 +361,10 @@
                 </button>
             </div>
         `;
-    }
+        }
     }
     reader.readAsDataURL(file);
-    }
+}
 document.addEventListener("click", function (e) {
     const btn = e.target.closest(".btn-delete-comment");
     if (!btn) return;

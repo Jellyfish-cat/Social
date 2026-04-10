@@ -45,6 +45,20 @@ const userId = document.querySelector('meta[name="auth-user-id"]')?.getAttribute
 if (userId && window.Echo) {
     window.Echo.private(`notifications.${userId}`)
         .listen('NotificationSent', (e) => {
+            if (e.type === 'account_locked') {
+                const message = (e.content || '').replace(/<[^>]*>/g, '');
+                alert(message);
+                fetch('/logout', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                }).finally(() => {
+                    window.location.href = '/login';
+                });
+                return;
+            }
+
             const badge = document.getElementById('global-noti-badge');
             const notidot = document.getElementById('noti-dot');
             if (badge) {

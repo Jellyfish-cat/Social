@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Report;  
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -81,6 +82,7 @@ class UserController extends Controller
             ], 404);
         }
 
+        Report::where('target_id', $id)->where('target_type', User::class)->delete();
         $users->delete();
         $userslist = User::latest()->get();
         return response()->json([

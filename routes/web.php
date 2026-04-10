@@ -86,7 +86,7 @@ Route::middleware('auth')->group(function () {
 });
 Route::middleware('auth')->group(function () {
 
-    Route::get('/profile/setup_profile', [ProfileController::class,'setup'])->name('profile.setup');
+    Route::get('/profile/setup_profile/{layout?}', [ProfileController::class,'setup'])->name('profile.setup');
     Route::post('/profile/setup', [ProfileController::class,'storeSetup'])->name('profile.setup.store');
 
 });

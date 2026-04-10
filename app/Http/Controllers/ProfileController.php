@@ -21,17 +21,19 @@ class ProfileController extends Controller
      */
     public function detail($id)
     {
-        $profile = profile::findorfail($id);
+        // Tìm profile theo user_id thay vì profile_id để đồng bộ với các hàm khác
+        $profile = Profile::where('user_id', $id)->firstOrFail();
+        
         if ($profile->user->status === 'hidden'  && auth()->user()->role !== 'admin') {
-         abort(403, 'Tài khoản này đã bị khóa hoặc không tồn tại');
+            abort(403, 'Tài khoản này đã bị khóa hoặc không tồn tại');
         } 
         $user = $profile->user;
         $posts = $user->posts()->latest()->get();
         return view('profile.detail', compact('profile','user','posts'));
     }
-     public function setup()
+    public function setup($layout = 'layouts.app')
     {
-        return view('profile.setup_profile');
+        return view('profile.setup_profile', compact('layout'));
     }
 
     public function storeSetup(Request $request)
@@ -43,17 +45,19 @@ class ProfileController extends Controller
         ]);
 
         $avatarPath = null;
-
         if($request->hasFile('avatar')){
             $avatarPath = $request->file('avatar')->store('avatars','public');
         }
 
-        Profile::create([
-            'user_id'=>Auth::id(),
-            'display_name'=>$request->display_name,
-            'avatar'=>$avatarPath,
-            'bio'=>$request->bio
-        ]);
+        // Sử dụng updateOrCreate để tránh lỗi Duplicate entry nếu profile đã tồn tại
+        Profile::updateOrCreate(
+            ['user_id' => Auth::id()],
+            [
+                'display_name' => $request->display_name,
+                'avatar' => $avatarPath ?? Profile::where('user_id', Auth::id())->value('avatar'),
+                'bio' => $request->bio
+            ]
+        );
 
         return redirect()->route('home');
     }
@@ -104,7 +108,7 @@ class ProfileController extends Controller
     public function posts($id)
     {
         $user = User::findOrFail($id);
-        $posts = $user->posts()
+        $posts = $user->posts()->where('status','show')
             ->latest()
             ->get();
 
@@ -116,7 +120,7 @@ class ProfileController extends Controller
         $user = User::findOrFail($id);
 
         $posts = Post::whereHas('favorites', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
+            $q->where('user_id', $user->id)->where('status','show');
         })
         ->latest()
         ->get();
@@ -127,7 +131,7 @@ class ProfileController extends Controller
     {
         $user = User::findOrFail($id);
         $comments = Comment::where('user_id', $user->id)
-            ->latest()
+            ->latest()->where('status','show')
             ->get();
         return view('profile.partials.comment-list', compact('comments'));
     }

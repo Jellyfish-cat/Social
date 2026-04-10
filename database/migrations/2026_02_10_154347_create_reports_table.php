@@ -24,7 +24,6 @@ return new class extends Migration
 
             $table->text('reason')->nullable(); 
             $table->string('status')->default('pending');
-            $table->text('admin_note')->nullable(); 
             $table->unsignedBigInteger('resolved_by')->nullable(); 
             $table->timestamp('resolved_at')->nullable(); 
 

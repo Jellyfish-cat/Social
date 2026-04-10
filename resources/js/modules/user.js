@@ -1,8 +1,10 @@
 document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('btn-delete-user')) {
-        const btn = e.target;
+    const btn = e.target.closest('.btn-delete-user');
+    if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
         const postId = btn.dataset.id;
-        if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
+        if (!confirm('Bạn có chắc muốn xóa người dùng này?')) {
             return; 
         }
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;

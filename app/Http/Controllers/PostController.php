@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\Topic;
 use App\Models\Media;
+use App\Models\Report;
 use App\Models\Comment;
 use App\Models\Favorite;
 use App\Models\VideoView;
@@ -214,6 +215,7 @@ class PostController extends Controller
             $m->delete();
         }
         // Xóa các liên kết (Tương đương code cũ của bạn)
+        Report::where('target_id', $id)->where('target_type', Post::class)->delete();
         $post->delete();
         $postlist = Post::latest()->get();
         return response()->json([

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Post;
+use App\Events\NotificationSent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -41,54 +42,57 @@ class CommentController extends Controller
             DB::beginTransaction();
             try {  
                     $request->validate(['content' => 'required|string|max:1000']);
-    
                     $post = Post::findOrFail($post_id);
                     $user = Auth::user();
+
+                    $targetId = $request->parent_id;// ID comment gốc được reply
+                    $targetComment = $targetId ? Comment::find($targetId) : null;
+                    $rootParentId = ($targetComment && $targetComment->parent_comment_id) 
+                        ? $targetComment->parent_comment_id 
+                        : $targetId; //kiểm tra là comment gốc hay comment được reply 
 
                     $comment = Comment::create([
                         'user_id' => $user ? $user->id : 1,
                         'post_id' => $post->id,
                         'content' => $request->content,
-                        'parent_comment_id'=> $request -> parent_id,
+                        'parent_comment_id'=> $rootParentId,
                         'status' => 1
                     ]);
 
-                    if ($post->user_id !== ($user->id ?? 1)) {
-                        if($comment -> parent_comment_id === null){
-                        $notification = Notification::create([
-                            'user_id' => $post->user_id,
-                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bình luận bài viết của bạn. comment:' . $comment->id,
-                            'type' => 'comment'
-                        ]);
-                        broadcast(new \App\Events\NotificationSent($notification))->toOthers();
-                       } else{
-                        $Parent_comment = Comment::findOrFail($comment->parent_comment_id);
-                        if($post->user_id !== $Parent_comment->user_id){
-                        $notification1 = Notification::create([
-                            'user_id' => $post->user_id,
-                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã bình luận bài viết của bạn. comment:' . $comment->id,
-                            'type' => 'comment'
-                        ]);
-                        broadcast(new \App\Events\NotificationSent($notification1))->toOthers();
+                    $userId = auth()->id();
+                    $userName = '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong>';
+
+                    if (!$comment->parent_comment_id) {
+                        if ($userId !== $post->user_id) {
+                            $notif = Notification::create([
+                                'user_id' => $post->user_id,
+                                'content' => "{$userName} đã bình luận bài viết của bạn. comment:{$comment->id}",
+                                'type' => 'comment'
+                            ]);
+                            broadcast(new NotificationSent($notif))->toOthers();
+                        }
+                    } else {
+                        if ($userId !== $post->user_id) {
+                            $msg = ($targetComment && $targetComment->user_id === $post->user_id) 
+                                ? "{$userName} đã phản hồi bình luận trong bài viết của bạn." 
+                                : "{$userName} đã bình luận bài viết của bạn.";
                             
-                        $notification2 = Notification::create([
-                            'user_id' => $Parent_comment->user_id,
-                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã phản hồi bình luận của bạn. comment:' . $comment->id,
-                            'type' => 'comment'
-                        ]);
-                        broadcast(new \App\Events\NotificationSent($notification2))->toOthers();
+                            $notif = Notification::create([
+                                'user_id' => $post->user_id,
+                                'content' => "{$msg} comment:{$comment->id}",
+                                'type' => 'comment'
+                            ]);
+                            broadcast(new NotificationSent($notif))->toOthers();
                         }
-                        else{
-                            $notification3 = Notification::create([
-                            'user_id' => $post->user_id,
-                            'content' => '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong> đã phản hồi bình luận trong bài viết của bạn. comment:' . $comment->id,
-                            'type' => 'comment'
-                        ]);
-                        broadcast(new \App\Events\NotificationSent($notification3))->toOthers();
-                        }
+                        if ($targetComment && $targetComment->user_id !== $post->user_id && $userId !== $targetComment->user_id) {
+                            $notif = Notification::create([
+                                'user_id' => $targetComment->user_id,
+                                'content' => "{$userName} đã phản hồi bình luận của bạn. comment:{$comment->id}",
+                                'type' => 'comment'
+                            ]);
+                            broadcast(new NotificationSent($notif))->toOthers();
                         }
                     }
-
                     if ($request->hasFile('file')) {
                         $file = $request->file('file');
                         $fileName = time().'_'.$file->getClientOriginalName();
@@ -168,6 +172,7 @@ class CommentController extends Controller
             ], 404);
         }
 
+        \App\Models\Report::where('target_id', $id)->where('target_type', Comment::class)->delete();
         $comment->delete();
         $commentlist = Comment::latest()->get();
         return response()->json([

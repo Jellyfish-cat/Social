@@ -5,15 +5,7 @@
             <img src="{{ asset('storage/' . ($post->user->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
             </a>
             <div>
-                <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }} @if($post->user->id != Auth::id())
-                     @if($post->user->followers->contains(Auth::id()))
-                        <button class=" mt-1 ms-3 btn btn-light rounded-3 fw-semibold px-3 btn-sm follow-btn" 
-                        data-id="{{$post->user->id}}">Đang Theo dõi</button>
-                        @else
-                        <button class="mt-1 ms-3 btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn" 
-                        data-id="{{$post->user->id}}">Theo dõi</button>
-                        @endif
-                    @endif</div>
+                <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }}</div>
                 
                 <div class="text-muted" style="font-size: 13px;">
                 @if($post->topics->count())
@@ -26,20 +18,33 @@
             </div>
             </div>
         </div>
-        <div class="dropdown">
-            <i class="bi bi-three-dots cursor-pointer" data-bs-toggle="dropdown"></i>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                @if($post->user->id === Auth::id() || auth()->user()->role === 'admin')
-                <li><a class="dropdown-item small btn-edit-post" href="javascript:void(0)" data-id="{{ $post->id }}">Chỉnh sửa</a></li>
-                <li>
-                    <a class="dropdown-item small btn-delete" data-id="{{ $post->id }}">
-                        Xóa
-                </a>
-                </li>
+
+        <div class="d-flex align-items-center gap-3">
+            @if($post->user->id != Auth::id())
+                @if($post->user->followers->contains(Auth::id()))
+                    <button class="btn btn-light rounded-3 fw-semibold px-3 btn-sm follow-btn" 
+                    data-id="{{$post->user->id}}">Đang Theo dõi</button>
+                @else
+                    <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn" 
+                    data-id="{{$post->user->id}}">Theo dõi</button>
                 @endif
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item small text-danger open-report" data-type="post" data-id="{{ $post->id }}">Báo cáo</a></li>
-            </ul>
+            @endif
+
+            <div class="dropdown">
+                <i class="bi bi-three-dots cursor-pointer" data-bs-toggle="dropdown"></i>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                    @if($post->user->id === Auth::id() || auth()->user()->role === 'admin')
+                    <li><a class="dropdown-item small btn-edit-post" href="javascript:void(0)" data-id="{{ $post->id }}">Chỉnh sửa</a></li>
+                    <li>
+                        <a class="dropdown-item small btn-delete" data-id="{{ $post->id }}">
+                            Xóa
+                    </a>
+                    </li>
+                    @endif
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item small text-danger open-report" data-type="post" data-id="{{ $post->id }}">Báo cáo</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 

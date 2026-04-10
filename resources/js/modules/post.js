@@ -96,8 +96,10 @@ window.addEventListener('popstate', function (event) {
     }
 });
 document.addEventListener('click', function (e) {
-                       const btn = e.target.closest('.btn-delete');
-       if(btn){
+    const btn = e.target.closest('.btn-delete');
+    if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
         const postId = btn.dataset.id;
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;

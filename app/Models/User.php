@@ -20,6 +20,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role',
         'status',
+        'google_id',
+        'email_verified_at',
     ];
     public function profile()
     {

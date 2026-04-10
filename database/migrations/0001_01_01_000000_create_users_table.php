@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('role')->default('user');
             $table->string('status')->default('show');
+            $table->string('google_id')->nullable()->unique()->after('email');
             $table->rememberToken();
             $table->timestamps();
         });
@@ -47,5 +48,8 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::table('users', function (Blueprint $table) {
+        $table->dropColumn('google_id');
+    });
     }
 };

@@ -67,7 +67,20 @@
                     </span>
                 </a>
             </li>
-            
+            @php
+                $globalUnreadNotifications = 0;
+                if(Auth::check()){
+                    $globalUnreadNotifications = auth()->user()->notifications()->where('is_read', false)->count();
+                }
+            @endphp
+                <a href="#" onclick="event.preventDefault(); window.openNoti();" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+                    <i class="bi bi-heart" style="min-width: 40px; text-align: center;"></i>
+                    <span class="nav-text flex-grow-1">Thông báo</span>
+                    <span id="global-noti-badge" class="badge bg-danger rounded-pill {{ $globalUnreadNotifications > 0 ? '' : 'd-none' }}" 
+                          style="font-size: 0.8rem; transition: transform 0.2s ease-in-out;">
+                        {{ $globalUnreadNotifications }}
+                    </span>
+                </a>
         </ul>
         @elseif(auth()->user()?->role === 'admin')
     <ul class="nav nav-pills flex-column mb-auto gap-2">
@@ -167,7 +180,8 @@
         </div>
         <hr>
             {{-- Thông báo hệ thống --}}
-        @php
+            @if(auth()->user()?->role === 'admin')
+            @php
                 $globalUnreadNotifications = 0;
                 if(Auth::check()){
                     $globalUnreadNotifications = auth()->user()->notifications()->where('is_read', false)->count();
@@ -181,6 +195,7 @@
                         {{ $globalUnreadNotifications }}
                     </span>
                 </a>
+            @endif
         <hr>
         <!-- Profile -->
         <div class="dropdown">
@@ -206,7 +221,7 @@
     </nav>
     <!-- Main Content -->
     <div class="flex-grow-1 w-100 main-content">
-            <form action="{{ route('search.result') }}" method="GET" class="search-wrapper search-form">
+            <form action="{{ route('search.result') }}" method="GET" class="search-wrapper search-form"  onsubmit="return this.q.value.trim() !== ''">
     <div class="search-wrapper">
         <nav class="search-navbar shadow-sm rounded-5">
             <div class="search-input-wrapper">

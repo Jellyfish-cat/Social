@@ -26,6 +26,16 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        if (Auth::user()->status === 'hidden') {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Tài khoản của bạn đã bị khóa do vi phạm tiêu chuẩn cộng đồng.',
+            ]);
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('home', absolute: false));

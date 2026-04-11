@@ -141,7 +141,7 @@ return [
         'key' => env('MEILISEARCH_KEY'),
         'index-settings' => [
             'posts' => [
-                'filterableAttributes'=> ['topic_id', 'user_id', 'status', 'created_at'],
+                'filterableAttributes'=> ['topic_ids', 'user_id', 'status', 'created_at'],
                 'sortableAttributes' => ['created_at'],
             ],
             'users' => [

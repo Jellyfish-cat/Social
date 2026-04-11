@@ -19,7 +19,7 @@ class PostController extends Controller
     // 1. Hiển thị danh sách bài viết (thay cho news.index)
     public function index()
     {
-    $posts = Post::with(['user.profile', 'topic', 'media']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
+    $posts = Post::with(['user.profile', 'topics', 'media']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
                 ->withCount([
                     'comments',    // Tạo ra biến comments_count
                     'likes',       // Tạo ra biến likes_count
@@ -116,7 +116,7 @@ class PostController extends Controller
     $post = Post::with([
         'user.profile',
         'media',
-        'topic',
+        'topics',
         'likes',
         'favorites',
         'comments' => function ($query) {
@@ -169,7 +169,6 @@ class PostController extends Controller
         $topicIds[] = Topic::firstOrCreate(['name' => strtolower(trim($name))])->id;
     }
     $post->topics()->sync(array_slice(array_unique($topicIds), 0, 3));
-    $post->update(['topic_id' => $topicIds[0] ?? null]);
 
     if ($request->deleted_media_ids) {
         $ids = explode(',', $request->deleted_media_ids);
@@ -230,7 +229,9 @@ class PostController extends Controller
     public function postsByTopic($topicId)
     {
         $topic = Topic::findOrFail($topicId);
-        $posts = Post::where('topic_id', $topicId)
+        $posts = Post::whereHas('topics', function($q) use ($topicId) {
+                        $q->where('topic_id', $topicId);
+                    })
                     ->with(['user.profile', 'media'])
                     ->orderBy('created_at', 'desc')->where('status', 'show')
                     ->get();

@@ -18,8 +18,9 @@
                     <thead class="table-light text-center">
                         <tr>
                             <th width="5%">#</th>
-                            <th width="10%">Mã hội thoại</th>
+                            <th width="5%">Mã hội thoại</th>
                             <th width="35%">Nội dung</th>
+                            <th width="5%">Trạng thái</th>
                             <th width="15%">Người gửi</th>
                             <th width="15%">Người Nhận</th>
                             <th width="18%">Media</th>
@@ -38,6 +39,15 @@
                         <td class="text-start" >
                             {{ Str::limit($value->content, 120) }}
                         </td>
+                        @if($value->status === 'hide')
+                         <td class="text-start" >
+                        <span class="badge bg-warning text-dark">thu hồi</span>
+                        </td>
+                        @elseif($value->status === 'show')
+                         <td class="text-start" >
+                        <span class="badge bg-success">Hiển thị</span>
+                        </td>
+                        @endif
                         <td class="text-start">
                             {{ $value->sender->profile->display_name ?? $value->sender->email }}
                         </td>
@@ -48,7 +58,7 @@
                                 ->where('id', '!=', $value->sender->id)
                                 ->first();
                             @endphp
-                            {{ $otherUser->profile->display_name ?? $otherUser->email }}
+                            {{ $otherUser->profile->display_name ?? 'Người dùng' }}
                         </td>
                         <td class="text-center">
                             @php

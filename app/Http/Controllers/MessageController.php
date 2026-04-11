@@ -170,24 +170,24 @@ class MessageController extends Controller
      */
     public function destroy($id)
     {
-        $message = Message::find($id);
+        $message = Message::with('conversation.users')->findOrFail($id);
+
         if (auth()->user()->role !== 'admin' && auth()->id() !== $message->sender_id) {
-            abort(403, 'Bạn không có quyền');
-        }
-        if (!$message) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy tin nhắn'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Bạn không có quyền'], 403);
         }
 
-        $message->delete();
-        $messagelist = Message::latest()->get();
+        // Chuyển status sang hide instead of delete
+        $message->update(['status' => 'hide']);
+
+        $receiver = $message->conversation->users->where('id', '!=', $message->sender_id)->first();
+        
+        if ($receiver) {
+            broadcast(new \App\Events\MessageDeleted($message->id, $receiver->id))->toOthers();
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $messagelist,
-            'count' => Message::count(),
-            'message' => 'Xóa thành công'
+            'message' => 'Thu hồi tin nhắn thành công'
         ]);
     }
 }

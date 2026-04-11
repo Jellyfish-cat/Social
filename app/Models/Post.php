@@ -12,7 +12,6 @@ class Post extends Model
 
     protected $fillable = [
         'user_id',
-        'topic_id',
         'content',
         'is_comment_enabled',
         'pinned',
@@ -25,10 +24,6 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function topic()
-    {
-        return $this->belongsTo(Topic::class);
-    }
 
     public function comments()
     {
@@ -67,7 +62,7 @@ class Post extends Model
     {
         return [
             'id' => $this->id,
-            'topic_id' => $this->topic_id,
+            'topic_ids' => $this->topics->pluck('id')->toArray(),
             'user_id' => $this->user_id,
             'content' => $this->content,
             'user' => [

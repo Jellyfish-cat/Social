@@ -411,6 +411,7 @@
         object-fit: cover;
         flex-shrink: 0;
         margin-bottom: 2px;
+        
     }
 
     .msg-bubble {
@@ -442,6 +443,37 @@
         align-self: center;
     }
 
+    .msg-time {
+        position: absolute;
+        bottom: -18px;
+        font-size: 10px;
+        color: #b0b0b0;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+    }
+
+    /* Căn chỉnh thời gian theo phía người gửi */
+    .mine .msg-time {
+        right: 12px;
+    }
+
+    .theirs .msg-time {
+        left: 12px;
+    }
+
+    .msg-bubble-row {
+        transition: margin-bottom 0.2s ease;
+    }
+
+    .msg-bubble-row:has(.msg-bubble:hover) {
+        margin-bottom: 22px;
+    }
+
+    .msg-bubble-row:has(.msg-bubble:hover) .msg-time {
+        opacity: 1;
+    }
     /* ===== CHAT INPUT ===== */
     .msg-chat-footer {
         padding: 12px 16px;
@@ -521,7 +553,6 @@
         <div class="msg-left-header">
             <span class="msg-username">
                 {{ auth()->user()->profile->display_name ?? auth()->user()->name }}
-                <i class="bi bi-chevron-down"></i>
             </span>
             <button class="msg-icon-btn" title="Tạo cuộc trò chuyện mới">
                 <i class="bi bi-pencil-square"></i>
@@ -555,14 +586,18 @@
                     @php
                         $otherUser = $conversation->users->where('id', '!=', auth()->id())->first();
                         if(!$otherUser) continue;
+                        $status = $otherUser->status ?? 'show';
                         $lastMsg = $conversation->latestMessage;
-                        $mediaCount = $lastMsg->media ? $lastMsg->media->count() : 0;
-                        if ($mediaCount > 0) {
-                            $previewText = $lastMsg->content 
-                                ? $lastMsg->content 
-                                : "📷 Đã gửi {$mediaCount} ảnh";
-                        } else {
-                            $previewText = $lastMsg->content;
+                        $previewText = 'Chưa có tin nhắn';
+                        if ($lastMsg) {
+                            $mediaCount = $lastMsg->media ? $lastMsg->media->count() : 0;
+                            if ($mediaCount > 0) {
+                                $previewText = $lastMsg->content 
+                                    ? $lastMsg->content 
+                                    : "📷 Đã gửi {$mediaCount} ảnh";
+                            } else {
+                                $previewText = $lastMsg->content;
+                            }
                         }
                     @endphp
                  <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item {{ $conversation->unread_count > 0 ? 'unread' : '' }}"
@@ -613,6 +648,11 @@
 
     {{-- ===== ACTIVE CHAT PANEL ===== --}}
     <div class="msg-chat-panel" id="msgChatPanel">
+        @php
+            $currentConvo = $conversations && $conversations->isNotEmpty() ? $conversations->first() : null;
+            $currentUser = $currentConvo ? $currentConvo->users->where('id', '!=', auth()->id())->first() : null;
+            $status = $currentUser->status ?? 'show';
+        @endphp
 
         {{-- Chat Header --}}
         <div class="msg-chat-header">
@@ -624,7 +664,7 @@
                 <span class="msg-online-dot" id="chatOnlineDot" style="display:none;"></span>
             </div>
             <div class="msg-chat-header-info">
-                <div class="msg-chat-header-name" id="chatName">{{$otherUser->profile->display_name ?? ''}}</div>
+                <div class="msg-chat-header-name" id="chatName">{{$currentUser->profile->display_name ?? $currentUser->name ?? ''}}</div>
                 <div class="msg-chat-header-status" id="chatStatus">Đang hoạt động</div>
             </div>
             <div class="msg-chat-actions">
@@ -642,7 +682,8 @@
             </div>
 
         {{-- Chat Footer --}}
-                <div class="chat-form">
+        @if($status !== 'hidden')
+        <div class="chat-form">
             <div class="preview-media d-flex gap-2 px-3 py-1 w-100" style="display:none;"></div></div>
         <div class="msg-chat-footer chat-form constantIcon">
             <input type="file" id="msg-file-input" name="file" hidden accept="image/*,video/*" multiple onchange="previewMessageFiles(this)">
@@ -659,6 +700,14 @@
                 <i class="bi bi-send-fill"></i>
             </button>
         </div>
+        @else
+        <div class="msg-chat-footer chat-form constantIcon justify-content-center">
+            <div class="text-center text-muted py-3">
+                <i class="bi bi-lock-fill fs-6"></i>
+                <p class="mb-0 mt-1">Tài khoản này đã bị khóa do vi phạm</p>
+            </div>
+        </div>
+        @endif
     </div>
 
 </div>

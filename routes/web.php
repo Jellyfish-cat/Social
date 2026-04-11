@@ -82,7 +82,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/favorites/{id}', [ProfileController::class, 'favorites']);
     Route::get('/profile/comments/{id}', [ProfileController::class, 'comments']);
         Route::get('/profile/likes/{id}', [ProfileController::class, 'likes']);
-
+    Route::get('/profile/edit/{id}', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 Route::middleware('auth')->group(function () {
 

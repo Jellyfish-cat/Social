@@ -232,39 +232,39 @@ class ReportController extends Controller
             ->where('target_type', $report->target_type);
         $target = $report->target;
 
-        // 1. Xác định chủ sở hữu và thông tin chuẩn bị cho thông báo
+        // 1. Cập nhật trạng thái của đối tượng bị báo cáo (Post, Comment, hoặc User)
+        if ($target) {
+            $newStatus = ($action === 'hide') ? 'hidden' : 'show';
+            $target->update(['status' => $newStatus]);
+        }
+
+        // 2. Xác định chủ sở hữu và chuẩn bị thông tin thông báo
         $owner = ($report->target_type === User::class) ? $target : ($target->user ?? null);
-        
-        if ($owner) {
-            $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
-            $typeLabel = 'nội dung';
-            $preview = '';
-            $email='';
-            if ($report->target_type === Post::class) {
-                $typeLabel = 'bài viết';
-                $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
-            } elseif ($report->target_type === Comment::class) {
-                $typeLabel = 'bình luận';
-                $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
-            } elseif ($report->target_type === User::class) {
-                $typeLabel = 'tài khoản';
-                $email ='chúng tôi đã gửi mail cho bạn, hãy kiểm tra email để biết thêm chi tiết';
-            }
 
-            // 2. Thực hiện hành động HIDE
-            if ($action === 'hide') {
-                if ($target) {
-                    $target->status = 'hidden';
-                    $target->save();
-                }
-                $relatedReports->update([
-                    'status' => 'resolved',
-                    'resolved_by' => auth()->id(),
-                    'resolved_at' => now(),
-                ]);
+        if ($action === 'hide') {
+            $relatedReports->update([
+                'status' => 'resolved',
+                'resolved_by' => auth()->id(),
+                'resolved_at' => now(),
+            ]);
 
-                // Gửi mail nếu là tài khoản bị khóa
-                if ($report->target_type === User::class) {
+            if ($owner) {
+                $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
+                $typeLabel = 'nội dung';
+                $preview = '';
+                $email = '';
+                
+                if ($report->target_type === Post::class) {
+                    $typeLabel = 'bài viết';
+                    $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
+                } elseif ($report->target_type === Comment::class) {
+                    $typeLabel = 'bình luận';
+                    $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
+                } elseif ($report->target_type === User::class) {
+                    $typeLabel = 'tài khoản';
+                    $email = 'chúng tôi đã gửi mail cho bạn, hãy kiểm tra email để biết thêm chi tiết';
+
+                    // Gửi mail nếu là tài khoản bị khóa
                     try {
                         Mail::raw("Chào {$displayName},\n\nTài khoản của bạn đã bị khóa do vi phạm các tiêu chuẩn cộng đồng của chúng tôi.\n\nNếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng phản hồi lại email này để được hỗ trợ giải quyết.\n\nTrân trọng,\nĐội ngũ Admin.", function ($message) use ($owner) {
                             $message->to($owner->email)
@@ -283,18 +283,17 @@ class ReportController extends Controller
                 ]);
                 broadcast(new NotificationSent($notif))->toOthers();
             }
+        } elseif ($action === 'restore') {
+            $relatedReports->update([
+                'status' => 'dismissed',
+                'resolved_by' => null,
+                'resolved_at' => null,
+            ]);
 
-            // 3. Thực hiện hành động RESTORE
-            if ($action === 'restore') {
-                if ($target) {
-                    $target->status = 'show';
-                    $target->save();
-                }
-                $relatedReports->update([
-                    'status' => 'dismissed',
-                    'resolved_by' => null,
-                    'resolved_at' => null,
-                ]);
+            if ($owner) {
+                $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
+                $typeLabel = ($report->target_type === User::class) ? 'tài khoản' : (($report->target_type === Post::class) ? 'bài viết' : 'bình luận');
+                $preview = ($report->target_type !== User::class) ? ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"' : '';
 
                 $notif = Notification::create([
                     'user_id' => $owner->id,

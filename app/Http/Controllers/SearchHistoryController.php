@@ -89,15 +89,13 @@ class SearchHistoryController extends Controller
             // =========================
             $followingIds = $user->following()->pluck('users.id')->toArray();
             $interestedTopicIds = \App\Models\LikePost::where('user_id', $user->id)
-                ->with(['post.topic', 'post.topics'])
+                ->with(['post.topics'])
                 ->get()
                 ->flatMap(function ($like) {
-                    $ids = [];
-                    if ($like->post && $like->post->topic_id) $ids[] = $like->post->topic_id;
                     if ($like->post && $like->post->topics) {
-                        $ids = array_merge($ids, $like->post->topics->pluck('id')->toArray());
+                        return $like->post->topics->pluck('id')->toArray();
                     }
-                    return $ids;
+                    return [];
                 })
                 ->unique()
                 ->toArray();
@@ -127,7 +125,7 @@ class SearchHistoryController extends Controller
                 $followingPosts = Post::search($q)
                     ->whereIn('user_id', $followingIds)
                     ->orderBy('created_at', 'desc')
-                    ->query(fn($query) => $query->with(['user.profile', 'topic'])->where('status', 'show'))
+                    ->query(fn($query) => $query->with(['user.profile', 'topics'])->where('status', 'show'))
                     ->take(5)
                     ->get();
                 $results = $results->merge($followingPosts);
@@ -136,9 +134,9 @@ class SearchHistoryController extends Controller
 
             if (!empty($interestedTopicIds)) {
                 $topicPosts = Post::search($q)
-                    ->whereIn('topic_id', $interestedTopicIds)
+                    ->whereIn('topic_ids', $interestedTopicIds)
                     ->orderBy('created_at', 'desc')
-                    ->query(fn($query) => $query->with(['user.profile', 'topic'])->where('status', 'show')->whereNotIn('id', $excludeIds))
+                    ->query(fn($query) => $query->with(['user.profile', 'topics'])->where('status', 'show')->whereNotIn('id', $excludeIds))
                     ->take(5)
                     ->get();
                 $results = $results->merge($topicPosts);
@@ -146,7 +144,7 @@ class SearchHistoryController extends Controller
             }
 
             $otherPosts = Post::search($q)
-                ->query(fn($query) => $query->with(['user.profile', 'topic'])->where('status', 'show')->whereNotIn('id', $excludeIds))
+                ->query(fn($query) => $query->with(['user.profile', 'topics'])->where('status', 'show')->whereNotIn('id', $excludeIds))
                 ->take(5)
                 ->get();
 

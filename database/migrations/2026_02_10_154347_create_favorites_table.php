@@ -22,7 +22,7 @@ return new class extends Migration
           ->constrained()
           ->cascadeOnDelete();
 
-    $table->timestamps();
+   $table->timestamp('created_at')->useCurrent();
 
     $table->unique(['user_id', 'post_id']);
 });

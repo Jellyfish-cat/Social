@@ -41,19 +41,20 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
-                    <a href="#" class="text-dark small fw-bold text-decoration-none">Xem tất cả</a>
                 </div>
 
-                @foreach(\App\Models\User::where('id', '!=', auth()->id())->limit(5)->get() as $u)
+                @foreach($suggestedUsers as $u)
                 <div class="d-flex align-items-center justify-content-between mb-3">
+                    <a href="{{ route('profile.detail', $u->id) }}" class="text-decoration-none">
                     <div class="d-flex align-items-center">
                         <img src="{{ asset('storage/' . ($u->profile->avatar ?? 'default-avatar.png')) }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
                         <div class="ms-3">
                             <div class="fw-bold small">{{ $u->profile->display_name ?? $u->name }}</div>
                             <div class="text-muted" style="font-size: 11px;">Gợi ý cho bạn</div>
                         </div>
-                    </div>
-                    <a href="#" class="text-primary small fw-bold text-decoration-none">Theo dõi</a>
+                    </div></a>
+                    <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn" 
+                    data-id="{{$u->id}}">Theo dõi</button>
                 </div>
                 @endforeach
             </div>

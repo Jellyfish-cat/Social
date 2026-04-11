@@ -10,7 +10,7 @@ class Favorite extends Model
         'user_id',
         'post_id'
     ];
-
+        const UPDATED_AT = null;
     public function user()
     {
         return $this->belongsTo(User::class);

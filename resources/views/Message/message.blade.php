@@ -26,21 +26,14 @@
         </a>
 
     </div>
-    @foreach($messages as $index => $msg)
-
+    @php $prevMsg = null; @endphp
+    @foreach($messages as $msg)
         @php
             $showTime = false;
-
-            if ($index == 0) {
+            if (!$prevMsg || $msg->created_at->diffInMinutes($prevMsg->created_at) > 1) {
                 $showTime = true;
-            } else {
-                $prev = $messages[$index - 1];
-                $diff = $msg->created_at->diffInMinutes($prev->created_at);
-
-                if ($diff > 5) {
-                    $showTime = true;
-                }
             }
+            $prevMsg = $msg;
         @endphp
 
         @if($showTime)
@@ -49,7 +42,18 @@
             </div>
         @endif
 
-        <div class="msg-bubble-row {{ $msg->sender_id == auth()->id() ? 'mine' : '' }}">
+        <div class="msg-bubble-row {{ $msg->sender_id == auth()->id() ? 'mine' : '' }}" 
+             data-id="{{ $msg->id }}" 
+             data-time="{{ $msg->created_at->timestamp }}">
+
+            @if($msg->sender_id == auth()->id() && $msg->status !== 'hide' && $otherUser->status !== 'hidden')
+                <button class="btn-unsend-msg p-0 border-0 bg-transparent text-muted order-1" 
+                        onclick="unsendMsg(this, {{ $msg->id }})" 
+                        title="Thu hồi tin nhắn"
+                        style="font-size: 0.8rem; margin: 0 5px;">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+            @endif
 
             @if($msg->sender_id != auth()->id())
                 <img src="{{ asset('storage/' . ($msg->sender->profile->avatar ?? 'default-avatar.png')) }}"
@@ -57,21 +61,29 @@
             @endif
 
             <div class="msg-bubble {{ $msg->sender_id == auth()->id() ? 'mine' : 'theirs' }}">
-                @foreach($msg->media as $media)
-
-                    @if($media->type === 'image')
-                                <a href="{{ asset('storage/' . $media->file_path) }}" 
-                    data-fancybox="gallery-{{Auth::id() }}">
-                        <img src="{{ asset('storage/' . $media->file_path) }}" style="max-width:200px;border-radius:12px;" class="mb-1"></a>
-                    @elseif($media->type === 'video')
-                    <a href="{{ asset('storage/' . $media->file_path) }}" 
-                            class="video-link"
-                    data-fancybox="gallery-{{Auth::id() }}">
-                        <video src="{{ asset('storage/' . $media->file_path) }}" style="max-width:200px;border-radius:12px;" controls class="mb-1"></video></a>
+                @if($msg->status === 'hide')
+                    <div class="text-muted small fst-italic">Tin nhắn đã bị thu hồi</div>
+                @else
+                    @foreach($msg->media as $media)
+                        @if($media->type === 'image')
+                            <a href="{{ asset('storage/' . $media->file_path) }}" 
+                                data-fancybox="gallery-{{Auth::id() }}">
+                                <img src="{{ asset('storage/' . $media->file_path) }}" style="max-width:200px;border-radius:12px;" class="mb-1">
+                            </a>
+                        @elseif($media->type === 'video')
+                            <a href="{{ asset('storage/' . $media->file_path) }}" 
+                                    class="video-link"
+                                data-fancybox="gallery-{{Auth::id() }}">
+                                <video src="{{ asset('storage/' . $media->file_path) }}" style="max-width:200px;border-radius:12px;" controls class="mb-1"></video>
+                            </a>
+                        @endif
+                    @endforeach
+                    @if($msg->content)
+                        <div>{{ $msg->content }}</div>
+                         <div class="msg-time">
+                            {{ $msg->created_at->format('H:i d/m') }}
+                        </div>
                     @endif
-                @endforeach
-                @if($msg->content)
-                    <div>{{ $msg->content }}</div>
                 @endif
             </div>
 

@@ -19,4 +19,5 @@ class MessageSent implements ShouldBroadcast {
         // Gửi vào channel private của tài khoản người nhận tin nhắn
        return new PrivateChannel('chat.' . $this->message->receiver_id);
     }
+    
 }

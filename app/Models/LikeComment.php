@@ -10,7 +10,7 @@ class LikeComment extends Model
         'user_id',
         'comment_id'
     ];
-
+        const UPDATED_AT = null;
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -22,3 +22,4 @@ class LikeComment extends Model
     }
 }
 
+    

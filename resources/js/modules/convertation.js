@@ -155,6 +155,18 @@ if (msgPage) {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    // Cập nhật ID cho bubble vừa gửi để có thể thu hồi ngay
+                    row.dataset.id = data.message.id;
+
+                    // Thêm nút thu hồi (prepend vì row-reverse để nó nằm bên phải bubble)
+                    const unsendBtn = document.createElement('button');
+                    unsendBtn.className = 'btn-unsend-msg p-0 border-0 bg-transparent text-muted order-1';
+                    unsendBtn.title = 'Thu hồi tin nhắn';
+                    unsendBtn.style.fontSize = '0.8rem';
+                    unsendBtn.style.margin = '0 5px';
+                    unsendBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+                    unsendBtn.onclick = function () { unsendMsg(this, data.message.id); };
+                    row.prepend(unsendBtn);
 
                     const emptyUI = document.getElementById('chatEmptyUI');
                     if (emptyUI) {
@@ -312,6 +324,33 @@ if (msgPage) {
                 .finally(() => finishLoading());
         }
     });
+
+    // ===== Thu hồi tin nhắn =====
+    window.unsendMsg = function (btn, msgId) {
+        if (!confirm('Bạn muốn thu hồi tin nhắn này?')) return;
+
+        fetch(`/message/destroy/${msgId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = btn.closest('.msg-bubble-row');
+                    const bubble = row ? row.querySelector('.msg-bubble') : null;
+                    if (bubble) {
+                        bubble.innerHTML = '<div class="text-muted small fst-italic">Tin nhắn đã bị thu hồi</div>';
+                    }
+                    btn.remove(); // Xóa nút sau khi thu hồi xong
+                } else {
+                    alert(data.message || 'Lỗi khi thu hồi tin nhắn');
+                }
+            })
+            .catch(err => console.error('Lỗi thu hồi:', err));
+    };
 }
 //hàm gợi ý user
 const input = document.getElementById("user-input");
@@ -375,6 +414,15 @@ setTimeout(() => {
         console.log("Đã kết nối Echo thành công cho user ID: " + authUserId); // Log dòng này ra F12 để check
 
         window.Echo.private(`chat.${authUserId}`)
+            .listen('.message.deleted', (e) => {
+                const msgRow = document.querySelector(`.msg-bubble-row[data-id="${e.messageId}"]`);
+                if (msgRow) {
+                    const bubble = msgRow.querySelector('.msg-bubble');
+                    if (bubble) {
+                        bubble.innerHTML = '<div class="text-muted small fst-italic">Tin nhắn đã bị thu hồi</div>';
+                    }
+                }
+            })
             .listen('MessageSent', (e) => {
                 console.log("Đã nhận được tin nhắn realtime!!", e); // Bắn log ra F12 để check luôn
                 const incomingMsg = e.message;
@@ -415,19 +463,22 @@ setTimeout(() => {
 
                     bubble.innerHTML = mediaHtml;
                     if (incomingMsg.content) {
-                        bubble.innerHTML += `<div class="mt-1">${incomingMsg.content}</div>`;
+                        bubble.innerHTML += `<div class="mt-1 messege-item">${incomingMsg.content}</div>`;
                     }
 
                     // --- 3. Gắn giao diện theo thứ tự: Avatar trước -> Bong bóng sau ---
                     row.appendChild(avatarImg);
                     row.appendChild(bubble);
-                    
+
                     const localChatBody = document.getElementById('msgChatBody');
                     if (localChatBody) {
                         localChatBody.appendChild(row);
                         // Tự động cuộn xuống dưới cùng
                         localChatBody.scrollTop = localChatBody.scrollHeight;
                     }
+
+                    // Gán ID để có thể thu hồi real-time
+                    row.dataset.id = incomingMsg.id;
 
                     // --- 4. Cập nhật Sidebar Preview và đẩy lên đầu tiên ---
                     const activeConvoItem = document.querySelector(`.convo-item[data-user-id="${incomingMsg.sender_id}"]`);
@@ -605,7 +656,7 @@ setTimeout(() => {
 document.addEventListener('click', function (e) {
 
     const btn = e.target.closest('.btn-delete-conversation');
-       if(btn){
+    if (btn) {
         const postId = btn.dataset.id;
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;
@@ -618,31 +669,31 @@ document.addEventListener('click', function (e) {
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const row = btn.closest(".conversation-item");
-            if (row) {
-                // Hiệu ứng mượt
-                row.style.transition = "all 0.3s ease";
-                row.style.opacity = "0";
-                setTimeout(() => {
-                    row.remove();
-                    document.querySelector(".count-conversation").innerText = 
-                    `Tổng hộp thoại: ${data.count}`;
-                    updateSTT();
-                }, 300);
-            }
-            // Thông báo
-            console.log(data.message || "Xóa thành công");
-        }
-        })
-        .catch((err) => {
-            alert(err.message);
-        })
-        .finally(() => {
-            btn.disabled = false;
-            finishLoading(); 
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = btn.closest(".conversation-item");
+                    if (row) {
+                        // Hiệu ứng mượt
+                        row.style.transition = "all 0.3s ease";
+                        row.style.opacity = "0";
+                        setTimeout(() => {
+                            row.remove();
+                            document.querySelector(".count-conversation").innerText =
+                                `Tổng hộp thoại: ${data.count}`;
+                            updateSTT();
+                        }, 300);
+                    }
+                    // Thông báo
+                    console.log(data.message || "Xóa thành công");
+                }
+            })
+            .catch((err) => {
+                alert(err.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                finishLoading();
+            });
     }
 });

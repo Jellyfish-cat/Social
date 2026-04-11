@@ -12,5 +12,6 @@ public $timestamps = false;
         'follower_id',
         'following_id'
     ];
+        const UPDATED_AT = null;
 }
 

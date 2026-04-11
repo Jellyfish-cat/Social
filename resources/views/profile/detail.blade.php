@@ -15,7 +15,7 @@
             <div class="d-flex align-items-center gap-3 mb-3">
                 <h3 class="fw-light mb-0">{{ $user->name }}</h3>
                 @if(Auth::id() === $user->id)
-                    <a  class="btn btn-outline-dark btn-sm">
+                    <a href="{{ route('profile.edit', $user->id) }}"  class="btn btn-outline-dark btn-sm">
                         Chỉnh sửa hồ sơ
                     </a>
                 @endif

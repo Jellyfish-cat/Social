@@ -62,10 +62,18 @@ class ProfileController extends Controller
         return redirect()->route('home');
     }
 
-    public function edit(Request $request): View
+    public function edit(Request $request, $id): View
     {
+        $user = User::findOrFail($id);
+        
+        // Chỉ cho phép chủ sở hữu hoặc admin chỉnh sửa
+        if (Auth::id() !== $user->id && Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'profile' => $user->profile
         ]);
     }
 
@@ -74,15 +82,29 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->safe()->only(['name', 'email']));
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        // Cập nhật thông tin Profile
+        $profileData = $request->safe()->only(['display_name', 'bio']);
+        
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $profileData['avatar'] = $avatarPath;
+        }
+
+        $user->profile()->updateOrCreate(
+            ['user_id' => $user->id],
+            $profileData
+        );
+
+        return Redirect::route('profile.edit', $user->id)->with('status', 'profile-updated');
     }
 
     /**

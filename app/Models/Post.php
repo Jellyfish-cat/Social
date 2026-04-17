@@ -69,6 +69,8 @@ class Post extends Model
                 'name' => $this->user->name ?? '',
             ],
             'topics' => $this->topics->pluck('name')->toArray(),
+            'status' => $this->status,
+            'created_at' => $this->created_at->timestamp,
         ];
     }
 }

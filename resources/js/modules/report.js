@@ -3,7 +3,7 @@ let tab = null;
 window.addEventListener("DOMContentLoaded", () => {
     const resultsContainer = document.getElementById("report-results-container");
     if (!resultsContainer) return;
-        tab = resultsContainer.dataset.tab; 
+    tab = resultsContainer.dataset.tab;
     const urlParams = new URLSearchParams(window.location.search);
     let currentType = urlParams.get('tab') || sessionStorage.getItem("currentReportTab") || "post";
 
@@ -23,6 +23,14 @@ window.addEventListener("DOMContentLoaded", () => {
     const url = new URL(window.location);
     url.searchParams.set('tab', currentType);
     window.history.replaceState({ tab: currentType }, '', url);
+});
+
+document.addEventListener("change", function (e) {
+    const statusFilter = e.target.closest("#filter-status");
+    if (statusFilter) {
+        tab = statusFilter.value;
+        loadReportTab(currentReportTab);
+    }
 });
 
 document.addEventListener("click", function (e) {
@@ -63,8 +71,12 @@ function loadReportTab(type) {
     `;
 
     if (typeof startLoading === 'function') startLoading();
+    
+    // Luôn ưu tiên lấy status từ dropdown nếu có
+    const statusFilter = document.getElementById("filter-status");
+    if (statusFilter) tab = statusFilter.value;
 
-    fetch(`/admin/reports/tab/${type}/${tab}`)
+    fetch(`/admin/reports/tab/${type}/${tab}?status=${tab}`)
         .then(res => res.text())
         .then(html => {
             container.innerHTML = html;
@@ -128,7 +140,10 @@ function loadReportPage(type, page) {
     const container = document.getElementById("report-results-container");
     if (typeof startLoading === 'function') startLoading();
 
-    fetch(`/admin/reports/tab/${type}/${tab}?page=${page}`)
+    const statusFilter = document.getElementById("filter-status");
+    if (statusFilter) tab = statusFilter.value;
+
+    fetch(`/admin/reports/tab/${type}/${tab}?page=${page}&status=${tab}`)
         .then(res => res.text())
         .then(html => {
             container.innerHTML = html;
@@ -140,15 +155,15 @@ function loadReportPage(type, page) {
 }
 
 document.addEventListener('click', function (e) {
-       const btn = e.target.closest('.btn-delete-report');
-       if(btn){
+    const btn = e.target.closest('.btn-delete-report');
+    if (btn) {
         e.stopPropagation();
         e.preventDefault();
         const postId = btn.dataset.id;
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;
         }
-        
+
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         fetch(`/reports/destroy/${postId}`, {
             method: 'DELETE',
@@ -157,43 +172,43 @@ document.addEventListener('click', function (e) {
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const row = btn.closest(".report-item");
-            if (row) {
-                // Hiệu ứng mượt
-                row.style.transition = "all 0.3s ease";
-                row.style.opacity = "0";
-                setTimeout(() => {
-                    row.remove();
-                    document.querySelector(".count-report").innerText = 
-                    `Tổng: ${data.count}`;
-                    updateSTT();
-                }, 300);
-            }
-            // Thông báo
-            console.log(data.message || "Xóa thành công");
-        }
-        })
-        .catch((err) => {
-            alert(err.message);
-        })
-        .finally(() => {
-            btn.disabled = false;
-            finishLoading(); 
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = btn.closest(".report-item");
+                    if (row) {
+                        // Hiệu ứng mượt
+                        row.style.transition = "all 0.3s ease";
+                        row.style.opacity = "0";
+                        setTimeout(() => {
+                            row.remove();
+                            document.querySelector(".count-report").innerText =
+                                `Tổng: ${data.count}`;
+                            updateSTT();
+                        }, 300);
+                    }
+                    // Thông báo
+                    console.log(data.message || "Xóa thành công");
+                }
+            })
+            .catch((err) => {
+                alert(err.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                finishLoading();
+            });
     }
 });
 
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.btn-check-report');
     if (btn) {
-            e.stopPropagation();
+        e.stopPropagation();
         e.preventDefault(); // In case of 'a' tag
         const postId = btn.dataset.id;
         const action = btn.dataset.action || 'hide';
-        
+
         let confirmMsg = 'Duyệt xử lý tin này. Bạn chắc chắn chứ?';
         if (action === 'hide') confirmMsg = 'Ẩn toàn bộ nội dung này. Bạn chắc chứ?';
         if (action === 'dismiss') confirmMsg = 'Bỏ qua báo cáo do nội dung không vi phạm?';
@@ -212,32 +227,32 @@ document.addEventListener('click', function (e) {
             },
             body: JSON.stringify({ action: action })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                // If it's the dropdown link, we need to hide the row
-                const row = btn.closest(".report-item");
-            if (row) {
-                // Hiệu ứng mượt
-                row.style.transition = "all 0.3s ease";
-                row.style.opacity = "0";
-                setTimeout(() => {
-                    row.remove();
-                    document.querySelector(".count-report").innerText = 
-                    `Tổng: ${data.count}`;
-                    updateSTT();
-                }, 300);
-            }
-            // Thông báo
-            console.log(data.message || "Duyệt thành công");
-        }
-        })
-        .catch((err) => {
-            alert(err.message);
-        })
-        .finally(() => {
-            btn.disabled = false;
-            finishLoading(); 
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // If it's the dropdown link, we need to hide the row
+                    const row = btn.closest(".report-item");
+                    if (row) {
+                        // Hiệu ứng mượt
+                        row.style.transition = "all 0.3s ease";
+                        row.style.opacity = "0";
+                        setTimeout(() => {
+                            row.remove();
+                            document.querySelector(".count-report").innerText =
+                                `Tổng: ${data.count}`;
+                            updateSTT();
+                        }, 300);
+                    }
+                    // Thông báo
+                    console.log(data.message || "Duyệt thành công");
+                }
+            })
+            .catch((err) => {
+                alert(err.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                finishLoading();
+            });
     }
 });

@@ -24,10 +24,10 @@
                         data-bs-toggle="dropdown"></i>
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                            @if($user->id !== Auth::id())
-                            <li><button class="dropdown-item small open-report" data-type="user" data-id="{{ $user->id }}">Chặn</button></li>
+                            @if(!Auth::check() || $user->id !== Auth::id())
+                            <li><button class="dropdown-item small open-report require-login" data-type="user" data-id="{{ $user->id }}">Chặn</button></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item small text-danger open-report" data-type="user" data-id="{{ $user->id }}">Báo cáo</button></li>
+                            <li><button class="dropdown-item small text-danger open-report require-login" data-type="user" data-id="{{ $user->id }}">Báo cáo</button></li>
                             @endif
                         </ul>
                     </div>
@@ -48,19 +48,19 @@
                 </span>
                 
             </div>
-            @if(Auth::id() !== $user->id)
+            @if(!Auth::check() || Auth::id() !== $user->id)
             <div class="mt-2">
-                @if($user->followers->contains(Auth::id()))
+                @if(Auth::check() && $user->followers->contains(Auth::id()))
                     <button class="btn btn-light rounded-3 fw-semibold px-4 w-25 btn-sm follow-btn" 
                     data-id="{{$user->id}}">Đang Theo dõi</button>
-                                    @else
-                                    <button class="btn btn-primary rounded-3 w-25 fw-semibold px-4 btn-sm follow-btn" 
-                                    data-id="{{$user->id}}">Theo dõi</button>
-                                    @endif
-                        <a href="{{ route('conversations.index', ['chat' => $user->id]) }}"
-                            class="btn btn-dark rounded-3 w-25 fw-semibold px-4 btn-sm">
-                                Nhắn tin
-                            </a>
+                @else
+                    <button class="btn btn-primary rounded-3 w-25 fw-semibold px-4 btn-sm follow-btn require-login" 
+                    data-id="{{$user->id}}">Theo dõi</button>
+                @endif
+                <a href="{{ route('conversations.index', ['chat' => $user->id]) }}"
+                    class="btn btn-dark rounded-3 w-25 fw-semibold px-4 btn-sm require-login">
+                        Nhắn tin
+                </a>
             </div>
             @endif
         </div>
@@ -91,31 +91,20 @@
             </div>
         </div>
         <div class="col-lg-4 d-none d-lg-block">
-    <div class="sidebar-sticky ps-4">
-                <!-- <div class="col-lg-4 d-none d-lg-block" id="comment-panel">
-                <div class="sidebar-sticky ps-4"> -->
-                <div class="d-flex align-items-center mb-4">
-                    <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="rounded-circle" style="width: 56px; height: 56px; object-fit: cover;">
-                    <div class="ms-3">
-                        <div class="fw-bold small">{{ auth()->user()->name }}</div>
-                        <div class="text-muted small">{{ auth()->user()->profile->display_name ?? 'User' }}</div>
-                    </div>
-                    <a href="#" class="ms-auto text-primary text-decoration-none small fw-bold">Chuyển</a>
+     @foreach($suggestedUsers as $u)
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <a href="{{ route('profile.detail', $u->id) }}" class="text-decoration-none">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ asset('storage/' . ($u->profile->avatar ?? 'default-avatar.png')) }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                        <div class="ms-3">
+                            <div class="fw-bold small">{{ $u->profile->display_name ?? $u->name }}</div>
+                            <div class="text-muted" style="font-size: 11px;">Gợi ý cho bạn</div>
+                        </div>
+                    </div></a>
+                    <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn require-login" 
+                    data-id="{{$u->id}}">Theo dõi</button>
                 </div>
-                
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
-                    <a href="#" class="text-dark text-decoration-none small fw-bold">Xem tất cả</a>
-                </div>
-
-                <div class="text-muted mt-4" style="font-size: 12px;">
-                    Giới thiệu • Trợ giúp • Báo chí • API • Việc làm • Quyền riêng tư • Điều khoản
-                </div>
-                <div class="text-muted mt-3 fw-bold" style="font-size: 12px;">
-                </div>
-            </div>
-        </div>
-    </div>
+                @endforeach
 </div>
       
 <!-- Modal xem chi tiết người theo dõi -->

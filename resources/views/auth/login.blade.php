@@ -1,13 +1,10 @@
-<x-guest-layout>
+@extends($layout)
 
+@section('content')
 <style>
-body{
-    background:#fafafa;
-}
-
 .insta-wrapper{
     max-width:350px;
-    margin:40px auto;
+    margin:10px auto;
 }
 
 .insta-card{
@@ -120,7 +117,7 @@ body{
             <hr>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3 text-center">
             <a href="{{ route('google.login') }}" style="text-decoration: none; display: flex; align-items: center; justify-content: center; color: #385185; font-weight: 600; font-size: 14px;">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="18" class="me-2">
                 Đăng nhập bằng Google
@@ -149,5 +146,4 @@ body{
 
     </div>
 </div>
-
-</x-guest-layout>
+@endsection

@@ -14,12 +14,12 @@
                                           {{ $user->followers->count() ?? 0 }} người theo dõi</button>
                                     </div>
                                 </div>
-                                @if($user->id != Auth::id())
-                                 @if($user->followers->contains(Auth::id()))
+                                @if(!Auth::check() || $user->id != Auth::id())
+                                 @if(Auth::check() && $user->followers->contains(Auth::id()))
                                     <button class="btn btn-light rounded-pill fw-semibold px-4 btn-sm follow-btn" 
                                     data-id="{{$user->id}}">Đang Theo dõi</button>
                                     @else
-                                    <button class="btn btn-primary rounded-pill fw-semibold px-4 btn-sm follow-btn" 
+                                    <button class="btn btn-primary rounded-pill fw-semibold px-4 btn-sm follow-btn require-login" 
                                     data-id="{{$user->id}}">Theo dõi</button>
                                     @endif
                                 @endif

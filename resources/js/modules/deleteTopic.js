@@ -11,7 +11,7 @@
         // Disable nút để tránh spam click
         btn.disabled = true;
         startLoading();
-        fetch(`/topics/destroy/${id}`, {
+        fetch(`/admin/topics/destroy/${id}`, {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,

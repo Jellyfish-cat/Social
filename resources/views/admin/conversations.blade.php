@@ -3,12 +3,12 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="text-primary">
-            <i class="bi bi-file-earmark-text"></i> Quản lý hộp thoại
+            <i class="bi bi-file-earmark-text"></i> Quản lý hội thoại
         </h3>
     </div>
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            Danh sách hộp thoại
+            Danh sách hội thoại
              <span class="badge bg-white text-primary count-conversation">Tổng: {{ $conversations->total() }}</span>
         </div>
         <div class="card-body p-0">
@@ -34,8 +34,15 @@
                                 {{ $item->profile->display_name ?? $item->email }},
                             @endforeach
                         </td>
-                        <td class="text-center">
-                            {{ $value->type   ?? 'private' }}
+                             @if($value->type === 'private')
+                         <td class="text-start" >
+                        <span class="badge bg-warning text-dark">cá nhân</span>
+                        </td>
+                        @elseif($value->type === 'group')
+                         <td class="text-start" >
+                        <span class="badge bg-success">nhóm</span>
+                        </td>
+                        @endif
                         </td>
                          <td class="text-center">
                             {{ $value->messages_count   ?? 0 }}

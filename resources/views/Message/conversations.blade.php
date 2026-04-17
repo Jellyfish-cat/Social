@@ -554,8 +554,8 @@
             <span class="msg-username">
                 {{ auth()->user()->profile->display_name ?? auth()->user()->name }}
             </span>
-            <button class="msg-icon-btn" title="Tạo cuộc trò chuyện mới">
-                <i class="bi bi-pencil-square"></i>
+            <button class="msg-icon-btn me-2" id="btnOpenGroupModal" title="Tạo nhóm trò chuyện">
+                <i class="bi bi-people-fill"></i>
             </button>
         </div>
 
@@ -584,9 +584,23 @@
             @if($conversations !== null)
                 @foreach($conversations as $conversation)
                     @php
-                        $otherUser = $conversation->users->where('id', '!=', auth()->id())->first();
-                        if(!$otherUser) continue;
-                        $status = $otherUser->status ?? 'show';
+                        $isGroup = $conversation->type === 'group';
+                        $targetId = null;
+                        $displayName = 'Unnamed';
+                        $avatar = asset('storage/default-avatar.png');
+
+                        if ($isGroup) {
+                            $displayName = $conversation->name;
+                            $avatar = $conversation->avatar ? asset('storage/' . $conversation->avatar) : asset('storage/default-group.png');
+                            $targetId = $conversation->id;
+                        } else {
+                            $otherUser = $conversation->users->where('id', '!=', auth()->id())->first();
+                            if(!$otherUser) continue;
+                            $displayName = $otherUser->profile->display_name ?? $otherUser->name;
+                            $avatar = asset('storage/' . ($otherUser->profile->avatar ?? 'default-avatar.png'));
+                            $targetId = $otherUser->id;
+                        }
+
                         $lastMsg = $conversation->latestMessage;
                         $previewText = 'Chưa có tin nhắn';
                         if ($lastMsg) {
@@ -601,16 +615,18 @@
                         }
                     @endphp
                  <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item {{ $conversation->unread_count > 0 ? 'unread' : '' }}"
-                         data-name="{{ $otherUser->profile->display_name ?? $otherUser->name }}"
+                         data-name="{{ $displayName }}"
                          data-status="{{ $lastMsg->content ?? '' }}"
                          data-online="false"
-                         data-user-id="{{ $otherUser->id }}">
-                        <img src="{{ asset('storage/' . ($otherUser->profile->avatar ?? 'default-avatar.png')) }}"
-                             class="rounded-circle" width="50" height="50">
+                         data-is-group="{{ $isGroup ? 'true' : 'false' }}"
+                         data-convo-id="{{ $targetId }}"
+                         data-user-id="{{ $targetId }}">
+                        <img src="{{ $avatar }}"
+                             class="rounded-circle flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">
 
                         <div class="flex-grow-1 text-truncate">
                             <div class="fw-semibold">
-                                {{ $otherUser->profile->display_name ?? $otherUser->name }}
+                                {{ $displayName }}
                             </div>
 
                             <small class="text-muted">
@@ -668,8 +684,6 @@
                 <div class="msg-chat-header-status" id="chatStatus">Đang hoạt động</div>
             </div>
             <div class="msg-chat-actions">
-                <button class="msg-icon-btn" title="Gọi điện"><i class="bi bi-telephone"></i></button>
-                <button class="msg-icon-btn" title="Gọi video"><i class="bi bi-camera-video"></i></button>
                 <button class="msg-icon-btn" title="Thông tin"><i class="bi bi-info-circle"></i></button>
             </div>
         </div>
@@ -710,7 +724,56 @@
         @endif
     </div>
 
+{{-- New Group Modal --}}
+<div class="modal fade" id="newGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold">Tạo nhóm trò chuyện</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newGroupForm" enctype="multipart/form-data">
+                    <div class="text-center mb-3">
+                        <label for="groupAvatarInput" class="cursor-pointer">
+                            <img src="{{ asset('storage/default-avatar.png') }}" id="groupAvatarPreview" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #efefef;">
+                            <div class="small text-primary mt-1">Chọn ảnh nhóm (tùy chọn)</div>
+                        </label>
+                        <input type="file" id="groupAvatarInput" name="avatar" hidden accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="name" class="form-control rounded-3" placeholder="Tên nhóm (VD: Hội Quán...)" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold mb-2">Thêm thành viên</label>
+                        <input type="text" id="groupUserSearch" class="form-control mb-2 rounded-3" placeholder="Tìm tên người dùng...">
+                        <div id="selectedUsers" class="d-flex flex-wrap gap-2 mb-2"></div>
+                        <div id="groupUserSuggestions" class="list-group list-group-flush border rounded-3 overflow-auto" style="max-height: 200px;"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" id="btnCreateGroup" class="btn btn-primary rounded-pill px-4">Tạo nhóm</button>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnOpenGroupModal = document.getElementById('btnOpenGroupModal');
+    if (btnOpenGroupModal) {
+        btnOpenGroupModal.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modalEl = document.getElementById('newGroupModal');
+            if (modalEl) {
+                const modalParams = new bootstrap.Modal(modalEl);
+                modalParams.show();
+            }
+        });
+    }
+});
+</script>
 
 @endsection

@@ -78,10 +78,10 @@
                                     <input type="hidden" name="new_topics" id="new-topics">
                                 </div>
                             <div class="mb-4 border-top pt-3">
-                                <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-3">
+                                 <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-3">
                                     <label class="form-check-label small fw-bold text-dark" for="pinned">Ghim bài viết này</label>
                                     <input class="form-check-input" type="checkbox" id="pinned" name="pinned" value="1" {{ $post->pinned ? 'checked' : '' }}>
-                                </div>
+                                </div> 
                                 <div class="form-check form-switch d-flex justify-content-between align-items-center ps-0 mb-1">
                                     <label class="form-check-label small fw-bold text-dark" for="is_comment_enabled">Bật tính năng bình luận</label>
                                     <input class="form-check-input" type="checkbox" id="is_comment_enabled" name="is_comment_enabled" value="1" {{ $post->is_comment_enabled ? 'checked' : '' }}>

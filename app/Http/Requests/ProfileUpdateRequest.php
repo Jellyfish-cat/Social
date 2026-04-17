@@ -23,11 +23,12 @@ class ProfileUpdateRequest extends FormRequest
                 'lowercase',
                 'email',
                 'max:255',
-                Rule::unique(User::class)->ignore($this->user()->id),
+                Rule::unique(User::class)->ignore($this->id ?? $this->user()->id),
             ],
             'display_name' => ['required', 'string', 'max:50'],
             'bio' => ['nullable', 'string', 'max:255'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'role' => ['nullable', 'string', 'in:user,moderator,admin'],
         ];
     }
 }

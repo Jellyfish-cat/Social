@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('conversations', function (Blueprint $table) {
     $table->id();
     $table->string('type'); // private | group
+    $table->string('name')->nullable();
+    $table->string('avatar')->nullable();
     $table->timestamp('created_at')->useCurrent();
     $table->string('status')->default('show');
 

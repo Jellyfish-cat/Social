@@ -145,7 +145,7 @@ return [
                 'sortableAttributes' => ['created_at'],
             ],
             'users' => [
-                'filterableAttributes'=> ['id', 'status'],
+                'filterableAttributes'=> ['id', 'status', 'role'],
             ],
         ],
     ],

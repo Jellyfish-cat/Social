@@ -20,12 +20,12 @@
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            @if($post->user->id != Auth::id())
-                @if($post->user->followers->contains(Auth::id()))
+            @if(!Auth::check() || $post->user->id != Auth::id())
+                @if(Auth::check() && $post->user->followers->contains(Auth::id()))
                     <button class="btn btn-light rounded-3 fw-semibold px-3 btn-sm follow-btn" 
                     data-id="{{$post->user->id}}">Đang Theo dõi</button>
                 @else
-                    <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn" 
+                    <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn require-login" 
                     data-id="{{$post->user->id}}">Theo dõi</button>
                 @endif
             @endif
@@ -33,7 +33,7 @@
             <div class="dropdown">
                 <i class="bi bi-three-dots cursor-pointer" data-bs-toggle="dropdown"></i>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                    @if($post->user->id === Auth::id() || auth()->user()->role === 'admin')
+                    @if(Auth::check() && ($post->user->id === Auth::id() || auth()->user()->role === 'admin'))
                     <li><a class="dropdown-item small btn-edit-post" href="javascript:void(0)" data-id="{{ $post->id }}">Chỉnh sửa</a></li>
                     <li>
                         <a class="dropdown-item small btn-delete" data-id="{{ $post->id }}">
@@ -42,7 +42,7 @@
                     </li>
                     @endif
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item small text-danger open-report" data-type="post" data-id="{{ $post->id }}">Báo cáo</a></li>
+                    <li><a class="dropdown-item small text-danger open-report require-login" data-type="post" data-id="{{ $post->id }}">Báo cáo</a></li>
                 </ul>
             </div>
         </div>
@@ -93,8 +93,8 @@
         </div>
           <div class="d-flex justify-content-between mb-2">
             <div class="d-flex gap-3">
-                <button class="btn-like" data-id="{{ $post->id }}">
-                    @if($post->likes->contains('user_id', auth()->id()))
+                <button class="btn-like require-login" data-id="{{ $post->id }}">
+                    @if(Auth::check() && $post->likes->contains('user_id', auth()->id()))
                     <i class="bi bi-heart-fill action-icon fs-5 text-danger"></i>
                     @else
                     <i class="bi bi-heart action-icon fs-5 "></i>
@@ -103,10 +103,12 @@
                 <button class="open-post" data-id="{{ $post->id }}">
                     <i class="bi bi-chat action-icon fs-5"></i>
                 </button>
-                <i class="bi bi-share action-icon fs-5"></i>
+                <button class="open-share bg-transparent border-0 p-0 require-login" data-id="{{ $post->id }}">
+                    <i class="bi bi-share action-icon fs-5"></i>
+                </button>
             </div>
-            <button class="btn-favorite" data-id="{{ $post->id }}">
-                @if($post->favorites->contains('user_id', auth()->id()))
+            <button class="btn-favorite require-login" data-id="{{ $post->id }}">
+                @if(Auth::check() && $post->favorites->contains('user_id', auth()->id()))
                     <i class="bi bi-bookmark-fill action-icon fs-5 text-warning"></i>
                 @else
                     <i class="bi bi-bookmark action-icon fs-5 "></i>

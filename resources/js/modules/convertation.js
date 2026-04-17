@@ -26,8 +26,10 @@ if (msgPage) {
         msgPage.classList.add('show-chat');
 
         // Fetch messages từ server
-        const userId = el.dataset.userId;
-        if (userId) {
+        const targetId = el.dataset.convoId || el.dataset.userId;
+        const isGroup = el.dataset.isGroup === 'true';
+
+        if (targetId) {
             chatBody.innerHTML = `
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status"></div>
@@ -35,7 +37,9 @@ if (msgPage) {
         </div>
      `;
             startLoading();
-            fetch(`/message/chat/${userId}`)
+            const fetchUrl = isGroup ? `/message/group/chat/${targetId}` : `/message/chat/${targetId}`;
+            
+            fetch(fetchUrl)
                 .then(res => res.text())
                 .then(html => {
                     chatBody.innerHTML = html;
@@ -63,7 +67,10 @@ if (msgPage) {
             if (csrfTokenElement) {
                 fetch(`/messages/read/${userId}`, {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrfTokenElement.content }
+                    headers: {
+                        'X-CSRF-TOKEN': csrfTokenElement.content,
+                        'Accept': 'application/json'
+                    }
                 })
                     .then(res => res.json())
                     .then(data => {
@@ -142,14 +149,28 @@ if (msgPage) {
         }
 
         // Gửi lên server bằng FormData
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
         const formData = new FormData();
         if (text) formData.append('content', text);
         files.forEach(file => formData.append('files[]', file));
+
+        const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfTokenElement) {
+            console.error('CSRF token not found');
+            return;
+        }
+
+        const isGroup = currentItem.dataset.isGroup === 'true';
+        const targetId = currentItem.dataset.convoId || currentUserId;
+        const fetchUrl = isGroup ? `/message/group/send/${targetId}` : `/message/send/${targetId}`;
+
         startLoading();
-        fetch(`/message/send/${userId}`, {
+        fetch(fetchUrl, {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken },
+            headers: {
+                'X-CSRF-TOKEN': csrfTokenElement.content,
+                'Accept': 'application/json'
+            },
             body: formData,
         })
             .then(res => res.json())
@@ -426,9 +447,22 @@ setTimeout(() => {
             .listen('MessageSent', (e) => {
                 console.log("Đã nhận được tin nhắn realtime!!", e); // Bắn log ra F12 để check luôn
                 const incomingMsg = e.message;
-                // Nếu bạn ĐANG MỞ khung chat với người vừa gửi tin tới
-                if (currentUserId == incomingMsg.sender_id) {
-                    fetch(`/messages/read/${incomingMsg.sender_id}`, {
+                const isGroupEvent = incomingMsg.is_group === true;
+                
+                // Nếu đang mở khung chat tương ứng với tin nhắn (private hoặc group)
+                let isMatch = false;
+                const currentType = currentItem ? currentItem.dataset.isGroup : 'false';
+                const currentId = currentItem ? (currentItem.dataset.convoId || currentItem.dataset.userId) : null;
+                
+                if (isGroupEvent) {
+                    isMatch = (currentType === 'true' && currentId == incomingMsg.conversation_id);
+                } else {
+                    isMatch = (currentType === 'false' && currentId == incomingMsg.sender_id);
+                }
+
+                if (isMatch) {
+                    const readId = isGroupEvent ? incomingMsg.conversation_id : incomingMsg.sender_id;
+                    fetch(`/messages/read/${readId}`, {
                         method: 'POST',
                         headers: {
                             "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
@@ -481,7 +515,13 @@ setTimeout(() => {
                     row.dataset.id = incomingMsg.id;
 
                     // --- 4. Cập nhật Sidebar Preview và đẩy lên đầu tiên ---
-                    const activeConvoItem = document.querySelector(`.convo-item[data-user-id="${incomingMsg.sender_id}"]`);
+                    let selector = ``;
+                    if (isGroupEvent) {
+                        selector = `.convo-item[data-convo-id="${incomingMsg.conversation_id}"][data-is-group="true"]`;
+                    } else {
+                        selector = `.convo-item[data-user-id="${incomingMsg.sender_id}"][data-is-group="false"]`;
+                    }
+                    const activeConvoItem = document.querySelector(selector);
                     if (activeConvoItem) {
                         const preview = activeConvoItem.querySelector('small.text-muted');
                         let textPreview = incomingMsg.content;
@@ -504,25 +544,33 @@ setTimeout(() => {
                     }
 
                 } else {
-                    const senderId = incomingMsg.sender_id;
-                    let convoItem = document.querySelector(`.convo-item[data-user-id="${senderId}"]`);
+                    let selector = isGroupEvent 
+                        ? `.convo-item[data-convo-id="${incomingMsg.conversation_id}"][data-is-group="true"]`
+                        : `.convo-item[data-user-id="${incomingMsg.sender_id}"][data-is-group="false"]`;
+                    let convoItem = document.querySelector(selector);
+
                     // ===== 1. Nếu chưa có conversation thì tạo mới
                     if (!convoItem) {
                         const convoList = document.getElementById('msgConvoList');
-                        const avatar = incomingMsg.sender_avatar
-                            ? `/storage/${incomingMsg.sender_avatar}`
-                            : '/storage/default-avatar.png';
+                        const avatar = isGroupEvent 
+                            ? (incomingMsg.group_avatar ? `/storage/${incomingMsg.group_avatar}` : '/storage/default-group.png')
+                            : (incomingMsg.sender_avatar ? `/storage/${incomingMsg.sender_avatar}` : '/storage/default-avatar.png');
+                        const displayName = isGroupEvent ? incomingMsg.group_name : (incomingMsg.sender_name || 'User');
+                        const targetId = isGroupEvent ? incomingMsg.conversation_id : incomingMsg.sender_id;
+
                         convoItem = document.createElement('div');
                         convoItem.className = 'd-flex align-items-center px-3 py-2 gap-2 convo-item unread';
-                        convoItem.dataset.userId = senderId;
-                        convoItem.dataset.name = incomingMsg.sender_name || 'User';
+                        convoItem.dataset.userId = targetId;
+                        convoItem.dataset.convoId = targetId;
+                        convoItem.dataset.name = displayName;
                         convoItem.dataset.status = '';
                         convoItem.dataset.online = 'false';
+                        convoItem.dataset.isGroup = isGroupEvent ? 'true' : 'false';
                         convoItem.innerHTML = `
-                                <img src="${avatar}" class="rounded-circle" width="50" height="50">
+                                <img src="${avatar}" class="rounded-circle" width="50" height="50" style="object-fit: cover;">
                                 <div class="flex-grow-1 text-truncate">
                                     <div class="fw-semibold msg-convo-name">
-                                        ${incomingMsg.sender_name || 'User'}
+                                        ${displayName}
                                     </div>
                                     <small class="text-muted"></small>
                                 </div>
@@ -661,11 +709,10 @@ document.addEventListener('click', function (e) {
         if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
             return;
         }
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         fetch(`/conversation/destroy/${postId}`, {
             method: 'DELETE',
             headers: {
-                'X-CSRF-TOKEN': csrfToken,
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Accept': 'application/json'
             }
         })
@@ -697,3 +744,112 @@ document.addEventListener('click', function (e) {
             });
     }
 });
+
+// ===== GROUP CHAT UI LOGIC =====
+let selectedGroupUsers = [];
+
+const groupUserSearch = document.getElementById('groupUserSearch');
+const groupUserSuggestions = document.getElementById('groupUserSuggestions');
+const selectedUsersContainer = document.getElementById('selectedUsers');
+const btnCreateGroup = document.getElementById('btnCreateGroup');
+
+if (groupUserSearch) {
+    let debounce;
+    groupUserSearch.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(async () => {
+            const q = groupUserSearch.value.trim().toLowerCase();
+            if (!q) {
+                groupUserSuggestions.innerHTML = '';
+                return;
+            }
+            try {
+                const res = await fetch(`/conversation/search?q=${q}`);
+                const data = await res.json();
+                groupUserSuggestions.innerHTML = data.map(u => `
+                    <div class="list-group-item list-group-item-action d-flex align-items-center gap-2 cursor-pointer"
+                         onclick="window.selectUserForGroup(${u.id}, '${(u.profile?.display_name || u.name).replace(/'/g, "\\'")}')">
+                        <img src="${u.profile?.avatar ? '/storage/' + u.profile.avatar : '/storage/default-avatar.png'}" 
+                             class="rounded-circle" style="width:30px;height:30px;object-fit:cover;">
+                        <span class="small">${u.profile?.display_name ?? u.name}</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Lỗi tim kiếm", e);
+            }
+        }, 300);
+    });
+}
+
+window.selectUserForGroup = function(id, name) {
+    if (selectedGroupUsers.includes(id)) return;
+    selectedGroupUsers.push(id);
+    
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-light text-dark border p-2 d-flex align-items-center gap-2 m-1';
+    badge.innerHTML = `
+        ${name} 
+        <i class="bi bi-x-circle cursor-pointer text-danger" onclick="window.removeUserFromGroup(${id}, this)"></i>
+    `;
+    selectedUsersContainer.appendChild(badge);
+    
+    groupUserSearch.value = '';
+    groupUserSuggestions.innerHTML = '';
+};
+
+window.removeUserFromGroup = function(id, element) {
+    selectedGroupUsers = selectedGroupUsers.filter(uid => uid !== id);
+    element.parentElement.remove();
+};
+
+if (btnCreateGroup) {
+    btnCreateGroup.addEventListener('click', async function() {
+        const form = document.getElementById('newGroupForm');
+        const formData = new FormData(form);
+        
+        if (selectedGroupUsers.length < 1) {
+            alert('Vui lòng chọn ít nhất 1 thành viên!');
+            return;
+        }
+        
+        selectedGroupUsers.forEach(id => formData.append('user_ids[]', id));
+        
+        const csrfTag = document.querySelector('meta[name="csrf-token"]');
+        
+        startLoading();
+        try {
+            const res = await fetch('/conversation/group/create', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfTag.content,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.location.reload(); 
+            } else {
+                alert(data.error || data.message || 'Lỗi server');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Lỗi khởi tạo nhóm.');
+        } finally {
+            finishLoading();
+        }
+    });
+
+    const groupAvatarInput = document.getElementById('groupAvatarInput');
+    if (groupAvatarInput) {
+        groupAvatarInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(ex) {
+                    document.getElementById('groupAvatarPreview').src = ex.target.result;
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+    }
+}

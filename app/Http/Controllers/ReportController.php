@@ -16,13 +16,16 @@ class ReportController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($tab)
+    public function index($tab = 'pending')
     {
+        if (!in_array($tab, ['pending', 'resolved', 'dismissed'])) {
+            $tab = 'pending';
+        }
          $item='report-item';
          $delete='btn-delete-report';
         // Default to post reports for the initial page load
         if ($tab === 'pending') {
-            $values = Report::selectRaw('target_type, target_id, count(id) as total_reports, max(created_at) as last_reported_at, max(category) as category, max(reason) as reason, max(id) as id')
+            $values = Report::selectRaw('target_type, target_id, count(id) as total_reports, max(created_at) as last_reported_at, max(category) as category, max(reason) as reason, max(id) as id, max(status) as status')
                 ->where('target_type', 'App\Models\Post')
                 ->where('status', 'pending')
                 ->groupBy('target_type', 'target_id')
@@ -64,8 +67,13 @@ class ReportController extends Controller
     /**
      * Fetch reports by type for tabs (AJAX).
      */
-    public function reportTab(Request $request, $type, $tab)
+    public function reportTab(Request $request, $type, $tab = 'pending')
     {
+        $tab = $request->query('status', $tab);
+        if (!in_array($tab, ['pending', 'resolved', 'dismissed'])) {
+            $tab = 'pending';
+        }
+        
         $targetTypeMap = [
             'post' => 'App\Models\Post',
             'people' => 'App\Models\User',
@@ -75,7 +83,7 @@ class ReportController extends Controller
         $item='report-item';
         $delete='btn-delete-report';
         if ($tab === 'pending') {
-            $values = Report::selectRaw('target_type, target_id, count(id) as total_reports, max(created_at) as last_reported_at, max(category) as category, max(reason) as reason, max(id) as id')
+            $values = Report::selectRaw('target_type, target_id, count(id) as total_reports, max(created_at) as last_reported_at, max(category) as category, max(reason) as reason, max(id) as id, max(status) as status')
                 ->where('target_type', $targetType)
                 ->where('status', 'pending')
                 ->groupBy('target_type', 'target_id')
@@ -161,17 +169,17 @@ class ReportController extends Controller
             'status' => 'pending',
         ]);
 
-        // Thông báo đến role=admin khi có report đến
-        $admins = User::where('role', 'admin')->get();
+        // Thông báo đến role=admin và moderator khi có report đến
+        $staff = User::whereIn('role', ['admin', 'moderator'])->get();
         $reporterName = Auth::user()->name ?? 'Người dùng';
         $targetName = 'nội dung';
         if ($mapKey === 'post') $targetName = 'bài viết';
         if ($mapKey === 'comment') $targetName = 'bình luận';
         if ($mapKey === 'user') $targetName = 'người dùng';
 
-        foreach ($admins as $admin) {
+        foreach ($staff as $member) {
             $notification = Notification::create([
-                'user_id' => $admin->id,
+                'user_id' => $member->id,
                 'content' => "<strong>{$reporterName}</strong> đã gửi một báo cáo mới về {$targetName}. report:{$mapKey}:{$request->target_id}",
                 'type' => 'report'
             ]);
@@ -183,18 +191,18 @@ class ReportController extends Controller
             'message' => __('Report submitted successfully.'),
         ]);
     }
-    public function destroy( $id)
+
+    public function destroy($id)
     {
         $report = Report::find($id);
+        if (!$report) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy báo cáo'], 404);
+        }
+
+        // Quyền: Người tạo báo cáo hoặc Admin/Mod (CheckRole middleware đã xử lý role, nhưng cho shared destroy ta vẫn cần check)
         if (auth()->user()->role !== 'admin' && auth()->id() !== $report->user_id) {
             abort(403, 'Bạn không có quyền');
-        }
-        if (!$report) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy báo cáo'
-            ], 404);
-        }
+        }   
 
         $report->delete();
         $reportlist = Report::where('status','pending')->latest()->get();
@@ -210,18 +218,13 @@ class ReportController extends Controller
         $report = Report::find($id);
 
         if (!$report) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy báo cáo'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy báo cáo'], 404);
         }
 
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $report->user_id) {
-            abort(403, 'Bạn không có quyền');
-        }
+        // Đã có middleware checkRole:admin,moderator ở web.php nên không cần check ở đây nữa
 
         $action = $request->input('action'); 
-        if (!in_array($action, ['hide', 'restore'])) {
+        if (!in_array($action, ['hide', 'restore', 'dismiss'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Action không hợp lệ'
@@ -232,13 +235,13 @@ class ReportController extends Controller
             ->where('target_type', $report->target_type);
         $target = $report->target;
 
-        // 1. Cập nhật trạng thái của đối tượng bị báo cáo (Post, Comment, hoặc User)
-        if ($target) {
+        // 1. Cập nhật trạng thái của đối tượng bị báo cáo (Nếu không phải là bỏ qua)
+        if ($target && $action !== 'dismiss') {
             $newStatus = ($action === 'hide') ? 'hidden' : 'show';
             $target->update(['status' => $newStatus]);
         }
 
-        // 2. Xác định chủ sở hữu và chuẩn bị thông tin thông báo
+        // 2. Xác định chủ sở hữu
         $owner = ($report->target_type === User::class) ? $target : ($target->user ?? null);
 
         if ($action === 'hide') {
@@ -276,18 +279,22 @@ class ReportController extends Controller
                     }
                 }
 
-                $notif = Notification::create([
-                    'user_id' => $owner->id,
-                    'content' => "Chào <strong>{$displayName}</strong>, {$typeLabel} của bạn{$preview} đã bị ẩn do vi phạm tiêu chuẩn cộng đồng. {$email}",
-                    'type' => ($report->target_type === User::class) ? 'account_locked' : 'system'
-                ]);
-                broadcast(new NotificationSent($notif))->toOthers();
+
             }
-        } elseif ($action === 'restore') {
+        } elseif ($action === 'dismiss') {
             $relatedReports->update([
                 'status' => 'dismissed',
-                'resolved_by' => null,
-                'resolved_at' => null,
+                'resolved_by' => auth()->id(),
+                'resolved_at' => now(),
+            ]);
+        } elseif ($action === 'restore') {
+            if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+                abort(403, 'Bạn không có quyền');
+            }
+            $relatedReports->update([
+                'status' => 'dismissed',
+                'resolved_by' => auth()->id(),
+                'resolved_at' => now(),
             ]);
 
             if ($owner) {
@@ -311,7 +318,8 @@ class ReportController extends Controller
                 max(created_at) as last_reported_at, 
                 max(category) as category, 
                 max(reason) as reason, 
-                max(id) as id
+                max(id) as id,
+                max(status) as status
             ')
             ->where('status', 'pending')
             ->groupBy('target_type', 'target_id')

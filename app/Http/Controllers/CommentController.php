@@ -159,11 +159,16 @@ class CommentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, $id)
+    public function destroy($id)
     {
         $comment = Comment::find($id);
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $comment->user_id) {
-            abort(403, 'Bạn không có quyền');
+        if (!$comment) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy comment'], 404);
+        }
+
+        // Kiểm tra quyền: Chủ sở hữu HOẶC Admin HOẶC Moderator
+        if (auth()->id() !== $comment->user_id && auth()->user()->role !== 'admin' && auth()->user()->role !== 'moderator') {
+            abort(403, 'Bạn không có quyền xóa bình luận này');
         }
         if (!$comment) {
             return response()->json([

@@ -46,7 +46,7 @@
                 <div class="d-flex align-items-center gap-3">
                     <a href="{{ route('profile.detail', $value->id) }}">
                         <img src="{{ asset('storage/' . ($value->profile->avatar ?? 'default-avatar.png')) }}"
-                             class="rounded-circle" width="44" height="44">
+                             class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover; flex-shrink: 0; border: 1px solid #eee;">
                     </a>
 
                     <div>

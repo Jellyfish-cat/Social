@@ -79,6 +79,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'id' => $this->id,
             'name' => $this->name,
             'display_name' => $this->profile->display_name ?? '',
+            'role' => $this->role,
+            'status' => $this->status,
         ];
     }
 }

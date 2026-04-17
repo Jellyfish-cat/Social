@@ -6,7 +6,7 @@ window.clearSearchCache = function () {
     cacheSearch = {};
 };
 
-document.addEventListener("click", function (e) {
+document.addEventListener("DOMContentLoaded", function () {
     const inputSearch = document.querySelector(".search-input");
     const suggestionsContainer = document.querySelector(".search-wrapper #suggestions");
 
@@ -105,8 +105,13 @@ document.addEventListener("click", function (e) {
         const hasTopics = data.topics && data.topics.length > 0;
         const hasUsers = data.users && data.users.length > 0;
         const hasPosts = data.posts && data.posts.length > 0;
+        const hasComments = data.comments && data.comments.length > 0;
+        const hasMessages = data.messages && data.messages.length > 0;
+        const hasConversations = data.conversations && data.conversations.length > 0;
+        const hasReports = data.reports && data.reports.length > 0;
+        const hasAdminHistory = data.admin_history && data.admin_history.length > 0;
 
-        if (!hasHistory && !hasTopics && !hasUsers && !hasPosts) {
+        if (!hasHistory && !hasTopics && !hasUsers && !hasPosts && !hasComments && !hasMessages && !hasConversations && !hasReports && !hasAdminHistory) {
             suggestionsContainer.innerHTML = `
                 <div class="list-group-item text-center text-muted border-0">
                     Không có gợi ý nào.
@@ -118,7 +123,7 @@ document.addEventListener("click", function (e) {
 
         let html = '';
 
-        // 1. Gợi ý (Người dùng + Bài viết) - Đưa lên trên cùng
+        // 1. Gợi ý (Người dùng + Bài viết + Admin Types)
         let suggestions = [];
         // thêm users
         if (hasUsers) {
@@ -136,11 +141,72 @@ document.addEventListener("click", function (e) {
         // thêm posts
         if (hasPosts) {
             data.posts.forEach(p => {
+                const uName = p.user?.profile?.display_name || p.user?.name || "Ẩn danh";
                 let contentSnippet = p.content ? p.content.substring(0, 50) + "..." : "Bài viết";
                 suggestions.push({
                     type: 'post',
-                    text: contentSnippet,
+                    text: `Bài viết [${uName}]: ${contentSnippet}`,
                     action: `window.location.href='/posts/detail/${p.id}'`
+                });
+            });
+        }
+
+        // thêm comments
+        if (hasComments) {
+            data.comments.forEach(c => {
+                const uName = c.user?.profile?.display_name || c.user?.name || "Ẩn danh";
+                let contentSnippet = c.content ? c.content.substring(0, 50) + "..." : "Bình luận";
+                suggestions.push({
+                    type: 'comment',
+                    text: `Bình luận [${uName}]: ${contentSnippet}`,
+                    action: `selectSearchItem(null, '${c.content.replace(/'/g, "\\'")}')`
+                });
+            });
+        }
+
+        // thêm messages
+        if (hasMessages) {
+            data.messages.forEach(m => {
+                const uName = m.sender?.profile?.display_name || m.sender?.name || "Ẩn danh";
+                let contentSnippet = m.content ? m.content.substring(0, 50) + "..." : "Tin nhắn";
+                suggestions.push({
+                    type: 'message',
+                    text: `Tin nhắn [${uName}]: ${contentSnippet}`,
+                    action: `selectSearchItem(null, '${m.content.replace(/'/g, "\\'")}')`
+                });
+            });
+        }
+
+        // thêm conversations
+        if (hasConversations) {
+            data.conversations.forEach(c => {
+                const names = c.users.map(u => u.profile?.display_name || u.name).join(', ');
+                suggestions.push({
+                    type: 'conversation',
+                    text: `Hộp thoại: ${names}`,
+                    action: `window.location.href='/admin/conversations/${c.id}'`
+                });
+            });
+        }
+
+        // thêm reports
+        if (hasReports) {
+            data.reports.forEach(r => {
+                suggestions.push({
+                    type: 'report',
+                    text: `Báo cáo [${r.category}]: ${r.reason.substring(0, 30)}...`,
+                    action: `selectSearchItem(null, '${r.reason.replace(/'/g, "\\'")}')`
+                });
+            });
+        }
+
+        // thêm admin_history
+        if (hasAdminHistory) {
+            data.admin_history.forEach(h => {
+                suggestions.push({
+                    type: 'history',
+                    text: `Lịch sử: ${h.keyword} (${h.user?.profile?.display_name || 'User'})`,
+                    action: `selectSearchItem(null, '${h.keyword.replace(/'/g, "\\'")}')`
                 });
             });
         }

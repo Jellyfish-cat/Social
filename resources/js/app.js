@@ -4,9 +4,11 @@ window.Alpine = Alpine;
 Alpine.start();
 
 // import modules
+import './modules/auth_guard';
 import './modules/home';
 import './modules/post';
 import './modules/like';
+import './modules/convertation';
 import './modules/comment';
 import './modules/createpost';
 import './modules/editpost';
@@ -19,10 +21,10 @@ import './modules/search';
 import './modules/searchtopic';
 import './modules/follow';
 import './modules/suggestionsSearch';
-import './modules/convertation';
 import './modules/message';
 import './modules/notification';
 import './modules/user';
 import './modules/report';
 import './modules/actionReport';
+import './modules/share';
 

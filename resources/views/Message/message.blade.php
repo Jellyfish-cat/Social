@@ -79,7 +79,13 @@
                         @endif
                     @endforeach
                     @if($msg->content)
-                        <div>{{ $msg->content }}</div>
+                        <div style="word-break: break-all;">
+                            {!! preg_replace(
+                                '/(https?:\/\/[^\s]+)/', 
+                                '<a href="$1" target="_blank" class="text-decoration-underline" style="color: inherit;">$1</a>', 
+                                e($msg->content) 
+                            ) !!}
+                        </div>
                          <div class="msg-time">
                             {{ $msg->created_at->format('H:i d/m') }}
                         </div>

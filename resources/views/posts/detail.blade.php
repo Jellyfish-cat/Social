@@ -111,7 +111,7 @@
                         data-bs-toggle="dropdown"></i>
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                            @if($comment->user->id === Auth::id() || auth()->user()->role === 'admin')
+                            @if(Auth::check() && ($comment->user->id === Auth::id() || auth()->user()->role === 'admin'))
                             <li>
                                 <a class="dropdown-item small btn-delete-comment"
                                 data-id="{{ $comment->id }}">
@@ -119,9 +119,9 @@
                                 </a>
                             </li>
                             @endif
-                            @if($comment->user->id !== Auth::id())
+                            @if(!Auth::check() || $comment->user->id !== Auth::id())
                             <li><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item small text-danger open-report" data-type="comment" data-id="{{ $comment->id }}">Báo cáo</button></li>
+                            <li><button class="dropdown-item small text-danger open-report require-login" data-type="comment" data-id="{{ $comment->id }}">Báo cáo</button></li>
                             @endif
                         </ul>
                     </div>
@@ -129,7 +129,11 @@
                 </div>
                 
                 <div class="small ms-1 content">
-                    {{ $comment->content }}
+                    {!! preg_replace(
+                        '/@([A-ZÀ-ỹ][\p{L}\p{N}]*(?:\s[A-ZÀ-ỹ][\p{L}\p{N}]*)*)/u', 
+                        '<a href="/profile/search?name=$1" class="text-primary fw-bold">@$1</a>', 
+                        e($comment->content)
+                    ) !!}
                 </div>
                  @if($comment->media_path)
                     <div class="mt-1 comment-media">
@@ -158,19 +162,20 @@
                             {{ number_format($comment->likes->count() ?? 0) }} lượt thích
                 </button>
                 {{-- Reply button --}}
-                <button class="btn-reply" style="font-size:13px;"
+                <button class="btn-reply require-login" style="font-size:13px;"
                     data-comment-id="{{ $comment->id }}"
                     data-username="{{ $comment->user->profile->display_name }}"
+                    data-user-id="{{ $comment->user->id }}"
                     data-post-id="{{ $post->id }}">
                     Trả lời
                 </button>
                 {{-- Like comment --}}
                 <div class="ms-auto d-flex" style="gap:2px;">
                 <button type="button"
-                    class="btn-comment-like btn-sm p-0 text-muted small" data-comment-id="{{ $comment->id }}"
+                    class="btn-comment-like btn-sm p-0 text-muted small require-login" data-comment-id="{{ $comment->id }}"
                     data-username="{{ $comment->user->profile->display_name }}"
                     data-post-id="{{ $post->id }}">
-                    @if($comment->likes->contains('user_id', auth()->id()))
+                    @if(Auth::check() && $comment->likes->contains('user_id', auth()->id()))
                         <i class="bi bi-heart-fill action-icon fs-6 me-2 text-danger"></i>
                     @else
                         <i class="bi bi-heart action-icon fs-6 me-2 "></i>
@@ -180,11 +185,7 @@
                     class="btn btn-sm p-0 text-muted small" data-comment-id="{{ $comment->id }}"
                     data-username="{{ $comment->user->profile->display_name }}"
                     data-post-id="{{ $post->id }}">
-                    @if($comment->likes->contains('user_id', auth()->id()))
-                        <i class="bi bi-hand-thumbs-down-fill action-icon fs-6 text-danger"></i>
-                    @else
-                        <i class="bi bi-hand-thumbs-down action-icon fs-6  "></i>
-                    @endif
+                    
                 </button>
                 </div>
             </div>
@@ -215,7 +216,7 @@
                         data-bs-toggle="dropdown"></i>
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                            @if($reply->user->id === Auth::id() || auth()->user()->role === 'admin')
+                            @if(Auth::check() && ($reply->user->id === Auth::id() || auth()->user()->role === 'admin'))
                             <li>
                                 <a class="dropdown-item small btn-delete-comment"
                                 data-id="{{ $reply->id }}">
@@ -223,16 +224,20 @@
                                 </a>
                             </li>
                             @endif
-                            @if($reply->user->id !== Auth::id())
+                            @if(!Auth::check() || $reply->user->id !== Auth::id())
                             <li><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item small text-danger open-report" data-type="comment" data-id="{{ $reply->id }}">Báo cáo</button></li>
+                            <li><button class="dropdown-item small text-danger open-report require-login" data-type="comment" data-id="{{ $reply->id }}">Báo cáo</button></li>
                             @endif
                         </ul>
                     </div>
 
                 </div>
                     <div class="small ms-1 content">
-                        {{ $reply->content }}
+                        {!! preg_replace(
+                            '/^@([A-ZÀ-ỹ][\p{L}\p{N}]*(?:\s[A-ZÀ-ỹ][\p{L}\p{N}]*)*)/u', 
+                            '<a class="text-primary fw-bold">@$1</a>', 
+                            e($reply->content)
+                        ) !!}
                     </div>
                     @if($reply->media_path)
                 <div class="mt-1 comment-media">
@@ -245,25 +250,26 @@
                     {{ $reply->created_at?->diffForHumans() }}
                 </span>
                 {{-- Like comment list --}}
-                <button class="btn-reply-list me-3 like-comment-count" style="font-size:13px;"
+                <button class="open-like-comment btn-reply-list me-3 like-comment-count" style="font-size:13px;"
                     data-comment-id="{{ $reply->id }}"
                     data-username="{{ $reply->user->profile->display_name }}"
                     data-post-id="{{ $post->id }}">
                     {{ $reply->likes->count() }} lượt thích
                 </button>
                 {{-- Reply button --}}
-                <button class="btn-reply " style="font-size:13px;"
+                <button class="btn-reply require-login" style="font-size:13px;"
                     data-comment-id="{{ $reply->id }}"  
                     data-username="{{ $reply->user->profile->display_name }}"
+                    data-user-id="{{ $reply->user->id }}"
                     data-post-id="{{ $post->id }}">
                     Trả lời
                 </button>
                 <div class="ms-auto d-flex" style="gap:2px;">
                 <button type="button"
-                    class="btn-comment-like btn-sm p-0 text-muted small"  data-comment-id="{{ $reply->id }}"
+                    class="btn-comment-like btn-sm p-0 text-muted small require-login"  data-comment-id="{{ $reply->id }}"
                     data-username="{{ $reply->user->profile->display_name }}"
                     data-post-id="{{ $post->id }}">
-                    @if($reply->likes->contains('user_id', auth()->id()))
+                    @if(Auth::check() && $reply->likes->contains('user_id', auth()->id()))
                         <i class="bi bi-heart-fill action-icon fs-6 me-2 text-danger"></i>
                     @else
                         <i class="bi bi-heart action-icon fs-6 me-2 "></i>
@@ -273,11 +279,7 @@
                     class="btn btn-sm p-0 text-muted small" data-comment-id="{{ $reply->id }}"
                     data-username="{{ $reply->user->profile->display_name }}"
                     data-post-id="{{ $post->id }}">
-                    @if($reply->likes->contains('user_id', auth()->id()))
-                        <i class="bi bi-hand-thumbs-down-fill action-icon fs-6 text-danger"></i>
-                    @else
-                        <i class="bi bi-hand-thumbs-down action-icon fs-6  "></i>
-                    @endif
+              
                 </button>
                   </div>
             </div>
@@ -296,22 +298,24 @@
                     <div class="action-section">
                         <div class="d-flex justify-content-between mb-2">
                         <div class="d-flex">
-                            <button class="btn-like" data-id="{{ $post->id }}">
-                                @if($post->likes->contains('user_id', auth()->id()))
+                            <button class="btn-like require-login" data-id="{{ $post->id }}">
+                                @if(Auth::check() && $post->likes->contains('user_id', auth()->id()))
                                 <i class="bi bi-heart-fill action-icon fs-5 me-3 text-danger"></i>
                                 @else
                                 <i class="bi bi-heart action-icon fs-5 me-3 "></i>
-                              @endif
+                                @endif
                             </button>
-                             <button class="btn-favorite" data-id="{{ $post->id }}">
-                            @if($post->favorites->contains('user_id', auth()->id()))
+                             <button class="btn-favorite require-login" data-id="{{ $post->id }}">
+                            @if(Auth::check() && $post->favorites->contains('user_id', auth()->id()))
                                 <i class="bi bi-bookmark-fill action-icon fs-5 text-warning"></i>
                             @else
                                 <i class="bi bi-bookmark action-icon fs-5 "></i>
                                 @endif
                         </button>
                         </div>
-                            <i class="bi bi-share fs-5 me-3"></i>
+                        <button class="open-share bg-transparent border-0 p-0 me-3 require-login" data-id="{{ $post->id }}">
+                            <i class="bi bi-share fs-5"></i>
+                        </button>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                         <button class="open-like fw-bold small like-count"
@@ -319,13 +323,13 @@
                                 data-post-id="{{ $post->id }}">
                             {{ number_format($post->likes->count() ?? 0) }} lượt thích
                     </button>
-                        <div class="fw-bold small comment-count" data-post-id="{{ $post->id }}">
+                        <div class="fw-bold small comment-post-count" data-post-id="{{ $post->id }}">
                             {{ number_format($post->comments->count() ?? 0) }} bình luận
                         </div>
                     </div>
                         {{-- Form comment --}}
                         @if($post->is_comment_enabled)
-                            <form class="d-flex flex-column comment-form">
+                            <form class="d-flex flex-column comment-form require-login-form">
                                 @csrf
                                 <div class="preview-media d-flex flex-wrap gap-2 mb-2"></div>
                                 <div class="d-flex align-items-center w-100 constantIcon">

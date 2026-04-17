@@ -1,4 +1,4 @@
-@foreach($comments as $comment)
+@forelse($comments as $comment)
 <div class="card border-0 shadow-sm mb-3">
     <div class="card-body p-3">
         <div class="d-flex align-items-start btn-reply open-post" 
@@ -50,10 +50,10 @@
                                 <div class="d-flex align-items-center mb-1" style="gap:6px;">
                                      <a href="{{ route('profile.detail', $comment->post->user->id) }}" onclick="event.stopPropagation()">
                                     <img src="{{ $comment->post->user->profile->avatar 
-                                                ? asset('storage/'.$comment->user->profile->avatar) 
+                                                ? asset('storage/'.$comment->post->user->profile->avatar) 
                                                 : 'https://i.pravatar.cc/150' }}"
                                         class="rounded-circle"
-                                        width="28" height="28">
+                                        style="width:40px;height:40px;object-fit:cover;">
                                      </a>
                                     <div class="small fw-semibold text-dark">
                                         {{ $comment->post->user->profile->display_name }} Bài viết
@@ -94,15 +94,6 @@
                                 <i class="bi bi-heart"></i>
                             @endif
                         </button>
-                        <button type="button"
-                            class="border-0 bg-transparent p-0">
-                            
-                            @if($comment->likes->contains('user_id', auth()->id()))
-                                <i class="bi bi-hand-thumbs-down-fill text-danger"></i>
-                            @else
-                                <i class="bi bi-hand-thumbs-down"></i>
-                            @endif
-                        </button>
 
                     </div>
                 </div>
@@ -112,4 +103,9 @@
 
     </div>
 </div>
-@endforeach
+@empty
+<div class="text-center py-5">
+    <i class="bi bi-chat fs-1 text-muted"></i>
+    <p class="text-muted mt-2">Chưa có bình luận nào.</p>
+</div>
+@endforelse

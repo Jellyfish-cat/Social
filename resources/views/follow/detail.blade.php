@@ -27,12 +27,12 @@
     <!-- Header: Người theo dõi -->
     <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
         <div style="width: 38px;"></div> <!-- placeholder để cân bằng với nút close -->
-        <h6 class="fw-bold m-0 text-center flex-grow-1" style="font-size: 16px;">Người theo dõi</h6>
+        <h6 class="fw-bold m-0 text-center flex-grow-1" style="font-size: 16px;">{{ $user->relationLoaded('followers') ? 'Người theo dõi' : 'Đang theo dõi' }}</h6>
         <button type="button" class="btn border-0 shadow-none p-2" data-bs-dismiss="modal" aria-label="Close">
             <i class="bi bi-x-lg" style="font-size: 18px;"></i>
         </button>
     </div>
-
+    
     <!-- Thanh tìm kiếm -->
     <div class="p-3 pb-2 border-bottom">
         <div class="input-group align-items-center" style="background-color: #efefef; border-radius: 8px; height: 36px; overflow: hidden;">
@@ -52,7 +52,7 @@
                 <div class="d-flex align-items-center gap-3">
                     <a href="{{ route('profile.detail', $value->id) }}" class="text-decoration-none">
                         <img src="{{ asset('storage/' . ($value->profile->avatar ?? 'default-avatar.png')) }}" 
-                             class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover; border: 1px solid #ddd;">
+                             class="rounded-circle" style="width: 50px; height: 50px; min-width: 50px; min-height: 50px; object-fit: cover; flex-shrink: 0; border: 1px solid #eee;">
                     </a>
                     <div class="d-flex flex-column justify-content-center">
                         <div class="d-flex align-items-center gap-1">
@@ -69,21 +69,21 @@
                 
                 <!-- Nút hành động -->
                 <div>
-                    @if(Auth::check() && Auth::id() === $user->id)
+                    @if(Auth::id() === $user->id)
                         {{--xem danh sách của chính mình --}}
                         <button 
                             class="follow-btn btn btn-sm fw-semibold px-4 rounded-pill 
-                            {{ $user->following->contains($value->id) ? 'btn-light' : 'btn-primary' }}"
+                            {{ Auth::check() && $user->following->contains($value->id) ? 'btn-light' : 'btn-primary' }} {{ !Auth::check() ? 'require-login' : '' }}"
                             data-id="{{ $value->id }}"  data-authid="{{Auth::id()}}">
-                            {{ $user->following->contains($value->id) ? 'Đang Theo dõi' : 'Theo dõi' }}
+                            {{ Auth::check() && $user->following->contains($value->id) ? 'Đang Theo dõi' : 'Theo dõi' }}
                         </button>
-                                            @else
+                    @else
                         {{-- xem danh sách của người khác Hiện Theo dõi / Đang theo dõi --}}
-                        @if(Auth::check() && Auth::id() !== $value->id)
+                        @if(!Auth::check() || Auth::id() !== $value->id)
                             @php
-                                $isFollowing = Auth::user()->following->contains('id', $value->id);
+                                $isFollowing = Auth::check() && Auth::user()->following->contains('id', $value->id);
                             @endphp
-                            <button  data-authid="{{Auth::id()}}" class="btn {{ $isFollowing ? 'btn-light' : 'btn-primary' }} fw-semibold px-3 py-1 btn-sm follow-btn shadow-none" 
+                            <button  data-authid="{{Auth::id()}}" class="btn {{ $isFollowing ? 'btn-light' : 'btn-primary' }} fw-semibold px-3 py-1 btn-sm follow-btn shadow-none {{ !Auth::check() ? 'require-login' : '' }}" 
                                     data-id="{{$value->id}}" style="font-size: 14px; border-radius: 8px; {{ $isFollowing ? 'background-color: #efefef;' : '' }}">
                                 {{ $isFollowing ? 'Đang theo dõi' : 'Theo dõi' }}
                             </button>
@@ -100,28 +100,4 @@
     </div>
 </div>
 
-<script>
-    // JS logic cho ô tìm kiếm
-    var searchInput = document.getElementById('searchFollower');
-    if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            const text = e.target.value.toLowerCase().trim();
-            const items = document.querySelectorAll('.follower-item');
-            
-            items.forEach(item => {
-                const nameLink = item.querySelector('.fw-bold');
-                const name = nameLink ? nameLink.innerText.toLowerCase() : '';
-                
-                const displayDiv = item.querySelector('.text-muted');
-                const displayName = displayDiv ? displayDiv.innerText.toLowerCase() : '';
-                
-                if (name.includes(text) || displayName.includes(text)) {
-                    item.style.setProperty('display', 'flex', 'important');
-                } else {
-                    item.style.setProperty('display', 'none', 'important');
-                }
-            });
-        });
-    }
-</script>
 @endSection

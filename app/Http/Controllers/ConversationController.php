@@ -90,6 +90,58 @@ class ConversationController extends Controller
         ->get();
     }
 
+    public function storeGroup(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'user_ids' => 'required|array|min:2',
+            'avatar' => 'nullable|image|max:2048',
+        ]);
+
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('group_avatars', 'public');
+        }
+
+        $conversation = Conversation::create([
+            'type' => 'group',
+            'name' => $request->name,
+            'avatar' => $avatarPath,
+            'status' => 'show'
+        ]);
+
+        // Đảm bảo user tạo nhóm cũng nằm trong danh sách thành viên
+        $memberIds = array_unique(array_merge($request->user_ids, [auth()->id()]));
+        $conversation->users()->attach($memberIds);
+
+        return response()->json([
+            'success' => true,
+            'conversation' => $conversation
+        ]);
+    }
+
+    public function groupTab($id)
+    {
+        $authId = auth()->id();
+        
+        $conversation = Conversation::where('type', 'group')
+            ->whereHas('users', fn($q) => $q->where('user_id', $authId))
+            ->with('users.profile')
+            ->findOrFail($id);
+
+        Message::where('conversation_id', $conversation->id)
+            ->where('sender_id', '!=', $authId)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        $messages = Message::where('conversation_id', $conversation->id)
+            ->with(['sender.profile', 'media'])
+            ->orderBy('created_at')
+            ->get();
+
+        return view('Message.message', compact('messages', 'conversation'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */

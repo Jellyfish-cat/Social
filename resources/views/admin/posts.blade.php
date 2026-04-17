@@ -24,7 +24,6 @@
                             <th width="35%">Nội dung</th>
                             <th width="10%">Người đăng</th>
                             <th width="18%">Media</th>
-                            <th width="8%">Lượt xem</th>
                             <th width="8%">Lượt thích</th>
                             <th width="8%">Lượt lưu</th>
                             <th width="8%">Lượt bình luận</th>
@@ -72,10 +71,9 @@
                                 <span class="text-muted">Không có</span>
                             @endif
                         </td>
-                        <td class="text-center">
-                            {{ $value->video_views_count ?? 0 }}
-                        </td>
-                         <td class="text-center">
+                  
+                         <td class="text-center open-like" data-authid="{{$value->user->id}}"
+                    data-post-id="{{ $value->id }}">
                             {{ $value->likes_count   ?? 0 }}
                         </td>
                          <td class="text-center">

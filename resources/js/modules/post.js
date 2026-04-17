@@ -4,7 +4,8 @@ document.addEventListener("click", function (e) {
     if (!btn) return;
     
     const postId = btn.dataset.id;
-    if (window.matchMedia("(max-width: 992px)").matches) {
+    // Mobile: Chuyển hướng trực tiếp thay vì mở Modal
+    if (window.matchMedia("(max-width: 768px)").matches) {
         window.location.href = `/posts/detail/${postId}`;
         return;
     }

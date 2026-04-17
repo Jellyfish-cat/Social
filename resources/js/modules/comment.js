@@ -4,6 +4,16 @@ document.addEventListener("input", function (e) {
         e.target.style.height = e.target.scrollHeight + "px";
     }
 });
+
+// Hàm biến @Name thành link xanh
+function mentionify(text, userid) {
+    if (!text) return '';
+    const mentionRegex = /@([A-ZÀ-ỹ][\wÀ-ỹ]*(?:\s[A-ZÀ-ỹ][\wÀ-ỹ]*)*)/g;
+    return text.replace(mentionRegex, (match) => {
+        return `<a href="#" class="text-primary fw-bold">${match}</a>`;
+    });
+}
+
 //json gửi comment post
 document.addEventListener("click", function (e) {
     const button = e.target.closest(".comment-submit");
@@ -54,7 +64,7 @@ document.addEventListener("click", function (e) {
                 const avatar = data.avatar
                     ? `/storage/${data.avatar}`
                     : "https://i.pravatar.cc/150";
-                const CommentCounts = document.querySelectorAll(`.comment-count[data-post-id="${postId}"]`); //tăng lượt comment hiện thị trên 2 trang
+                const CommentCounts = document.querySelectorAll(`.comment-post-count[data-post-id="${postId}"]`); //tăng lượt comment hiện thị trên 2 trang
                 CommentCounts.forEach(el => {
                     el.innerText = data.comment_count + " Bình luận";
                 });
@@ -91,7 +101,7 @@ document.addEventListener("click", function (e) {
                             ${data.user_name}
                         </div>
                         <div class="small ms-1 content">
-                            ${data.content}
+                            ${mentionify(data.content, data.user_is_owner)}
                         </div>
                         ${mediaHtml}
                         <div class="d-flex align-items-center">
@@ -118,13 +128,7 @@ document.addEventListener("click", function (e) {
                             data-post-id="${postId}">
                             <i class="bi bi-heart action-icon fs-6 me-2"></i>
                         </button>
-                        <button type="button"
-                            class="btn btn-sm p-0 text-muted small ms-2"
-                            data-comment-id="${data.comment_id}"
-                            data-username="${data.user_name}"
-                            data-post-id="${postId}">
-                            <i class="bi bi-hand-thumbs-down action-icon fs-6"></i>
-                        </button>
+                        
                             </div>
                         </div>
                         </div>
@@ -406,6 +410,8 @@ document.addEventListener("click", function (e) {
                     row.remove();
                     document.querySelector(".comment-count").innerText =
                         `Tổng bình luận: ${data.count}`;
+                    document.querySelector(".comment-post-count").innerText =
+                        `${data.count} bình luận`;
                     updateSTT();
                 }, 300);
             }

@@ -12,9 +12,9 @@
         <div class="col-lg-8">
             <div class="card post-card p-3 mb-4">
                 <div class="d-flex align-items-center gap-3">
-                    <img  src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
-                    <a href="{{ route('posts.create') }}" class="btn btn-light rounded-pill flex-grow-1 text-start text-muted border-0 bg-light py-2 px-3 nav-ajax">
-                        {{ auth()->user()->profile->display_name ?? 'Bạn' }} ơi, bạn {{ __('Like') }} nghĩ gì thế?
+                    <img src="{{ asset('storage/' . (Auth::check() ? (auth()->user()->profile->avatar ?? 'default-avatar.png') : 'default-avatar.png')) }}" class="avatar-circle">
+                    <a href="{{ route('posts.create') }}" class="btn btn-light rounded-pill flex-grow-1 text-start text-muted border-0 bg-light py-2 px-3 nav-ajax require-login">
+                        {{ Auth::check() ? (auth()->user()->profile->display_name ?? 'Bạn') : 'Bạn' }} ơi, bạn nghĩ gì thế?
                     </a>
                 </div>
             </div>
@@ -31,6 +31,7 @@
     <div class="sidebar-sticky ps-4">
                 <!-- <div class="col-lg-4 d-none d-lg-block" id="comment-panel">
                 <div class="sidebar-sticky ps-4"> -->
+                @if(Auth::check())
                 <div class="d-flex align-items-center mb-4">
                     <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="rounded-circle" style="width: 56px; height: 56px; object-fit: cover;">
                     <div class="ms-3">
@@ -38,6 +39,7 @@
                         <div class="text-muted small">{{ auth()->user()->name }}</div>
                     </div>
                 </div>
+                @endif
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
@@ -53,7 +55,7 @@
                             <div class="text-muted" style="font-size: 11px;">Gợi ý cho bạn</div>
                         </div>
                     </div></a>
-                    <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn" 
+                    <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn require-login" 
                     data-id="{{$u->id}}">Theo dõi</button>
                 </div>
                 @endforeach

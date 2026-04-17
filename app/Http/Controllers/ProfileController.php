@@ -29,7 +29,50 @@ class ProfileController extends Controller
         } 
         $user = $profile->user;
         $posts = $user->posts()->latest()->get();
-        return view('profile.detail', compact('profile','user','posts'));
+        try {
+            $suggestedResults = collect();
+            $excludeUserIds = $user ? array_merge([$user->id], $followingIds) : $followingIds;
+
+            if ($user) {
+                // --- Ưu tiên 0: Tương tác cũ (Chỉ cho Logged in) ---
+                $interactedUserIdsRaw = collect()
+                    ->merge(\App\Models\LikePost::where('user_id', $user->id)->with('post')->get()->pluck('post.user_id'))
+                    ->merge(\App\Models\Comment::where('user_id', $user->id)->with('post')->get()->pluck('post.user_id'))
+                    ->filter();
+
+                $sortedInteractedIds = $interactedUserIdsRaw->countBy()->sortDesc()->keys()->toArray();
+
+                if (!empty($sortedInteractedIds)) {
+                    $tier0 = User::whereIn('id', $sortedInteractedIds)
+                        ->with('profile')
+                        ->whereNotIn('id', $excludeUserIds)
+                        ->get()
+                        ->sortBy(function($u) use ($sortedInteractedIds) {
+                            return array_search($u->id, $sortedInteractedIds);
+                        })
+                        ->take(5);
+
+                    $suggestedResults = $suggestedResults->merge($tier0);
+                    $excludeUserIds = array_merge($excludeUserIds, $tier0->pluck('id')->toArray());
+                }
+            }
+
+            // --- Các tầng ưu tiên khác: Topic chung, Bạn chung, Phổ biến ---
+            // (Đơn giản hóa cho Guest: chỉ lấy người dùng phổ biến/mới nhất)
+            if ($suggestedResults->count() < 5) {
+                $tier3 = User::with('profile')
+                    ->whereNotIn('id', $excludeUserIds)
+                    ->limit(10)
+                    ->get();
+                $suggestedResults = $suggestedResults->merge($tier3);
+            }
+            
+            $suggestedUsers = $suggestedResults->unique('id')->take(5);
+
+        } catch (\Exception $e) {
+            $suggestedUsers = User::with('profile')->limit(5)->get();
+        }
+        return view('profile.detail', compact('profile','user','posts','suggestedUsers'));
     }
     public function setup($layout = 'layouts.app')
     {
@@ -67,7 +110,7 @@ class ProfileController extends Controller
         $user = User::findOrFail($id);
         
         // Chỉ cho phép chủ sở hữu hoặc admin chỉnh sửa
-        if (Auth::id() !== $user->id && Auth::user()->role !== 'admin') {
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'admin') {
             abort(403);
         }
 
@@ -82,11 +125,18 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $user = $request->user();
+        // Xác định user cần cập nhật (nếu là Admin và có truyền ID)
+        $user = ($request->has('id') && auth()->user()->role === 'admin') ? User::findOrFail($request->id) : $request->user();
+        
         $user->fill($request->safe()->only(['name', 'email']));
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
+        }
+
+        // Chỉ Admin mới được quyền đổi quyền hạn (Role)
+        if (auth()->user()->role === 'admin' && $request->has('role')) {
+            $user->role = $request->role;
         }
 
         $user->save();
@@ -112,12 +162,15 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
-
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $user->id) {
+            abort(403, 'Bạn không có quyền');
+        }
         Auth::logout();
 
         $user->delete();
@@ -131,6 +184,7 @@ class ProfileController extends Controller
     {
         $user = User::findOrFail($id);
         $posts = $user->posts()->where('status','show')
+            ->orderBy('pinned', 'desc')
             ->latest()
             ->get();
 

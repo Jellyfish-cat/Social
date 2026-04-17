@@ -42,11 +42,11 @@
                                 {{$value->email}}
                         </td>
                         <td class="text-start">
-                            {{ $value->profile->display_name }}
+                            {{ $value->profile->display_name ?? 'Không có' }}
                         </td>
                         <td class="text-center">
                             @php
-                                $firstMedia = $value->profile->avatar;
+                                $firstMedia = $value->profile->avatar ?? 'Không có';
                             @endphp
                             @if($firstMedia)
                             <a href="{{ asset('storage/' . $firstMedia) }}" 
@@ -82,9 +82,17 @@
                                class="btn btn-info btn-sm " href="{{ route('profile.detail', $value->id ?? '') }}" >
                                 <i class="bi bi-eye"></i>
                             </a>
+                            <a 
+                               class="btn btn-warning btn-sm " href="{{ route('profile.edit', $value->id ?? '') }}" >
+                                <i class="bi bi-pencil"></i>
+                            </a>
                                   <a  class="btn btn-danger btn-sm btn-delete-user"
-                                data-id="{{ $value->id }}">
+                                data-id="{{ $value->id }}" data-type="destroy">
                                     <i class="bi bi-trash"></i></a>
+                                    <a  class="btn btn-danger btn-sm btn-delete-user"
+                                data-id="{{ $value->id }}" data-type="hide">
+                                <i class="bi bi-eye-slash"></i></a>
+                        
                         </td>
                     </tr>
                     @empty

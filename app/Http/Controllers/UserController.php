@@ -65,14 +65,49 @@ class UserController extends Controller
     {
         //
     }
+     public function hide($id)
+    {
+        $user = User::find($id);
+        if (auth()->user()->role !== 'admin' ){
+            abort(403, 'Bạn không có quyền');
+        }
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy người dùng'
+            ], 404);
+        }
+        
+        $user->status = 'hide';
+        $user->save();
+        Report::create([
+            'user_id' => auth()->id(),
+            'target_id' => $user->id,
+            'target_type' => User::class,
+            'category' => 'admin',
+            'reason' => 'Admin khóa tài khoản người dùng',
+            'status' => 'resolved',
+            'resolved_by' => auth()->id(),
+            'resolved_at' => now(),
+        ]);
+
+        $userslist = User::latest()->get();
+        return response()->json([
+            'success' => true,
+            'data' => $userslist,
+            'count' => User::count(),
+            'message' => 'Đã khóa tài khoản thành công'
+        ]);
+    }
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy($id)
     {
+        // Đã có middleware checkRole:admin ở web.php nên không cần check ở đây nữa
         $users = User::find($id);
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $users->id ) {
+        if (auth()->user()->role !== 'admin' ){
             abort(403, 'Bạn không có quyền');
         }
         if (!$users) {

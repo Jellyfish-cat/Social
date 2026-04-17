@@ -10,6 +10,7 @@
 
     <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="mt-4">
         @csrf
+        <input type="hidden" name="id" value="{{ $user->id }}">
         
         {{-- Avatar Section --}}
         <div class="mb-4 text-center">
@@ -69,6 +70,16 @@
                 <textarea name="bio" class="form-control" rows="3" placeholder="Giới thiệu ngắn về bản thân...">{{ old('bio', $user->profile->bio ?? '') }}</textarea>
                 @if ($errors->has('bio')) <div class="text-danger small">{{ $errors->first('bio') }}</div> @endif
             </div>
+            @if(Auth::user()->role == 'admin')
+            <div class="col-12">
+                <label class="form-label fw-semibold small">Quyền hạn</label>
+                <select name="role" class="form-select">
+                    <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>User</option>
+                    <option value="moderator" {{ $user->role == 'moderator' ? 'selected' : '' }}>Moderator</option>
+                    <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
+                </select>
+            </div>
+            @endif
         </div>
 
         <div class="mt-4 pt-3 border-top d-flex align-items-center gap-3">

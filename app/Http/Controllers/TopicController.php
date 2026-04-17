@@ -64,9 +64,6 @@ class TopicController extends Controller
      */
     public function edit(Request $request, $id)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Bạn không có quyền');
-        }
         $topic = Topic::findOrFail($id);
         $page = $request->page ?? 1;
         return view('topics.edit', compact('topic','page'));
@@ -77,9 +74,6 @@ class TopicController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Bạn không có quyền');
-        }
         $topic = Topic::findOrFail($id);
         $topic->update([
             'name' => $request->name
@@ -94,7 +88,7 @@ class TopicController extends Controller
     public function destroy(Request $request, $id)
     {
         $topic = Topic::find($id);
-        if (auth()->user()->role !== 'admin' )  {
+        if (auth()->user()->role !== 'admin' ){
             abort(403, 'Bạn không có quyền');
         }
         if (!$topic) {

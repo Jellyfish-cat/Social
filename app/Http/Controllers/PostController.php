@@ -16,20 +16,17 @@ use Illuminate\Support\Facades\DB;
 
 class PostController extends Controller
 {
-    // 1. Hiển thị danh sách bài viết (thay cho news.index)
+    // 1. Hiển thị danh sách bài viết (Admin/Mod)
     public function index()
     {
-    $posts = Post::with(['user.profile', 'topics', 'media']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
-                ->withCount([
-                    'comments',    // Tạo ra biến comments_count
-                    'likes',       // Tạo ra biến likes_count
-                    'favorites'    // Tạo ra biến favorites_count
-                ])
-                ->orderBy('created_at', 'desc')->where('status', 'show')
-                ->paginate(10);
+        $posts = Post::with(['user.profile', 'topics', 'media'])
+                    ->withCount(['comments', 'likes', 'favorites'])
+                    ->orderBy('created_at', 'desc')->where('status', 'show')
+                    ->paginate(10);
 
-    return view('admin.posts', compact('posts'));
-}
+        return view('admin.posts', compact('posts'));
+    }
+
     // 2. Giao diện tạo bài viết
     public function create()
     {
@@ -47,40 +44,31 @@ class PostController extends Controller
             $post->user_id = Auth::id();
             $post->content = $request->content;
             $post->is_comment_enabled = $request->is_comment_enabled ?? 1;
-            $post->pinned = 0;
+            // Xử lý ghim duy nhất 1 bài viết
+            if ($request->has('pinned')) {
+                Post::where('user_id', Auth::id())->update(['pinned' => 0]);
+                $post->pinned = 1;
+            } else {
+                $post->pinned = 0;
+            }
 
             $post->save();
 
-            // topic đã có
-            $topicIds = $request->topic_ids
-                ? explode(',', $request->topic_ids)
-                : [];
-
-            // topic mới
-            $newTopics = $request->new_topics
-                ? explode(',', $request->new_topics)
-                : [];
+            $topicIds = $request->topic_ids ? explode(',', $request->topic_ids) : [];
+            $newTopics = $request->new_topics ? explode(',', $request->new_topics) : [];
 
             foreach ($newTopics as $name) {
                 if (!$name) continue;
-
-                $topic = Topic::firstOrCreate([
-                    'name' => strtolower(trim($name))
-                ]);
-
+                $topic = Topic::firstOrCreate(['name' => strtolower(trim($name))]);
                 $topicIds[] = $topic->id;
             }
 
-            // loại trùng + null
             $topicIds = array_unique(array_filter($topicIds));
-
-            // giới hạn 3
             if (count($topicIds) > 3) {
                 DB::rollBack();
                 return back()->with('error', 'Chỉ tối đa 3 chủ đề');
             }
 
-            // gắn topic vào post
             $post->topics()->sync($topicIds);
 
             if ($request->hasFile('file')) {
@@ -99,7 +87,7 @@ class PostController extends Controller
             DB::commit();
 
             if (Auth::user()->role == 'admin') {
-                return redirect()->route('/')->with('success', 'Đăng bài thành công!');
+                return redirect()->route('home')->with('success', 'Đăng bài thành công!');
             }
 
             return view('2_back');
@@ -109,46 +97,36 @@ class PostController extends Controller
             return redirect(route('home'))->with('error', 'Có lỗi: ' . $e->getMessage());
         }
     }
-    // 4. Xem chi tiết và tăng lượt xem
-   public function detail(request $request, $id)
+
+    // 4. Xem chi tiết
+    public function detail(request $request, $id)
     {
-    $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
-    $post = Post::with([
-        'user.profile',
-        'media',
-        'topics',
-        'likes',
-        'favorites',
-        'comments' => function ($query) {
-            $query->whereNull('parent_comment_id')
-                  ->with(['user.profile', 'replies.user.profile'])
-                  ->latest();
+        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        $post = Post::with([
+            'user.profile', 'media', 'topics', 'likes', 'favorites',
+            'comments' => function ($query) {
+                $query->whereNull('parent_comment_id')->with(['user.profile', 'replies.user.profile'])->latest();
+            }
+        ])->findOrFail($id);
+
+        if ($post->status !== 'show' && (!auth()->check() || auth()->user()->role !== 'admin')) {
+            abort(403, 'Bài viết đã khóa hoặc không tồn tại');
         }
-    ])->findOrFail($id);
-    if ($post->status !== 'show' && auth()->user()->role !== 'admin') {
-    abort(403, 'Bài viết đã khóa hoặc không tồn tại');
+
+        return view('posts.detail', compact('post','layout'));
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | TĂNG LƯỢT XEM VIDEO (bảng video_views)
-    |--------------------------------------------------------------------------
-    */
-
-    // Lấy media đầu tiên là video (nếu có)
-
-    return view('posts.detail', compact('post','layout'));
-}
 
     // 5. Giao diện chỉnh sửa
     public function edit($id)
     {
-        
         $topics = Topic::all();
         $post = Post::with('media', 'topics')->findOrFail($id);
-            if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
-        abort(403, 'Bạn không có quyền');
-    }
+
+        // Check quyền sở hữu hoặc Staff
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
+            abort(403, 'Bạn không có quyền');
+        }
+
         if (request()->ajax()) {
             return view('posts.edit', compact('topics', 'post'))->renderSections()['content'];
         }
@@ -156,76 +134,94 @@ class PostController extends Controller
     }
 
     // 6. Cập nhật bài viết
-  public function update(Request $request, $id)
-{
-    $post = Post::findOrFail($id);
-    $post->update([
-        'content' => $request->content,
-        'pinned' => $request->has('pinned'),
-        'is_comment_enabled' => $request->has('is_comment_enabled'),
-    ]);
-    $topicIds = array_filter(explode(',', $request->topic_ids ?? ''));
-    foreach (array_filter(explode(',', $request->new_topics ?? '')) as $name) {
-        $topicIds[] = Topic::firstOrCreate(['name' => strtolower(trim($name))])->id;
-    }
-    $post->topics()->sync(array_slice(array_unique($topicIds), 0, 3));
+    public function update(Request $request, $id)
+    {
+        $post = Post::findOrFail($id);
 
-    if ($request->deleted_media_ids) {
-        $ids = explode(',', $request->deleted_media_ids);
-        $medias = $post->media()->whereIn('id', $ids)->get();
-        foreach ($medias as $media) {
-            Storage::disk('public')->delete($media->file_path);
-            $media->delete();
+        // Check quyền sở hữu hoặc Staff
+        if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
+            abort(403, 'Bạn không có quyền');
         }
-    }
-    if ($request->hasFile('file')) {
-        foreach ($request->file('file') as $file) {
-            $path = $file->store('posts', 'public');
-            $type = str_contains($file->getMimeType(), 'video') ? 'video' : 'image';
-            Media::create([
-                'post_id' => $post->id,
-                'file_path' => $path,
-                'type' => $type
+
+        // Xử lý ghim duy nhất 1 bài viết khi cập nhật
+        if ($request->has('pinned')) {
+            Post::where('user_id', $post->user_id)->where('id', '!=', $id)->update(['pinned' => 0]);
+            $post->pinned = 1;
+        } else {
+            $post->pinned = 0;
+        }
+
+        $post->content = $request->content;
+        $post->is_comment_enabled = $request->has('is_comment_enabled');
+        $post->save();
+
+        $topicIds = array_filter(explode(',', $request->topic_ids ?? ''));
+        foreach (array_filter(explode(',', $request->new_topics ?? '')) as $name) {
+            $topicIds[] = Topic::firstOrCreate(['name' => strtolower(trim($name))])->id;
+        }
+        $post->topics()->sync(array_slice(array_unique($topicIds), 0, 3));
+
+        if ($request->deleted_media_ids) {
+            $ids = explode(',', $request->deleted_media_ids);
+            $medias = $post->media()->whereIn('id', $ids)->get();
+            foreach ($medias as $media) {
+                Storage::disk('public')->delete($media->file_path);
+                $media->delete();
+            }
+        }
+
+        if ($request->hasFile('file')) {
+            foreach ($request->file('file') as $file) {
+                $path = $file->store('posts', 'public');
+                $type = str_contains($file->getMimeType(), 'video') ? 'video' : 'image';
+                Media::create([
+                    'post_id' => $post->id,
+                    'file_path' => $path,
+                    'type' => $type
+                ]);
+            }
+        }
+
+        if ($request->ajax()) {
+            $post->load(['topics', 'media']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật thành công',
+                'html' => view('posts.post_item', compact('post'))->render()
             ]);
         }
+        return redirect()->route('home')->with('success', 'Cập nhật thành công');
     }
 
-    if ($request->ajax()) {
-        $post->load(['topics', 'media']);
-        return response()->json([
-            'success' => true,
-            'message' => 'Cập nhật thành công',
-            'html' => view('posts.post_item', compact('post'))->render()
-        ]);
-    }
-    return redirect()->route('home')->with('success', 'Cập nhật thành công');
-}
-
+    // 7. Xóa bài viết
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
-         abort(403, 'Bạn không có quyền');
+
+        // Check quyền sở hữu hoặc Staff
+        if (auth()->user()->role !== 'admin' || auth()->user()->role !== 'moderator' && auth()->id() !== $post->user_id) {
+            abort(403, 'Bạn không có quyền');
         }
-        // Xóa file vật lý trong storage
+
         $medias = Media::where('post_id', $id)->get();
         foreach ($medias as $m) {
             Storage::disk('public')->delete($m->file_path);
             $m->delete();
         }
-        // Xóa các liên kết (Tương đương code cũ của bạn)
+
         Report::where('target_id', $id)->where('target_type', Post::class)->delete();
         $post->delete();
         $postlist = Post::latest()->get();
+
         return response()->json([
-        'success' => true,
+            'success' => true,
             'data' => $postlist,
             'count' => Post::count(),
             'message' => 'Xóa thành công'
-    ]);
+        ]);
     }
 
-    // 8. Hiển thị bài viết theo chủ đề (Topics)
+    // 8. Hiển thị bài viết theo chủ đề
     public function postsByTopic($topicId)
     {
         $topic = Topic::findOrFail($topicId);
@@ -239,20 +235,14 @@ class PostController extends Controller
         return view('posts.topic', compact('posts', 'topic'));
     }
 
-    // 9. Duyệt bài viết
-    public function approve($id)
-    {
-        // Giả sử bạn thêm cột 'status' vào bảng posts để duyệt
-        $updated = Post::where('id', $id)->update(['pinned' => 1]); // Ví dụ dùng pinned làm trạng thái duyệt
 
-        return redirect()->back()->with('success', 'Duyệt bài thành công!');
-    }
+
     public function loadComments($id)
     {
         $post = Post::with('comments.user')->where('status', 'show')->findOrFail($id);
-
         return view('posts.comments', compact('post'));
     }
+
     public function like_list(Request $request, $id)
     {
         $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
@@ -260,5 +250,4 @@ class PostController extends Controller
         $values = $item->likedUsers; 
         return view('like.like-list', compact('values', 'item', 'layout'));
     } 
-
 }

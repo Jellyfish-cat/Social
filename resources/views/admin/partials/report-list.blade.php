@@ -18,7 +18,13 @@
                     @else
                     <th width="15%">Người báo cáo</th>
                     @endif
-                    <th width="15%">Trạng thái</th>
+                    <th width="15%">
+                        <select class="form-select form-select-sm border-0 bg-light fw-bold text-center" id="filter-status" style="box-shadow: none;">
+                            <option value="pending" {{ $tab === 'pending' ? 'selected' : '' }}>Chờ xử lý</option>
+                            <option value="resolved" {{ $tab === 'resolved' ? 'selected' : '' }}>Đã xử lý</option>
+                            <option value="dismissed" {{ $tab === 'dismissed' ? 'selected' : '' }}>Đã khôi phục</option>
+                        </select>
+                    </th>
                     <th width="15%">Hành động</th>
                 </tr>
             </thead>
@@ -36,7 +42,7 @@
                         <small class="text-muted">ID Bài viết: {{ $value->target->id }}</small>
                     @elseif($type === 'people' && $value->target)
                         <div class="d-flex align-items-center">
-                            <img src="{{ $value->target->profile->avatar ?? asset('assets/images/default-avatar.png') }}" class="rounded-circle me-2" width="30" height="30">
+                            <img src="{{ $value->target->profile->avatar ? asset('storage/' . $value->target->profile->avatar) : asset('storage/default-avatar.png') }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
                             <div>
                                 <div class="fw-bold">{{ $value->target->profile->display_name ?? $value->target->name }}</div>
                                 <small class="text-muted">{{ $value->target->email }}</small>
@@ -66,7 +72,7 @@
                         <span class="badge bg-secondary mb-1">{{ __('Có ' . $value->total_reports . ' người đã báo cáo') }}</span>
                     @else
                         <div class="d-flex align-items-center">
-                            <img src="{{ $value->user->profile->avatar ?? asset('assets/images/default-avatar.png') }}" class="rounded-circle me-2" width="25" height="25">
+                            <img src="{{ $value->user->profile->avatar ? asset('storage/' . $value->user->profile->avatar) : asset('storage/default-avatar.png') }}" class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;">
                             <span>{{ $value->user->profile->display_name ?? $value->user->name }}</span>
                         </div>
                     @endif
@@ -76,6 +82,8 @@
                         <span class="badge bg-warning text-dark">Chờ xử lý</span>
                     @elseif($value->status === 'resolved')
                         <span class="badge bg-success">Đã xử lý</span>
+                    @elseif($value->status === 'dismissed')
+                        <span class="badge bg-info text-dark">Đã khôi phục</span>
                     @else
                         <span class="badge bg-secondary">{{ $value->status }}</span>
                     @endif
@@ -100,13 +108,8 @@
                                  
                              @if($tab==='pending')
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-warning btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Xử lý báo cáo">
-                                        <i class="bi bi-shield-exclamation"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                        <li><a class="dropdown-item btn-check-report cursor-pointer text-danger" data-id="{{ $value->id }}" data-action="hide"><i class="bi bi-eye-slash me-2"></i>Ẩn nội dung</a></li>
-                                        <li><a class="dropdown-item btn-check-report cursor-pointer text-success" data-id="{{ $value->id }}" data-action="dismiss"><i class="bi bi-check-circle me-2"></i>Bỏ qua (Không VP)</a></li>
-                                    </ul>
+                                    <a class="btn btn-danger btn-sm btn-check-report cursor-pointer text-white" data-id="{{ $value->id }}" data-action="hide" title="Ẩn nội dung"><i class="bi bi-eye-slash me-2"></i></a>
+                                    <a class="btn btn-success btn-sm btn-check-report cursor-pointer text-white" data-id="{{ $value->id }}" data-action="dismiss" title="Bỏ qua (Không VP)"><i class="bi bi-check-circle me-2"></i></a>
                                 </div>
                             @else
                              <button class="btn btn-danger btn-sm {{$delete}}" data-id="{{ $tab === 'pending' ? $value->id : $value->target_id }}" title="Xóa {{ $tab === 'pending' ? 'báo cáo' : 'nội dung' }}">

@@ -49,7 +49,12 @@
                         </td>
                         @endif
                         <td class="text-start">
-                            {{ $value->sender->profile->display_name ?? $value->sender->email }}
+                            {{ $value->sender->profile->display_name ?? $value->sender->email ?? 'Người dùng' }}
+                             @if($value->sender->role === 'user')
+                         <i class="bi bi-person-fill text-primary"></i>
+                        @elseif($value->sender->role === 'admin' || $value->sender->role === 'moderator')
+                         <i class="bi bi-shield-fill-check text-danger"></i>
+                        @endif
                         </td>
                         <td class="text-start">
                             @php
@@ -59,6 +64,11 @@
                                 ->first();
                             @endphp
                             {{ $otherUser->profile->display_name ?? 'Người dùng' }}
+                             @if($otherUser->role === 'user')
+                        <i class="bi bi-person-fill text-primary"></i>
+                        @elseif($otherUser->role === 'admin' || $otherUser->role === 'moderator')
+                        <i class="bi bi-shield-fill-check text-danger"></i>
+                        @endif
                         </td>
                         <td class="text-center">
                             @php

@@ -10,7 +10,7 @@ function mentionify(text, userid) {
     if (!text) return '';
     const mentionRegex = /@([A-ZÀ-ỹ][\wÀ-ỹ]*(?:\s[A-ZÀ-ỹ][\wÀ-ỹ]*)*)/g;
     return text.replace(mentionRegex, (match) => {
-        return `<a href="#" class="text-primary fw-bold">${match}</a>`;
+        return `<a class="text-primary fw-bold">${match}</a>`;
     });
 }
 

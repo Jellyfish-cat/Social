@@ -9,6 +9,7 @@ use App\Models\Report;
 use App\Models\Comment;
 use App\Models\Favorite;
 use App\Models\VideoView;
+use App\Services\ContentModerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -36,7 +37,7 @@ class PostController extends Controller
     }
 
     // 3. Lưu bài viết mới
-    public function store(Request $request)
+    public function store(Request $request, ContentModerationService $moderator)
     {
         DB::beginTransaction();
         try {
@@ -48,11 +49,30 @@ class PostController extends Controller
             if ($request->has('pinned')) {
                 Post::where('user_id', Auth::id())->update(['pinned' => 0]);
                 $post->pinned = 1;
-            } else {
-                $post->pinned = 0;
+            $post->pinned = 0;
+            }
+
+            // Kiểm duyệt nội dung
+            $moderation = $moderator->analyze($request->content);
+            if ($moderation->is_toxic) {
+                $post->status = 'hide';
             }
 
             $post->save();
+
+            // Nếu bị ẩn, tạo báo cáo đã xử lý
+            if ($moderation->is_toxic) {
+                Report::create([
+                    'user_id' => Auth::id() ?? 1,
+                    'target_id' => $post->id,
+                    'target_type' => Post::class,
+                    'category' => 'Automated',
+                    'reason' => 'Hệ thống tự động ẩn: ' . $moderation->reason,
+                    'status' => 'resolved',
+                    'resolved_by' => Auth::id() ?? 1,
+                    'resolved_at' => now(),
+                ]);
+            }
 
             $topicIds = $request->topic_ids ? explode(',', $request->topic_ids) : [];
             $newTopics = $request->new_topics ? explode(',', $request->new_topics) : [];
@@ -134,7 +154,7 @@ class PostController extends Controller
     }
 
     // 6. Cập nhật bài viết
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, ContentModerationService $moderator)
     {
         $post = Post::findOrFail($id);
 
@@ -153,6 +173,32 @@ class PostController extends Controller
 
         $post->content = $request->content;
         $post->is_comment_enabled = $request->has('is_comment_enabled');
+
+        // Kiểm duyệt nội dung khi cập nhật
+        $moderation = $moderator->analyze($request->content);
+        if ($moderation->is_toxic) {
+            $post->status = 'hide';
+            
+            // Tạo báo cáo nếu chưa có báo cáo tự động cho bài này hoặc cập nhật lý do
+            Report::updateOrCreate(
+                [
+                    'target_id' => $post->id,
+                    'target_type' => Post::class,
+                    'category' => 'Automated'
+                ],
+                [
+                    'user_id' => Auth::id() ?? 1,
+                    'reason' => 'Hệ thống tự động ẩn (Cập nhật): ' . $moderation->reason,
+                    'status' => 'resolved',
+                    'resolved_by' => Auth::id() ?? 1,
+                    'resolved_at' => now(),
+                ]
+            );
+        } else {
+            // Nếu nội dung đã sạch, có thể khôi phục về show (tùy chọn)
+            $post->status = 'show';
+        }
+
         $post->save();
 
         $topicIds = array_filter(explode(',', $request->topic_ids ?? ''));

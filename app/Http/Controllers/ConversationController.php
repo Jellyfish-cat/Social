@@ -72,23 +72,27 @@ class ConversationController extends Controller
         ->get();
     // Trả về partial view (chỉ HTML tin nhắn) cho fetch JS
     return view('Message.message', compact('messages','conversation'));
-} 
-    /**
-     * Show the form for creating a new resource.
-     */
+    } 
     public function search_user(Request $request)
     {
-        $keyword  = $request->q;
-        return User::where(function ($query) use ($keyword) {
-        $query->where('name', 'like', "%$keyword%")
-              ->orWhereHas('profile', function ($q) use ($keyword) {
-                  $q->where('display_name', 'like', "%$keyword%");
-              });
-        })
-        ->with('profile') 
-        ->limit(5)
-        ->get();
+        $keyword = $request->q;
+        if (!$keyword) return [];
+
+        $role = auth()->user()->role;
+
+        $search = User::search($keyword);
+        if ($role === 'user') {
+            $search->where('role', 'user');
+        } else {
+            $search->where('role', 'admin'); 
+        }
+        return $search->take(5) 
+            ->query(function ($query) {
+                $query->where('id', '!=', auth()->id())->with('profile');
+            })
+            ->get();
     }
+
 
     public function storeGroup(Request $request)
     {

@@ -78,9 +78,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'display_name' => $this->profile->display_name ?? '',
+            'display_name' => $this->profile->display_name ?? $this->name,
+            'avatar' => $this->profile->avatar ?? 'default-avatar.png',
             'role' => $this->role,
             'status' => $this->status,
         ];
+    }
+
+    /**
+     * Configure Meilisearch settings
+     */
+    protected function makeAllSearchableUsing($query)
+    {
+        return $query->with('profile');
     }
 }

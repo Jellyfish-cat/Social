@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
+use App\Models\Report;
+use App\Services\ContentModerationService;
 class CommentController extends Controller
 {
     /**
@@ -37,7 +39,7 @@ class CommentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-        public function store(Request $request, $post_id)
+        public function store(Request $request, $post_id, ContentModerationService $moderator)
         {
             DB::beginTransaction();
             try {  
@@ -56,8 +58,35 @@ class CommentController extends Controller
                         'post_id' => $post->id,
                         'content' => $request->content,
                         'parent_comment_id'=> $rootParentId,
-                        'status' => 1
+                        'status' => 'show'
                     ]);
+
+                    // Kiểm duyệt nội dung
+                    $moderation = $moderator->analyze($request->content);
+                    if ($moderation->is_toxic) {
+                        $comment->status = 'hide';
+                        $comment->save();
+
+                        // Tạo báo cáo đã xử lý
+                        Report::create([
+                            'user_id' => Auth::id() ?? 1,
+                            'target_id' => $comment->id,
+                            'target_type' => Comment::class,
+                            'category' => 'Automated',
+                            'reason' => 'Hệ thống tự động ẩn: ' . $moderation->reason,
+                            'status' => 'resolved',
+                            'resolved_by' => Auth::id() ?? 1,
+                            'resolved_at' => now(),
+                        ]);
+                        
+                        // Nếu bị ẩn thì không gửi thông báo cho chủ bài viết
+                        DB::commit();
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Bình luận đã được gửi (đang chờ kiểm duyệt hoặc bị ẩn)',
+                            'status' => 'hide'
+                        ]);
+                    }
 
                     $userId = auth()->id();
                     $userName = '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong>';

@@ -31,7 +31,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.createUser');
     }
 
     /**
@@ -39,7 +39,48 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
+            'role' => 'required|in:admin,moderator,user',
+            'display_name' => 'nullable|string|max:255',
+            'bio' => 'nullable|string|max:1000',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        // 1. Create User
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role' => $request->role,
+            'status' => 'show',
+            'email_verified_at' => now(),
+        ]);
+
+        // 2. Handle Avatar Upload
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        // 3. Create Profile
+        $profile = $user->profile()->create([
+            'display_name' => $request->display_name ?? $request->name,
+            'bio' => $request->bio,
+            'avatar' => $avatarPath,
+        ]);
+
+        // Get the full user object with profile for the response
+        $newUser = User::with('profile')->find($user->id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $newUser,
+            'count' => User::count(),
+            'message' => 'Người dùng và Profile đã được tạo thành công'
+        ]);
     }
 
     /**

@@ -676,7 +676,7 @@
                 <i class="bi bi-arrow-left"></i>
             </button>
             <div class="msg-avatar-wrap">
-                <img src="{{ asset('storage/default-avatar.png') }}" class="msg-avatar" style="width:44px;height:44px;" id="chatAvatar" alt="Avatar">
+                <img src="{{ asset('storage/' . ($currentUser->profile->avatar ?? 'default-avatar.png')) }}" class="msg-avatar" style="width:44px;height:44px;" id="chatAvatar" alt="Avatar">
                 <span class="msg-online-dot" id="chatOnlineDot" style="display:none;"></span>
             </div>
             <div class="msg-chat-header-info">

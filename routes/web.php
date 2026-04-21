@@ -75,7 +75,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
     });
 
-   
+    // --- Messages & Conversations ---
+    Route::get('/message', [ConversationController::class, 'index'])->name('conversations.index');
+    Route::get('/message/chat/{id}', [ConversationController::class, 'messageTab'])->name('conversations.messageTab');
+    Route::post('/message/send/{id}', [MessageController::class, 'store'])->name('message.store');
+    Route::get('/conversation/search', [ConversationController::class, 'search_user'])->name('search.user');
+    Route::post('/messages/read/{id}', [MessageController::class, 'is_Read']);
+    // Group Chat Features
+    Route::post('/conversation/group/create', [ConversationController::class, 'storeGroup'])->name('conversation.group.create');
+    Route::get('/message/group/chat/{id}', [ConversationController::class, 'groupTab'])->name('conversations.groupTab');
+    Route::post('/message/group/send/{convoId}', [MessageController::class, 'storeGroupMsg'])->name('message.group.store');
     // --- Home ---
        // --- Profile ---
     Route::prefix('profile')->group(function () {
@@ -124,17 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     Route::post('/comment/like/{id}', [LikeCommentController::class, 'store'])->name('comment.like');
 
-    // --- Messages & Conversations ---
-    Route::get('/message', [ConversationController::class, 'index'])->name('conversations.index');
-    Route::get('/message/chat/{id}', [ConversationController::class, 'messageTab'])->name('conversations.messageTab');
-    Route::post('/message/send/{id}', [MessageController::class, 'store'])->name('message.store');
-    Route::get('/conversation/search', [ConversationController::class, 'search_user'])->name('search.user');
-    Route::post('/messages/read/{id}', [MessageController::class, 'is_Read']);
-
-    // Group Chat Features
-    Route::post('/conversation/group/create', [ConversationController::class, 'storeGroup'])->name('conversation.group.create');
-    Route::get('/message/group/chat/{id}', [ConversationController::class, 'groupTab'])->name('conversations.groupTab');
-    Route::post('/message/group/send/{convoId}', [MessageController::class, 'storeGroupMsg'])->name('message.group.store');
+    
     
     // --- Search ---
 
@@ -179,14 +178,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
      Route::middleware(['checkRole:admin'])->prefix('admin')->group(function () {
          Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-     });
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Routes (Super Admin Only)
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware(['checkRole:admin'])->group(function () {
+
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');
+    Route::get('/users/create', [UserController::class, 'create'])->name('admin.users.create');
+    Route::post('/users/store', [UserController::class, 'store'])->name('admin.users.store');
     Route::put('/users/hide/{id}', [UserController::class, 'hide'])->name('users.hide');
     Route::delete('users/destroy/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     });

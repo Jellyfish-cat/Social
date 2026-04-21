@@ -25,6 +25,9 @@ if (msgPage) {
         chatPanel.classList.add('open');
         msgPage.classList.add('show-chat');
 
+        chatName.textContent = currentItem.dataset.name || '';
+        const avatarSrc = currentItem.querySelector('img')?.src;
+        if (avatarSrc) document.getElementById('chatAvatar').src = avatarSrc;
         // Fetch messages từ server
         const targetId = el.dataset.convoId || el.dataset.userId;
         const isGroup = el.dataset.isGroup === 'true';
@@ -38,7 +41,7 @@ if (msgPage) {
      `;
             startLoading();
             const fetchUrl = isGroup ? `/message/group/chat/${targetId}` : `/message/chat/${targetId}`;
-            
+
             fetch(fetchUrl)
                 .then(res => res.text())
                 .then(html => {
@@ -160,8 +163,8 @@ if (msgPage) {
             return;
         }
 
-        const isGroup = currentItem.dataset.isGroup === 'true';
-        const targetId = currentItem.dataset.convoId || currentUserId;
+        const isGroup = currentItem ? currentItem.dataset.isGroup === 'true' : false;
+        const targetId = currentItem ? (currentItem.dataset.convoId || currentUserId) : currentUserId;
         const fetchUrl = isGroup ? `/message/group/send/${targetId}` : `/message/send/${targetId}`;
 
         startLoading();
@@ -336,7 +339,13 @@ if (msgPage) {
                         currentItem = fakeItem;
                         fakeItem.classList.add('active');
                         chatName.textContent = fakeItem.dataset.name || '';
-                        chatStatus.textContent = fakeItem.dataset.status || '';
+                        const avatarSrc = fakeItem.querySelector('img')?.src;
+                        if (avatarSrc) document.getElementById('chatAvatar').src = avatarSrc;
+                    } else {
+                        // Nếu người mới (chưa có trong list), lấy từ Header ẩn trong HTML vừa load
+                        const headerName = chatBody.querySelector('.msg-header .fw-semibold');
+                        const headerAvatar = chatBody.querySelector('.msg-header img');
+                        if (headerAvatar) document.getElementById('chatAvatar').src = headerAvatar.src;
                     }
                     requestAnimationFrame(() => {
                         chatBody.scrollTop = chatBody.scrollHeight;
@@ -396,6 +405,7 @@ if (input) {
                 let data = await res.json();
                 if (!input.value.trim()) return;
                 suggestions_user.innerHTML = data.map(t => {
+                    document.getElementById('chatName').innerHTML = t.display_name;
                     const avatar = t.profile?.avatar
                         ? `/storage/${t.profile.avatar}`
                         : `/storage/default-avatar.png`;
@@ -409,7 +419,7 @@ if (input) {
                                  style="width: 40px; height: 40px; object-fit: cover;">
                             <div class="flex-grow-1">
                                 <div class="fw-semibold small">
-                                    ${t.profile?.display_name ?? t.name}
+                                    ${t.display_name ?? t.name}
                                 </div>
                                 <div class="text-muted small">
                                     @${t.name}
@@ -448,12 +458,12 @@ setTimeout(() => {
                 console.log("Đã nhận được tin nhắn realtime!!", e); // Bắn log ra F12 để check luôn
                 const incomingMsg = e.message;
                 const isGroupEvent = incomingMsg.is_group === true;
-                
+
                 // Nếu đang mở khung chat tương ứng với tin nhắn (private hoặc group)
                 let isMatch = false;
                 const currentType = currentItem ? currentItem.dataset.isGroup : 'false';
                 const currentId = currentItem ? (currentItem.dataset.convoId || currentItem.dataset.userId) : null;
-                
+
                 if (isGroupEvent) {
                     isMatch = (currentType === 'true' && currentId == incomingMsg.conversation_id);
                 } else {
@@ -544,7 +554,7 @@ setTimeout(() => {
                     }
 
                 } else {
-                    let selector = isGroupEvent 
+                    let selector = isGroupEvent
                         ? `.convo-item[data-convo-id="${incomingMsg.conversation_id}"][data-is-group="true"]`
                         : `.convo-item[data-user-id="${incomingMsg.sender_id}"][data-is-group="false"]`;
                     let convoItem = document.querySelector(selector);
@@ -552,7 +562,7 @@ setTimeout(() => {
                     // ===== 1. Nếu chưa có conversation thì tạo mới
                     if (!convoItem) {
                         const convoList = document.getElementById('msgConvoList');
-                        const avatar = isGroupEvent 
+                        const avatar = isGroupEvent
                             ? (incomingMsg.group_avatar ? `/storage/${incomingMsg.group_avatar}` : '/storage/default-group.png')
                             : (incomingMsg.sender_avatar ? `/storage/${incomingMsg.sender_avatar}` : '/storage/default-avatar.png');
                         const displayName = isGroupEvent ? incomingMsg.group_name : (incomingMsg.sender_name || 'User');
@@ -781,10 +791,10 @@ if (groupUserSearch) {
     });
 }
 
-window.selectUserForGroup = function(id, name) {
+window.selectUserForGroup = function (id, name) {
     if (selectedGroupUsers.includes(id)) return;
     selectedGroupUsers.push(id);
-    
+
     const badge = document.createElement('span');
     badge.className = 'badge bg-light text-dark border p-2 d-flex align-items-center gap-2 m-1';
     badge.innerHTML = `
@@ -792,30 +802,30 @@ window.selectUserForGroup = function(id, name) {
         <i class="bi bi-x-circle cursor-pointer text-danger" onclick="window.removeUserFromGroup(${id}, this)"></i>
     `;
     selectedUsersContainer.appendChild(badge);
-    
+
     groupUserSearch.value = '';
     groupUserSuggestions.innerHTML = '';
 };
 
-window.removeUserFromGroup = function(id, element) {
+window.removeUserFromGroup = function (id, element) {
     selectedGroupUsers = selectedGroupUsers.filter(uid => uid !== id);
     element.parentElement.remove();
 };
 
 if (btnCreateGroup) {
-    btnCreateGroup.addEventListener('click', async function() {
+    btnCreateGroup.addEventListener('click', async function () {
         const form = document.getElementById('newGroupForm');
         const formData = new FormData(form);
-        
+
         if (selectedGroupUsers.length < 1) {
             alert('Vui lòng chọn ít nhất 1 thành viên!');
             return;
         }
-        
+
         selectedGroupUsers.forEach(id => formData.append('user_ids[]', id));
-        
+
         const csrfTag = document.querySelector('meta[name="csrf-token"]');
-        
+
         startLoading();
         try {
             const res = await fetch('/conversation/group/create', {
@@ -828,7 +838,7 @@ if (btnCreateGroup) {
             });
             const data = await res.json();
             if (data.success) {
-                window.location.reload(); 
+                window.location.reload();
             } else {
                 alert(data.error || data.message || 'Lỗi server');
             }
@@ -842,10 +852,10 @@ if (btnCreateGroup) {
 
     const groupAvatarInput = document.getElementById('groupAvatarInput');
     if (groupAvatarInput) {
-        groupAvatarInput.addEventListener('change', function(e) {
+        groupAvatarInput.addEventListener('change', function (e) {
             if (e.target.files && e.target.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(ex) {
+                reader.onload = function (ex) {
                     document.getElementById('groupAvatarPreview').src = ex.target.result;
                 }
                 reader.readAsDataURL(e.target.files[0]);

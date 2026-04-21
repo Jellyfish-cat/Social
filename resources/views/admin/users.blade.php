@@ -5,16 +5,20 @@
         <h3 class="text-primary">
             <i class="bi bi-file-earmark-text"></i> Quản lý người dùng
         </h3>
+          <button class="btn btn-success" id="btn-show-create-user">
+            <i class="bi bi-plus-circle"></i> Thêm mới
+        </button>
     </div>
+    <div id="create-container"></div>
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             Danh sách người dùng
-             <span class="badge bg-white text-primary count-user">Tổng: {{ $users->total() }}</span>
+            <span class="badge bg-white text-primary count-user">Tổng: {{ $users->total() }}</span>
 
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle mb-0 post-table">
+                <table class="table table-bordered table-hover align-middle mb-0 user-table">
                     <thead class="table-light text-center">
                         <tr>
                             <th width="5%">#</th>
@@ -29,7 +33,7 @@
                             <th width="120">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="user-body">
                     @forelse($users as $value)
                     <tr class="user-item">
                         <td class="text-center">

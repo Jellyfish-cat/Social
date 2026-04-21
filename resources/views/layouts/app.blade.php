@@ -218,6 +218,13 @@
                     $globalUnreadNotifications = auth()->user()->notifications()->where('is_read', false)->count();
                 }
             @endphp
+                <a href="{{ route('conversations.index') }}" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
+                    <i class="bi bi-chat-dots" style="min-width: 40px; text-align: center;"></i>
+                    <span class="nav-text flex-grow-1">Trò chuyện</span>
+                    <span id="global-mess-badge" class="badge bg-danger rounded-pill {{ $globalUnreadMessages > 0 ? '' : 'd-none' }}" style="font-size: 0.8rem; transition: transform 0.2s;">
+                        {{ $globalUnreadMessages }}
+                    </span>
+                </a>
                 <a href="#" onclick="event.preventDefault(); window.openNoti();" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
                     <i class="bi bi-heart" style="min-width: 40px; text-align: center;"></i>
                     <span class="nav-text flex-grow-1">Thông báo</span>

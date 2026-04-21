@@ -19,6 +19,7 @@
                             <th width="5%">#</th>
                             <th width="35%">thành viên</th>
                             <th width="10%">Loại</th>
+                            <th width="15%">Vai trò hội thoại</th>
                             <th width="10%">Số tin nhắn</th>
                             <th width="15%">Hành động</th>
                         </tr>
@@ -44,6 +45,15 @@
                         </td>
                         @endif
                         </td>
+                            @if($value->users->first()->role === 'user')
+                         <td class="text-start" >
+                        <span class="badge bg-primary text-light">người dùng</span>
+                        </td>
+                        @elseif($value->users->first()->role === 'admin' || $value->users->first()->role === 'moderator')
+                         <td class="text-start" >
+                        <span class="badge bg-danger text-light">quản trị viên</span>
+                        </td>
+                        @endif
                          <td class="text-center">
                             {{ $value->messages_count   ?? 0 }}
                         </td>

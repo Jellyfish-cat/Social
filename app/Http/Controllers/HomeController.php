@@ -32,50 +32,56 @@ class HomeController extends Controller
         }
 
         try {
-            $results = collect();
-            $excludeIds = [];
-
-            // A. Ưu tiên 1: Bài viết của người đang theo dõi (Nếu logged in)
-            if (!empty($followingIds)) {
-                $followingPosts = Post::search('')
-                    ->whereIn('user_id', $followingIds)
-                    ->orderBy('created_at', 'desc')
-                    ->query(fn($query) => $query->with(['user.profile', 'topics', 'comments.user', 'likes'])->where('status', 'show'))
-                    ->get();
-                $results = $results->merge($followingPosts);
-                $excludeIds = array_merge($excludeIds, $followingPosts->pluck('id')->toArray());
-            }
-
-            // B. Ưu tiên 2: Bài viết thuộc Topic quan tâm (Nếu logged in)
-            if (!empty($interestedTopicIds)) {
-                $topicPosts = Post::search('')
-                    ->whereIn('topic_ids', $interestedTopicIds)
-                    ->orderBy('created_at', 'desc')
-                    ->query(fn($query) => $query->with(['user.profile', 'topics', 'comments.user', 'likes'])
-                        ->where('status', 'show')
-                        ->whereNotIn('id', $excludeIds))
-                    ->get();
-                $results = $results->merge($topicPosts);
-                $excludeIds = array_merge($excludeIds, $topicPosts->pluck('id')->toArray());
-            }
-
-            // C. Ưu tiên 3: Các bài viết mới nhất khác để lấp đầy Feed (Dành cho cả Guest và User)
-            $otherPosts = Post::with(['user.profile', 'topics', 'comments.user', 'likes'])
+            // New Smart Ranking Algorithm (Weighted Scoring)
+            $posts = Post::with(['user.profile', 'topics', 'likes', 'comments.user'])
+                ->withCount(['comments', 'likes'])
                 ->where('status', 'show')
-                ->whereNotIn('id', $excludeIds)
                 ->orderBy('created_at', 'desc')
-                ->get();
-            
-            $posts = $results->merge($otherPosts);
+                ->limit(200) // Lấy pool 200 bài viết mới nhất để xếp hạng
+                ->get()
+                ->map(function ($post) use ($followingIds, $interestedTopicIds) {
+                    $score = 0;
+
+                    // 1. Ưu tiên Bạn bè (Collaborative Filtering: Social Graph)
+                    if (in_array($post->user_id, $followingIds)) {
+                        $score += 100;
+                    }
+
+                    // 2. Ưu tiên Chủ đề quan tâm (Content-Based Filtering)
+                    if (!empty($interestedTopicIds)) {
+                        $postTopicIds = $post->topics->pluck('id')->toArray();
+                        $matches = array_intersect($postTopicIds, $interestedTopicIds);
+                        $score += count($matches) * 50;
+                    }
+
+                    // 3. Tương tác cộng đồng (Engagement Scoring)
+                    $score += ($post->likes_count * 2);    // Like quan trọng
+                    $score += ($post->comments_count * 5); // Comment quan trọng hơn
+
+                    // 4. Ưu tiên độ tươi mới (Time Decay Algorithm)
+                    // Cứ mỗi giờ trôi qua trừ 10 điểm
+                    $hoursAgo = $post->created_at->diffInHours(now());
+                    $score -= ($hoursAgo * 10);
+
+                    // Gán điểm để có thể debug hoặc hiển thị
+                    $post->ranking_score = $score; 
+                    
+                    return $post;
+                })
+                ->sortByDesc('ranking_score') // Sắp xếp theo tổng điểm
+                ->values(); // Reset khóa mảng sau khi sort
 
             if ($posts->isEmpty()) {
-                throw new \Exception("Bạn đã xem hết bài viết");
+                throw new \Exception("Chưa có nội dung để hiển thị");
             }
 
         } catch (\Exception $e) {
+            // Fallback: Nếu có lỗi (ví dụ Reverb/Search lỗi) thì chỉ lấy theo thời gian
             $posts = Post::with(['user.profile', 'topics', 'comments.user', 'likes'])
+                ->withCount(['comments', 'likes'])
                 ->orderBy('created_at', 'desc')
                 ->where('status', 'show')
+                ->limit(50)
                 ->get();
         }
 
@@ -126,8 +132,12 @@ class HomeController extends Controller
         
         if (!$user || $user->role === 'user') {
             return view('home', compact('posts', 'suggestedUsers'));
-        } else {
+        } elseif ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
+        } elseif ($user->role === 'moderator') {
+            return redirect()->route('admin.reports', 'pending');
+        } else {
+            return view('home', compact('posts', 'suggestedUsers'));
         }
     }
       

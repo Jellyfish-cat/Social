@@ -1,7 +1,7 @@
     @php
         $otherUser = $conversation->users->where('id', '!=', auth()->id())->first();
     @endphp
-
+    @if($conversation->type === 'private')
     <div class="msg-header d-flex flex-column align-items-center  py-4 border-bottom">
 
         {{-- Avatar --}}
@@ -26,6 +26,29 @@
         </a>
 
     </div>
+    @else
+     <div class="msg-header d-flex flex-column align-items-center  py-4 border-bottom">
+
+        {{-- Avatar --}}
+        <img src="{{ asset('storage/' . ($conversation->avatar ?? 'default-avatar.png')) }}"
+            class="rounded-circle mb-2"
+            style="width:80px;height:80px;object-fit:cover;">
+
+        {{-- Name --}}
+        <div class="fw-semibold fs-5">
+            {{ $conversation->name }}
+            <i class="bi bi-people text-muted ms-1" title="Nhóm"></i>
+        </div>
+
+        {{-- Username / info --}}
+        <div class="text-muted small mb-3">
+            @foreach ($conversation->users as $item)
+                <a href="{{ route('profile.detail', $item->id) }}">{{ $item->profile->display_name ?? $item->email }}</a>,
+            @endforeach
+        </div>
+
+    </div>
+    @endif
     @php $prevMsg = null; @endphp
     @foreach($messages as $msg)
         @php
@@ -43,6 +66,7 @@
         @endif
 
         <div class="msg-bubble-row {{ $msg->sender_id == auth()->id() ? 'mine' : '' }}" 
+             id="message-{{ $msg->id }}"
              data-id="{{ $msg->id }}" 
              data-time="{{ $msg->created_at->timestamp }}">
 

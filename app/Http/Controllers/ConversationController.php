@@ -7,6 +7,8 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class ConversationController extends Controller
 {
@@ -100,11 +102,23 @@ class ConversationController extends Controller
             'name' => 'required|string|max:255',
             'user_ids' => 'required|array|min:2',
             'avatar' => 'nullable|image|max:2048',
+            'dicebear_url' => 'nullable|string',
         ]);
 
         $avatarPath = null;
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('group_avatars', 'public');
+        } elseif ($request->dicebear_url) {
+            try {
+                $response = Http::get($request->dicebear_url);
+                if ($response->successful()) {
+                    $name = 'group_' . uniqid() . '.svg';
+                    Storage::disk('public')->put('group_avatars/' . $name, $response->body());
+                    $avatarPath = 'group_avatars/' . $name;
+                }
+            } catch (\Exception $e) {
+                // Fallback
+            }
         }
 
         $conversation = Conversation::create([

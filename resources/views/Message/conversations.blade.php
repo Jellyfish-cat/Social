@@ -22,6 +22,7 @@
         border-top: 1px solid #efefef;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         overflow: hidden;
+        position: relative; /* Thêm để modal absolute hoạt động đúng */
     }
     /* ===== LEFT PANEL ===== */
     .msg-left {
@@ -544,7 +545,9 @@
     }
 </style>
 
-<div class="msg-page rounded-4" id="msgPage">
+<div class="msg-page rounded-4" id="msgPage" style="position:relative;">
+    @include('Message.info_modal')
+    @include('Message.partials.search_modal')
 
     {{-- ===== LEFT SIDEBAR ===== --}}
     <div class="msg-left">
@@ -591,7 +594,7 @@
 
                         if ($isGroup) {
                             $displayName = $conversation->name;
-                            $avatar = $conversation->avatar ? asset('storage/' . $conversation->avatar) : asset('storage/default-group.png');
+                            $avatar = $conversation->avatar ? asset('storage/' . $conversation->avatar) : asset('storage/default-avatar.png');
                             $targetId = $conversation->id;
                         } else {
                             $otherUser = $conversation->users->where('id', '!=', auth()->id())->first();
@@ -619,7 +622,7 @@
                          data-status="{{ $lastMsg->content ?? '' }}"
                          data-online="false"
                          data-is-group="{{ $isGroup ? 'true' : 'false' }}"
-                         data-convo-id="{{ $targetId }}"
+                         data-convo-id="{{ $conversation->id }}"
                          data-user-id="{{ $targetId }}">
                         <img src="{{ $avatar }}"
                              class="rounded-circle flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">
@@ -627,6 +630,9 @@
                         <div class="flex-grow-1 text-truncate">
                             <div class="fw-semibold">
                                 {{ $displayName }}
+                                @if($isGroup)
+                                    <i class="bi bi-people text-muted ms-1" title="Nhóm"></i>
+                                @endif
                             </div>
 
                             <small class="text-muted">
@@ -666,8 +672,20 @@
     <div class="msg-chat-panel" id="msgChatPanel">
         @php
             $currentConvo = $conversations && $conversations->isNotEmpty() ? $conversations->first() : null;
-            $currentUser = $currentConvo ? $currentConvo->users->where('id', '!=', auth()->id())->first() : null;
-            $status = $currentUser->status ?? 'show';
+            if ($currentConvo && $currentConvo->type === 'group') {
+                $chatDisplayName = $currentConvo->name;
+                $chatDisplayAvatar = $currentConvo->avatar ? 'storage/' . $currentConvo->avatar : 'storage/default-avatar.png';
+                $isGroup = true;
+                $status = 'show';
+            } else {
+                $otherUser = $currentConvo ? $currentConvo->users->where('id', '!=', auth()->id())->first() : null;
+                $chatDisplayName = $otherUser->profile->display_name ?? $otherUser->name ?? 'Người dùng';
+                $chatDisplayAvatar = ($otherUser && $otherUser->profile && $otherUser->profile->avatar) 
+                                     ? 'storage/' . $otherUser->profile->avatar 
+                                     : 'storage/default-avatar.png';
+                $isGroup = false;
+                $status = $otherUser->status ?? 'show';
+            }
         @endphp
 
         {{-- Chat Header --}}
@@ -676,25 +694,28 @@
                 <i class="bi bi-arrow-left"></i>
             </button>
             <div class="msg-avatar-wrap">
-                <img src="{{ asset('storage/' . ($currentUser->profile->avatar ?? 'default-avatar.png')) }}" class="msg-avatar" style="width:44px;height:44px;" id="chatAvatar" alt="Avatar">
+                <img src="{{ asset($chatDisplayAvatar) }}" class="msg-avatar" style="width:44px;height:44px;" id="chatAvatar" alt="Avatar">
                 <span class="msg-online-dot" id="chatOnlineDot" style="display:none;"></span>
             </div>
             <div class="msg-chat-header-info">
-                <div class="msg-chat-header-name" id="chatName">{{$currentUser->profile->display_name ?? $currentUser->name ?? ''}}</div>
-                <div class="msg-chat-header-status" id="chatStatus">Đang hoạt động</div>
+                <div class="msg-chat-header-name" id="chatName">
+                    {{ $chatDisplayName }}
+                    @if($isGroup)
+                        <i class="bi bi-people text-muted ms-1" title="Nhóm"></i>
+                    @endif
+                </div>
+                <div class="msg-chat-header-status" id="chatStatus">
+                    {{ $isGroup ? 'Nhóm trò chuyện' : 'Đang hoạt động' }}
+                </div>
             </div>
             <div class="msg-chat-actions">
-                <button class="msg-icon-btn" title="Thông tin"><i class="bi bi-info-circle"></i></button>
+                <button class="msg-icon-btn" id="btnInfo" title="Thông tin" onclick="window.openInfoPanel()"><i class="bi bi-info-circle"></i></button>
             </div>
         </div>
-
         {{-- Chat Body --}}
                     <div id="msgHeader"></div>
                 <div class="msg-chat-body" id="msgChatBody">
-                    
-
             </div>
-
         {{-- Chat Footer --}}
         @if($status !== 'hidden')
         <div class="chat-form">
@@ -723,7 +744,6 @@
         </div>
         @endif
     </div>
-
 {{-- New Group Modal --}}
 <div class="modal fade" id="newGroupModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -736,10 +756,14 @@
                 <form id="newGroupForm" enctype="multipart/form-data">
                     <div class="text-center mb-3">
                         <label for="groupAvatarInput" class="cursor-pointer">
-                            <img src="{{ asset('storage/default-avatar.png') }}" id="groupAvatarPreview" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #efefef;">
-                            <div class="small text-primary mt-1">Chọn ảnh nhóm (tùy chọn)</div>
+                            <img src="{{ asset('storage/default-avatar.png') }}" id="groupAvatarPreview" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                            <div class="small text-primary mt-1">Chọn ảnh nhóm</div>
                         </label>
+                        <div class="mt-1">
+                            <a href="javascript:void(0)" class="small text-muted text-decoration-none" id="btnShowAvatarLibrary">Hoặc chọn từ thư viện</a>
+                        </div>
                         <input type="file" id="groupAvatarInput" name="avatar" hidden accept="image/*">
+                        <input type="hidden" id="dicebearUrlInput" name="dicebear_url">
                     </div>
                     <div class="mb-3">
                         <input type="text" name="name" class="form-control rounded-3" placeholder="Tên nhóm (VD: Hội Quán...)" required>
@@ -759,6 +783,50 @@
         </div>
     </div>
 </div>
+
+{{-- DiceBear Avatar Library Modal --}}
+<div class="modal fade" id="avatarLibraryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-bottom-0">
+                <h6 class="modal-title fw-bold">Thư viện ảnh nhóm</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <div class="text-center mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" id="btnRefreshLibrary">
+                        <i class="bi bi-arrow-clockwise"></i> Đổi bộ khác
+                    </button>
+                </div>
+                <div id="avatarGrid" class="row g-3 justify-content-center">
+                    {{-- Avatar items will be injected here --}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Theo phong cách z-index của hệ thống trong app.blade.php */
+    #avatarLibraryModal {
+        z-index: 1065 !important;
+    }
+    .avatar-item {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .avatar-item:hover {
+        transform: scale(1.1);
+    }
+    .avatar-item img {
+        border: 2px solid transparent;
+        border-radius: 50%;
+        padding: 2px;
+    }
+    .avatar-item:hover img {
+        border-color: var(--bs-primary);
+    }
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

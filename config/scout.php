@@ -147,6 +147,10 @@ return [
             'users' => [
                 'filterableAttributes'=> ['id', 'status', 'role'],
             ],
+            'messages' => [
+                'filterableAttributes'=> ['conversation_id', 'created_at'],
+                'sortableAttributes' => ['created_at'],
+            ],
         ],
     ],
 

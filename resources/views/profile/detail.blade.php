@@ -33,12 +33,22 @@
                     </div>
             </div>
             {{-- Stats --}}
-            <div class="d-flex gap-4 mb-3">
+            <div class="d-flex gap-4 mb-3 align-items-center">
                 <div><strong>{{ $user->posts->count() }}</strong> bài viết</div>
-                <button class="open-follow follow-count" data-type="follower" data-id="{{$user->id}}">
-                   {{ $user->followers->count() ?? 0 }} người theo dõi</button>
-                <button class="open-follow following-count" data-authid="{{$user->id}}"  data-type="following" data-id="{{$user->id}}">
-                   {{ $user->following->count() ?? 0 }} đang theo dõi</button>
+                <button class="open-follow follow-count bg-transparent border-0 p-0" data-type="follower" data-id="{{$user->id}}">
+                   <strong>{{ $user->followers->count() ?? 0 }}</strong> người theo dõi</button>
+                <button class="open-follow following-count bg-transparent border-0 p-0" data-authid="{{$user->id}}"  data-type="following" data-id="{{$user->id}}">
+                   <strong>{{ $user->following->count() ?? 0 }}</strong> đang theo dõi</button>
+                
+                {{-- Blockchain Index --}}
+                <div class="d-flex align-items-center gap-1 text-primary shadow-sm px-2 py-1 rounded-pill bg-light" 
+                     id="blockchain-stats" 
+                     data-profile-id="{{ $user->id }}"
+                     style="font-size: 0.85rem; cursor: help;" title="Dữ liệu từ Blockchain Ganache">
+                    <i class="bi bi-shield-check"></i>
+                    <strong id="blockchain-value">...</strong>
+                    <span class="text-muted small">BC Index</span>
+                </div>
             </div>
             {{-- Bio --}}
             <div>
@@ -135,3 +145,7 @@
 </style>
 
 @endsection
+
+@push('scripts')
+    @vite(['resources/js/blockchain.js'])
+@endpush

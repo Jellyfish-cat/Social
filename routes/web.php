@@ -80,6 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/message/chat/{id}', [ConversationController::class, 'messageTab'])->name('conversations.messageTab');
     Route::post('/message/send/{id}', [MessageController::class, 'store'])->name('message.store');
     Route::get('/conversation/search', [ConversationController::class, 'search_user'])->name('search.user');
+    Route::get('/message/search', [MessageController::class, 'search'])->name('message.search');
     Route::post('/messages/read/{id}', [MessageController::class, 'is_Read']);
     // Group Chat Features
     Route::post('/conversation/group/create', [ConversationController::class, 'storeGroup'])->name('conversation.group.create');

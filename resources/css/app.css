@@ -1,9 +1,10 @@
+@import './modules/conversation';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ===== GLOBAL ===== */
-@import './modules/conversation';
 
 body {
     background: #f0f2f5;

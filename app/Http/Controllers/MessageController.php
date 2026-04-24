@@ -222,6 +222,30 @@ class MessageController extends Controller
 
         return response()->json(['success' => true]);
     }
+    public function search(Request $request)
+    {
+        $query = $request->input('q');
+        $conversationId = $request->input('conversation_id');
+
+        if (!$query || !$conversationId) {
+            return response()->json([]);
+        }
+
+        $messages = Message::search($query)
+            ->where('conversation_id', (int) $conversationId)
+            ->orderBy('created_at', 'desc')
+            ->take(50)
+            ->get()
+            ->load('sender.profile', 'media');
+
+        $messages->transform(function ($msg) {
+            $msg->time_ago = $msg->created_at->diffForHumans();
+            return $msg;
+        });
+
+        return response()->json($messages);
+    }
+
     /**
      * Display the specified resource.
      */

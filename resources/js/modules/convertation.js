@@ -95,6 +95,38 @@ if (msgPage) {
         const preview = el.querySelector('small.text-muted');
         if (preview) preview.innerHTML = preview.textContent;
 
+        // Cập nhật trạng thái hiển thị của footer (input hay thông báo khóa)
+        const convoStatus = el.dataset.convoStatus;
+        const isGroupChat = el.dataset.isGroup === 'true';
+
+        const previewContainer = document.getElementById('previewMediaContainer');
+        const lockedText = document.getElementById('lockedMessageText');
+        const footers = document.querySelectorAll('.msg-chat-footer');
+
+        if (lockedText) {
+            lockedText.textContent = isGroupChat ? 'Nhóm này đã bị giải tán' : 'Tài khoản này đã bị khóa do vi phạm';
+        }
+
+        if (previewContainer) {
+            previewContainer.style.display = (convoStatus === 'hide') ? 'none' : 'block';
+        }
+
+        footers.forEach(footer => {
+            if (convoStatus === 'hide') {
+                if (footer.classList.contains('justify-content-center')) {
+                    footer.style.display = 'flex';
+                } else {
+                    footer.style.display = 'none';
+                }
+            } else {
+                if (footer.classList.contains('justify-content-center')) {
+                    footer.style.display = 'none';
+                } else {
+                    footer.style.display = 'flex';
+                }
+            }
+        });
+
     }
 
     // ===== Đóng chat (mobile) =====
@@ -228,7 +260,6 @@ if (input) {
                 let data = await res.json();
                 if (!input.value.trim()) return;
                 suggestions_user.innerHTML = data.map(t => {
-                    document.getElementById('chatName').innerHTML = t.display_name;
                     const avatar = t.profile?.avatar
                         ? `/storage/${t.profile.avatar}`
                         : `/storage/default-avatar.png`;
@@ -277,9 +308,15 @@ setTimeout(() => {
                     const globalBadge = document.getElementById('global-mess-badge');
                     if (globalBadge) {
                         // Nếu đang ở TRONG web nhắn tin và ĐANG XEM đúng ông đó -> Ko cộng số báo
-                        if (typeof currentUserId !== 'undefined' && currentUserId == incomingMsg.sender_id) {
-                            return;
+                        let isViewing = false;
+                        if (typeof window.currentUserId !== 'undefined') {
+                            if (incomingMsg.is_group) {
+                                isViewing = (window.currentUserId == incomingMsg.conversation_id);
+                            } else {
+                                isViewing = (window.currentUserId == incomingMsg.sender_id);
+                            }
                         }
+                        if (isViewing) return;
 
                         // Nhảy số
                         let count = parseInt(globalBadge.textContent) || 0;
@@ -378,36 +415,120 @@ if (groupUserSearch) {
     });
 }
 
-window.selectUserForGroup = function (id, name) {
-    if (selectedGroupUsers.includes(id)) return;
-    selectedGroupUsers.push(id);
+// ===== MODAL DYNAMIC LOADING (open-group) =====
+document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".open-group");
+    if (!btn) return;
+    e.preventDefault();
 
-    const badge = document.createElement('span');
-    badge.className = 'badge bg-light text-dark border p-2 d-flex align-items-center gap-2 m-1';
-    badge.innerHTML = `
-        ${name} 
-        <i class="bi bi-x-circle cursor-pointer text-danger" onclick="window.removeUserFromGroup(${id}, this)"></i>
-    `;
-    selectedUsersContainer.appendChild(badge);
+    const action = btn.dataset.action;
+    let url = '';
 
-    groupUserSearch.value = '';
-    groupUserSuggestions.innerHTML = '';
-};
+    if (action === 'create') {
+        url = '/conversation/group/create';
+    } else if (action === 'edit') {
+        const convoId = window.currentItem ? window.currentItem.dataset.convoId : null;
+        if (!convoId) return;
+        url = `/conversation/edit/${convoId}`;
+    }
 
-window.removeUserFromGroup = function (id, element) {
-    selectedGroupUsers = selectedGroupUsers.filter(uid => uid !== id);
-    element.parentElement.remove();
-};
+    startLoading();
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("groupModalContent").innerHTML = html;
+            const modalEl = document.getElementById("groupModal");
+            const modal = new bootstrap.Modal(modalEl);
 
-if (btnCreateGroup) {
-    btnCreateGroup.addEventListener('click', async function () {
+            window.selectedGroupUsers = [];
+            window.selectedEditGroupUsers = [];
+
+            if (action === 'edit') {
+                const hiddenInputs = document.querySelectorAll('#editSelectedUsers input[name="user_ids[]"]');
+                hiddenInputs.forEach(input => {
+                    window.selectedEditGroupUsers.push(parseInt(input.value));
+                });
+            }
+
+            modal.show();
+        })
+        .finally(() => {
+            finishLoading();
+        });
+});
+
+// ===== DYNAMIC EVENTS (Delegation) =====
+let searchDebounce;
+document.addEventListener('input', async function (e) {
+    if (e.target.id === 'groupUserSearch' || e.target.id === 'editGroupUserSearch') {
+        const isEdit = e.target.id === 'editGroupUserSearch';
+        const suggestionsContainer = document.getElementById(isEdit ? 'editGroupUserSuggestions' : 'groupUserSuggestions');
+
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(async () => {
+            const q = e.target.value.trim().toLowerCase();
+            if (!q) {
+                suggestionsContainer.innerHTML = '';
+                return;
+            }
+            try {
+                const res = await fetch(`/conversation/search?q=${q}`);
+                const data = await res.json();
+                const fnName = isEdit ? 'window.selectUserForEditGroup' : 'window.selectUserForGroup';
+                suggestionsContainer.innerHTML = data.map(u => `
+                    <div class="list-group-item list-group-item-action d-flex align-items-center gap-2 cursor-pointer"
+                         onclick="${fnName}(${u.id}, '${(u.profile?.display_name || u.name).replace(/'/g, "\\'")}')">
+                        <img src="${u.profile?.avatar ? '/storage/' + u.profile.avatar : '/storage/default-avatar.png'}" 
+                             class="rounded-circle" style="width:30px;height:30px;object-fit:cover;">
+                        <span class="small">${u.profile?.display_name ?? u.name}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error("Lỗi tìm kiếm", err);
+            }
+        }, 300);
+    }
+});
+
+document.addEventListener('change', function (e) {
+    if (e.target.id === 'groupAvatarInput' || e.target.id === 'editGroupAvatarInput') {
+        const isEdit = e.target.id === 'editGroupAvatarInput';
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (ex) {
+                const preview = document.getElementById(isEdit ? 'editGroupAvatarPreview' : 'groupAvatarPreview');
+                if (preview) preview.src = ex.target.result;
+                const dicebearInput = document.getElementById(isEdit ? 'editDicebearUrlInput' : 'dicebearUrlInput');
+                if (dicebearInput) dicebearInput.value = '';
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    }
+});
+
+document.addEventListener('click', async function (e) {
+    if (e.target.id === 'btnShowAvatarLibrary' || e.target.id === 'btnShowEditAvatarLibrary') {
+        window.avatarTargetContext = e.target.id === 'btnShowEditAvatarLibrary' ? 'edit' : 'create';
+        const libraryModalEl = document.getElementById('avatarLibraryModal');
+        if (libraryModalEl) {
+            const modal = new bootstrap.Modal(libraryModalEl);
+            modal.show();
+            loadAvatarLibrary();
+        }
+    }
+    if (e.target.id === 'btnCreateGroup') {
         const form = document.getElementById('newGroupForm');
         const formData = new FormData(form);
-        if (selectedGroupUsers.length < 1) {
+        e.target.disabled = true;
+        if (window.selectedGroupUsers.length < 1) {
             alert('Vui lòng chọn ít nhất 1 thành viên!');
             return;
         }
-        selectedGroupUsers.forEach(id => formData.append('user_ids[]', id));
+        window.selectedGroupUsers.forEach(id => formData.append('user_ids[]', id));
         const csrfTag = document.querySelector('meta[name="csrf-token"]');
         startLoading();
         try {
@@ -420,132 +541,224 @@ if (btnCreateGroup) {
                 body: formData
             });
             const data = await res.json();
-
             if (data.success) {
-                // ===== LOGIC ĐƯA LÊN ĐẦU DANH SÁCH (GIỐNG SENDMESSAGE) =====
-                const convo = data.conversation;
-                const convoList = document.getElementById('msgConvoList');
-
-                if (convoList) {
-                    // Tạo phần tử hội thoại mới
-                    const convoItem = document.createElement('div');
-                    convoItem.className = 'd-flex align-items-center px-3 py-2 gap-2 convo-item';
-                    convoItem.dataset.convoId = convo.id;
-                    convoItem.dataset.userId = convo.id;
-                    convoItem.dataset.name = convo.name;
-                    convoItem.dataset.status = '';
-                    convoItem.dataset.online = 'false';
-                    convoItem.dataset.isGroup = 'true';
-
-                    const avatar = convo.avatar ? `/storage/${convo.avatar}` : '/storage/default-avatar.png';
-
-                    convoItem.innerHTML = `
-                        <img src="${avatar}" class="rounded-circle flex-shrink-0" width="50" height="50" style="object-fit: cover;">
+                const avatarUrl = data.conversation.avatar ? '/storage/' + data.conversation.avatar : '/storage/default-avatar.png';
+                const lastMsg = data.conversation.latest_message ? data.conversation.latest_message.content : 'Chưa có tin nhắn';
+                const newConvoHtml = `
+                    <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item"
+                         data-name="${data.conversation.name}"
+                         data-status=""
+                         data-convo-status="show"
+                         data-online="false"
+                         data-is-group="true"
+                         data-convo-id="${data.conversation.id}"
+                         data-user-id="${data.conversation.id}">
+                        <img src="${avatarUrl}"
+                             class="rounded-circle flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">
                         <div class="flex-grow-1 text-truncate">
-                            <div class="fw-semibold msg-convo-name">${convo.name}</div>
-                            <small class="text-muted">Nhóm mới tạo</small>
+                            <div class="fw-semibold">
+                                ${data.conversation.name}
+                                <i class="bi bi-people text-muted ms-1" title="Nhóm"></i>
+                            </div>
+                            <small class="text-muted">${lastMsg}</small>
                         </div>
                         <small class="text-muted">Vừa xong</small>
-                    `;
+                    </div>
+                `;
+                const convoList = document.getElementById('msgConvoList');
+                if (convoList) {
+                    convoList.insertAdjacentHTML('afterbegin', newConvoHtml);
+                    // Tự động click để mở đoạn chat vừa tạo
+                    const newItem = convoList.querySelector(`[data-convo-id="${data.conversation.id}"]`);
+                    if (newItem) newItem.click();
+                }
 
-                    // 1. Đưa lên đầu danh sách
-                    convoList.prepend(convoItem);
-
-                    // 2. Mở luôn khung chat (Sử dụng window.openChat có sẵn)
-                    if (typeof window.openChat === 'function') {
-                        window.openChat(convoItem, convo.name, '', false);
+                // Đóng modal
+                const modalEl = document.getElementById('groupModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) {
+                        modal.hide();
+                    } else {
+                        // Cố gắng tạo mới nếu chưa có instance
+                        new bootstrap.Modal(modalEl).hide();
                     }
                 }
-                // 3. Đóng modal
-                const modalEl = document.getElementById('newGroupModal');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-                // 4. Reset form
-                form.reset();
-                selectedGroupUsers = [];
-                const selectedContainer = document.getElementById('selectedUsers');
-                if (selectedContainer) selectedContainer.innerHTML = '';
-                const previewImg = document.getElementById('groupAvatarPreview');
-                if (previewImg) previewImg.src = '/storage/default-avatar.png';
+
+                // Cố gắng ẩn backdrop nếu còn sót lại (Bootstrap 5 bug sometimes)
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(bg => bg.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
             } else {
                 alert(data.error || data.message || 'Lỗi server');
             }
-        } catch (e) {
-            console.error(e);
+        } catch (err) {
+            console.error(err);
             alert('Lỗi khởi tạo nhóm.');
         } finally {
+            e.target.disabled = false;
             finishLoading();
         }
-    });
-}
-const groupAvatarInput = document.getElementById('groupAvatarInput');
-if (groupAvatarInput) {
-    groupAvatarInput.addEventListener('change', function (e) {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function (ex) {
-                document.getElementById('groupAvatarPreview').src = ex.target.result;
-                if (document.getElementById('dicebearUrlInput')) {
-                    document.getElementById('dicebearUrlInput').value = '';
-                }
-            }
-            reader.readAsDataURL(e.target.files[0]);
+    }
+
+    if (e.target.id === 'btnUpdateGroup') {
+        const convoId = document.getElementById('editConvoId').value;
+        const form = document.getElementById('editGroupForm');
+        const formData = new FormData(form);
+
+        if (window.selectedEditGroupUsers.length < 1) {
+            alert('Vui lòng chọn ít nhất 1 thành viên!');
+            return;
         }
-    });
-}
-// ===== DiceBear Avatar Library Logic =====
-const btnShowAvatarLibrary = document.getElementById('btnShowAvatarLibrary');
-const avatarLibraryModal = document.getElementById('avatarLibraryModal');
-const btnRefreshLibrary = document.getElementById('btnRefreshLibrary');
-const avatarGrid = document.getElementById('avatarGrid');
-const dicebearUrlInput = document.getElementById('dicebearUrlInput');
-const groupAvatarPreview = document.getElementById('groupAvatarPreview');
 
-if (btnShowAvatarLibrary) {
-    const bsAvatarModal = new bootstrap.Modal(avatarLibraryModal);
+        formData.delete('user_ids[]');
+        window.selectedEditGroupUsers.forEach(id => formData.append('user_ids[]', id));
 
-    btnShowAvatarLibrary.addEventListener('click', () => {
-        generateLibraryAvatars();
-        bsAvatarModal.show();
-    });
-
-    if (btnRefreshLibrary) {
-        btnRefreshLibrary.addEventListener('click', generateLibraryAvatars);
-    }
-}
-
-function generateLibraryAvatars() {
-    if (!avatarGrid) return;
-    avatarGrid.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
-
-    const styles = ['shapes', 'identicon', 'bottts', 'avataaars', 'pixel-art'];
-    let html = '';
-
-    for (let i = 0; i < 12; i++) {
-        const randomStyle = styles[Math.floor(Math.random() * styles.length)];
-        const randomSeed = Math.random().toString(36).substring(7);
-        const url = 'https://api.dicebear.com/9.x/' + randomStyle + '/svg?seed=' + randomSeed;
-
-        html += `
-            <div class="col-3 text-center">
-                <div class="avatar-item" onclick="selectLibraryAvatar('${url}')">
-                    <img src="${url}" class="img-fluid" style="width: 60px; height: 60px; background: #f8f9fa;">
-                </div>
-            </div>
-        `;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        const btn = e.target;
+        btn.disabled = true;
+        startLoading();
+        try {
+            const res = await fetch(`/conversation/group/update/${convoId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Lỗi cập nhật');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Lỗi cập nhật nhóm.');
+        } finally {
+            btn.disabled = false;
+            finishLoading();
+        }
     }
 
-    avatarGrid.innerHTML = html;
-}
+    if (e.target.id === 'btnDissolveGroup' || e.target.closest('#btnDissolveGroup')) {
+        const convoId = window.currentItem.dataset.convoId;
+        if (!convoId) return;
 
+        if (confirm('Bạn có chắc chắn muốn giải tán nhóm này không? Tất cả tin nhắn sẽ bị xóa và không thể khôi phục.')) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            startLoading();
+            fetch(`/conversation/destroy/${convoId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Lỗi khi giải tán nhóm');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Lỗi kết nối.');
+                })
+                .finally(() => finishLoading());
+        }
+    }
+
+    if (e.target.id === 'btnDeleteConversation' || e.target.closest('#btnDeleteConversation')) {
+        const convoId = window.currentItem.dataset.convoId;
+        if (!convoId) return;
+
+        if (confirm('Bạn có chắc chắn muốn xóa lịch sử trò chuyện này? Các tin nhắn sẽ biến mất với bạn nhưng vẫn còn với người khác.')) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            startLoading();
+            fetch(`/conversation/clear/${convoId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/message';
+                    } else {
+                        alert(data.message || 'Lỗi khi xóa đoạn chat');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Lỗi kết nối.');
+                })
+                .finally(() => finishLoading());
+        }
+    }
+});
+
+// Member Selection Logic
+window.selectedGroupUsers = [];
+window.selectedEditGroupUsers = [];
+
+window.selectUserForGroup = function (id, name) {
+    if (window.selectedGroupUsers.includes(id)) return;
+    window.selectedGroupUsers.push(id);
+    const container = document.getElementById('selectedUsers');
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-light text-dark border p-2 d-flex align-items-center gap-2 m-1';
+    badge.innerHTML = name + ' <i class="bi bi-x-circle cursor-pointer text-danger" onclick="window.removeUserFromGroup(' + id + ', this)"></i><input type="hidden" name="user_ids[]" value="' + id + '">';
+    if (container) container.appendChild(badge);
+    document.getElementById('groupUserSearch').value = '';
+    document.getElementById('groupUserSuggestions').innerHTML = '';
+};
+
+window.removeUserFromGroup = function (id, element) {
+    window.selectedGroupUsers = window.selectedGroupUsers.filter(uid => uid !== id);
+    element.parentElement.remove();
+};
+
+window.selectUserForEditGroup = function (id, name) {
+    if (window.selectedEditGroupUsers.includes(id)) return;
+    window.selectedEditGroupUsers.push(id);
+    const container = document.getElementById('editSelectedUsers');
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-light text-dark border p-2 d-flex align-items-center gap-2 m-1';
+    badge.innerHTML = name + ' <i class="bi bi-x-circle cursor-pointer text-danger" onclick="window.removeUserFromEditGroup(' + id + ', this)"></i><input type="hidden" name="user_ids[]" value="' + id + '">';
+    if (container) container.appendChild(badge);
+    document.getElementById('editGroupUserSearch').value = '';
+    document.getElementById('editGroupUserSuggestions').innerHTML = '';
+};
+
+window.removeUserFromEditGroup = function (id, element) {
+    window.selectedEditGroupUsers = window.selectedEditGroupUsers.filter(uid => uid !== id);
+    element.parentElement.remove();
+};
+
+window.avatarTargetContext = 'create';
 window.selectLibraryAvatar = function (url) {
-    if (groupAvatarPreview) groupAvatarPreview.src = url;
-    if (dicebearUrlInput) dicebearUrlInput.value = url;
-    const groupAvatarInput = document.getElementById('groupAvatarInput');
-    if (groupAvatarInput) groupAvatarInput.value = '';
+    const isCreate = window.avatarTargetContext === 'create';
+    const preview = document.getElementById(isCreate ? 'groupAvatarPreview' : 'editGroupAvatarPreview');
+    const diceInput = document.getElementById(isCreate ? 'dicebearUrlInput' : 'editDicebearUrlInput');
+    const fileInput = document.getElementById(isCreate ? 'groupAvatarInput' : 'editGroupAvatarInput');
 
-    const modal = bootstrap.Modal.getInstance(avatarLibraryModal);
-    if (modal) modal.hide();
+    if (preview) preview.src = url;
+    if (diceInput) diceInput.value = url;
+    if (fileInput) fileInput.value = '';
+
+    const modalEl = document.getElementById('avatarLibraryModal');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
 };
 
 // ===== INFO PANEL LOGIC (Messenger Style) =====
@@ -570,21 +783,65 @@ window.openInfoPanel = function () {
         const btnReportUser = document.getElementById('btnReportUser');
         const infoStatus = document.getElementById('infoStatus');
         const btnInfoProfile = document.getElementById('btnInfoProfile');
+        const btnDissolveGroup = document.getElementById('btnDissolveGroup');
 
         if (isGroup) {
             groupSection.classList.remove('d-none');
             btnEditGroup.classList.remove('d-none');
             btnLeaveGroup.classList.remove('d-none');
+            btnDissolveGroup.classList.add('d-none'); // Ẩn mặc định, sẽ hiện nếu là trưởng nhóm
             btnBlockUser.classList.add('d-none');
             btnInfoProfile.classList.add('d-none');
             btnReportUser.classList.add('d-none');
             infoStatus.textContent = 'Nhóm trò chuyện';
+            const conversationId = window.currentItem.dataset.convoId;
+            const membersContainer = document.getElementById('infoGroupMembers');
 
-            document.getElementById('infoGroupMembers').innerHTML = '<div class="text-center small text-muted py-2">Chức năng tải thành viên đang hoàn thiện</div>';
+            if (conversationId && membersContainer) {
+                membersContainer.innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+
+                fetch(`/conversation/members/${conversationId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            let html = '';
+                            let creator = data.creator;
+                            data.members.forEach(m => {
+                                html += `
+                                    <div class="d-flex align-items-center gap-2 py-2 border-bottom">
+                                        <img src="${m.avatar}" class="rounded-circle" style="width:32px;height:32px;object-fit:cover;">
+                                        <div class="flex-grow-1 small fw-semibold text-truncate">${m.name}</div>
+                                         ${creator == m.id ? '<span class="badge bg-primary">Trưởng nhóm</span>' : ''}
+                                        <a href="/profile/detail/${m.id}" class="btn btn-sm btn-light rounded-pill px-3" style="font-size: 11px;">Xem</a>
+                                    </div>
+                                `;
+                            });
+                            membersContainer.innerHTML = html || '<div class="text-center text-muted small py-2">Không có thành viên</div>';
+
+                            const authUserId = document.querySelector('meta[name="auth-user-id"]')?.content;
+                            if (authUserId == creator) {
+                                btnDissolveGroup.classList.remove('d-none');
+                            }
+                        } else {
+                            membersContainer.innerHTML = '<div class="text-center text-muted small py-2">Lỗi tải thành viên</div>';
+                        }
+                    })
+                    .catch(() => {
+                        membersContainer.innerHTML = '<div class="text-center text-muted small py-2">Lỗi kết nối</div>';
+                    });
+            }
+
+            if (conversationId && btnLeaveGroup) {
+                btnLeaveGroup.href = `/conversation/leave/${conversationId}`;
+            }
+            if (conversationId && btnEditGroup) {
+                btnEditGroup.href = `/conversation/edit/${conversationId}`;
+            }
         } else {
             groupSection.classList.add('d-none');
             btnEditGroup.classList.add('d-none');
             btnLeaveGroup.classList.add('d-none');
+            btnDissolveGroup.classList.add('d-none');
             btnBlockUser.classList.remove('d-none');
             btnInfoProfile.classList.remove('d-none');
             btnReportUser.classList.remove('d-none');
@@ -754,5 +1011,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 300);
         });
+    }
+});
+
+// ===== AVATAR LIBRARY LOGIC =====
+window.loadAvatarLibrary = function () {
+    const grid = document.getElementById('avatarGrid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+
+    let html = '';
+    for (let i = 0; i < 12; i++) {
+        const seed = Math.random().toString(36).substring(7);
+        // Using identicon/bottts/avataaars or any dicebear style
+        const styles = [
+            'identicon',
+            'bottts',
+            'avataaars',
+            'initials',
+            'thumbs',
+            'adventurer',
+            'adventurer-neutral',
+            'big-ears',
+            'big-ears-neutral',
+            'croodles',
+            'croodles-neutral',
+            'fun-emoji',
+            'icons',
+            'lorelei',
+            'lorelei-neutral',
+            'micah',
+            'miniavs',
+            'notionists',
+            'notionists-neutral',
+            'open-peeps',
+            'personas',
+            'pixel-art',
+            'pixel-art-neutral',
+            'shapes'
+        ];
+
+        const style = styles[Math.floor(Math.random() * styles.length)];
+        const url = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}`;
+        html += `
+            <div class="col-4 col-md-3 text-center">
+                <img src="${url}" class="rounded-circle cursor-pointer border border-2 hover-border-primary" 
+                     style="width: 70px; height: 70px; object-fit: cover; transition: all 0.2s;"
+                     onclick="window.selectLibraryAvatar('${url}')">
+            </div>
+        `;
+    }
+    grid.innerHTML = html;
+};
+
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('#btnRefreshLibrary');
+    if (btn) {
+        window.loadAvatarLibrary();
     }
 });

@@ -51,9 +51,18 @@
     @endif
     @php $prevMsg = null; @endphp
     @foreach($messages as $msg)
+        @if($msg->type === 'notification')
+            <div class="msg-system-notification d-flex justify-content-center my-3" data-id="{{ $msg->id }}" data-time="{{ $msg->created_at->timestamp }}">
+                <span class="px-3 py-1 bg-light text-muted small rounded-pill border" style="font-size: 11px;">
+                    {{ $msg->content }}
+                </span>
+            </div>
+            @continue
+        @endif
+
         @php
             $showTime = false;
-            if (!$prevMsg || $msg->created_at->diffInMinutes($prevMsg->created_at) > 1) {
+            if (!$prevMsg || $msg->created_at->diffInMinutes($prevMsg->created_at) > 60) {
                 $showTime = true;
             }
             $prevMsg = $msg;
@@ -70,7 +79,7 @@
              data-id="{{ $msg->id }}" 
              data-time="{{ $msg->created_at->timestamp }}">
 
-            @if($msg->sender_id == auth()->id() && $msg->status !== 'hide' && $otherUser->status !== 'hidden')
+            @if($msg->sender_id == auth()->id() && $msg->status !== 'hide' && (!$otherUser || $otherUser->status !== 'hidden'))
                 <button class="btn-unsend-msg p-0 border-0 bg-transparent text-muted order-1" 
                         onclick="unsendMsg(this, {{ $msg->id }})" 
                         title="Thu hồi tin nhắn"
@@ -85,6 +94,11 @@
             @endif
 
             <div class="msg-bubble {{ $msg->sender_id == auth()->id() ? 'mine' : 'theirs' }}">
+                @if($conversation->type === 'group' && $msg->sender_id != auth()->id())
+                    <div class="fw-bold mb-1" style="font-size: 0.75rem; color: #65676b;">
+                        {{ $msg->sender->profile->display_name ?? $msg->sender->name }}
+                    </div>
+                @endif
                 @if($msg->status === 'hide')
                     <div class="text-muted small fst-italic">Tin nhắn đã bị thu hồi</div>
                 @else

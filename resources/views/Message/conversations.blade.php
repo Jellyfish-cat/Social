@@ -548,7 +548,15 @@
 <div class="msg-page rounded-4" id="msgPage" style="position:relative;">
     @include('Message.info_modal')
     @include('Message.partials.search_modal')
-
+    
+    {{-- Group Modal Container (Loaded via AJAX) --}}
+    <div class="modal fade back-to" id="groupModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0" id="groupModalContent">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
     {{-- ===== LEFT SIDEBAR ===== --}}
     <div class="msg-left">
 
@@ -557,7 +565,7 @@
             <span class="msg-username">
                 {{ auth()->user()->profile->display_name ?? auth()->user()->name }}
             </span>
-            <button class="msg-icon-btn me-2" id="btnOpenGroupModal" title="Tạo nhóm trò chuyện">
+            <button class="msg-icon-btn me-2 open-group" data-action="create" title="Tạo nhóm trò chuyện">
                 <i class="bi bi-people-fill"></i>
             </button>
         </div>
@@ -620,6 +628,7 @@
                  <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item {{ $conversation->unread_count > 0 ? 'unread' : '' }}"
                          data-name="{{ $displayName }}"
                          data-status="{{ $lastMsg->content ?? '' }}"
+                         data-convo-status="{{ $conversation->status ?? 'show' }}"
                          data-online="false"
                          data-is-group="{{ $isGroup ? 'true' : 'false' }}"
                          data-convo-id="{{ $conversation->id }}"
@@ -638,7 +647,13 @@
                             <small class="text-muted">
                                 @if($conversation->unread_count > 0) <strong> @endif
                                 
-                                {{ $lastMsg && $lastMsg->sender_id == auth()->id() ? 'Bạn: ' : '' }}
+                                @if($lastMsg)
+                                    @if($lastMsg->sender_id == auth()->id())
+                                        Bạn: 
+                                    @elseif($isGroup && $lastMsg->sender && $lastMsg->type !== 'notification')
+                                        {{ $lastMsg->sender->profile->display_name ?? $lastMsg->sender->name }}: 
+                                    @endif
+                                @endif
                                 {{ Str::limit($previewText ?? 'Chưa có tin nhắn', 30) }}
                                 
                                 @if($conversation->unread_count > 0) </strong> @endif
@@ -676,7 +691,7 @@
                 $chatDisplayName = $currentConvo->name;
                 $chatDisplayAvatar = $currentConvo->avatar ? 'storage/' . $currentConvo->avatar : 'storage/default-avatar.png';
                 $isGroup = true;
-                $status = 'show';
+                $status = $currentConvo->status ?? 'show';
             } else {
                 $otherUser = $currentConvo ? $currentConvo->users->where('id', '!=', auth()->id())->first() : null;
                 $chatDisplayName = $otherUser->profile->display_name ?? $otherUser->name ?? 'Người dùng';
@@ -717,10 +732,11 @@
                 <div class="msg-chat-body" id="msgChatBody">
             </div>
         {{-- Chat Footer --}}
-        @if($status !== 'hidden')
-        <div class="chat-form">
-            <div class="preview-media d-flex gap-2 px-3 py-1 w-100" style="display:none;"></div></div>
-        <div class="msg-chat-footer chat-form constantIcon">
+        <div class="chat-form" id="previewMediaContainer" style="display: {{ $status === 'hide' ? 'none' : 'block' }}">
+            <div class="preview-media d-flex gap-2 px-3 py-1 w-100" style="display:none;"></div>
+        </div>
+        
+        <div class="msg-chat-footer chat-form constantIcon" style="display: {{ $status === 'hide' ? 'none' : 'flex' }}">
             <input type="file" id="msg-file-input" name="file" hidden accept="image/*,video/*" multiple onchange="previewMessageFiles(this)">
             <button type="button" class="btn-image btn msg-input-icon constantIcon" title="Gửi ảnh"
                 onclick="event.preventDefault(); document.getElementById('msg-file-input').click();">
@@ -735,76 +751,18 @@
                 <i class="bi bi-send-fill"></i>
             </button>
         </div>
-        @else
-        <div class="msg-chat-footer chat-form constantIcon justify-content-center">
+
+        <div class="msg-chat-footer chat-form constantIcon justify-content-center" style="display: {{ $status === 'hide' ? 'flex' : 'none' }}">
             <div class="text-center text-muted py-3">
                 <i class="bi bi-lock-fill fs-6"></i>
-                <p class="mb-0 mt-1">Tài khoản này đã bị khóa do vi phạm</p>
-            </div>
-        </div>
-        @endif
-    </div>
-{{-- New Group Modal --}}
-<div class="modal fade" id="newGroupModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0">
-            <div class="modal-header border-bottom-0">
-                <h5 class="modal-title fw-bold">Tạo nhóm trò chuyện</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="newGroupForm" enctype="multipart/form-data">
-                    <div class="text-center mb-3">
-                        <label for="groupAvatarInput" class="cursor-pointer">
-                            <img src="{{ asset('storage/default-avatar.png') }}" id="groupAvatarPreview" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
-                            <div class="small text-primary mt-1">Chọn ảnh nhóm</div>
-                        </label>
-                        <div class="mt-1">
-                            <a href="javascript:void(0)" class="small text-muted text-decoration-none" id="btnShowAvatarLibrary">Hoặc chọn từ thư viện</a>
-                        </div>
-                        <input type="file" id="groupAvatarInput" name="avatar" hidden accept="image/*">
-                        <input type="hidden" id="dicebearUrlInput" name="dicebear_url">
-                    </div>
-                    <div class="mb-3">
-                        <input type="text" name="name" class="form-control rounded-3" placeholder="Tên nhóm (VD: Hội Quán...)" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold mb-2">Thêm thành viên</label>
-                        <input type="text" id="groupUserSearch" class="form-control mb-2 rounded-3" placeholder="Tìm tên người dùng...">
-                        <div id="selectedUsers" class="d-flex flex-wrap gap-2 mb-2"></div>
-                        <div id="groupUserSuggestions" class="list-group list-group-flush border rounded-3 overflow-auto" style="max-height: 200px;"></div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" id="btnCreateGroup" class="btn btn-primary rounded-pill px-4">Tạo nhóm</button>
+                <p class="mb-0 mt-1" id="lockedMessageText">
+                    {{ $isGroup ? 'Nhóm này đã bị giải tán' : 'Tài khoản này đã bị khóa do vi phạm' }}
+                </p>
             </div>
         </div>
     </div>
-</div>
 
-{{-- DiceBear Avatar Library Modal --}}
-<div class="modal fade" id="avatarLibraryModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0">
-            <div class="modal-header border-bottom-0">
-                <h6 class="modal-title fw-bold">Thư viện ảnh nhóm</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body pt-0">
-                <div class="text-center mb-3">
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" id="btnRefreshLibrary">
-                        <i class="bi bi-arrow-clockwise"></i> Đổi bộ khác
-                    </button>
-                </div>
-                <div id="avatarGrid" class="row g-3 justify-content-center">
-                    {{-- Avatar items will be injected here --}}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <style>
     /* Theo phong cách z-index của hệ thống trong app.blade.php */

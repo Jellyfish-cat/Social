@@ -18,8 +18,8 @@ return new class extends Migration
     $table->string('avatar')->nullable();
     $table->timestamp('created_at')->useCurrent();
     $table->string('status')->default('show');
-
-    $table->timestamps();
+    $table->string('createUser');
+    $table->timestamp('deleted_at')->nullable();
 });
 
     }

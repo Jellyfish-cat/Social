@@ -58,14 +58,14 @@
             
             <div class="list-group list-group-flush rounded-3 border">
                 <!-- Options for Group -->
-                <button class="list-group-item list-group-item-action d-flex align-items-center py-3 d-none" id="btnEditGroup">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action d-flex align-items-center py-3 d-none open-group" data-action="edit" id="btnEditGroup">
                     <i class="bi bi-pencil me-3 fs-5"></i>
-                    <span>Đổi tên nhóm</span>
-                </button>
-                <button class="list-group-item list-group-item-action d-flex align-items-center py-3 text-danger d-none" id="btnLeaveGroup">
+                    <span>Chỉnh sửa thông tin nhóm</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action d-flex align-items-center py-3 text-danger d-none" id="btnLeaveGroup">
                     <i class="bi bi-box-arrow-right me-3 fs-5"></i>
                     <span>Rời khỏi nhóm</span>
-                </button>
+                </a>
 
                 <!-- Options for Private -->
                 <button class="list-group-item list-group-item-action d-flex align-items-center py-3 text-danger d-none" id="btnBlockUser">
@@ -81,6 +81,11 @@
                 <button class="list-group-item list-group-item-action d-flex align-items-center py-3 text-danger" id="btnDeleteConversation">
                     <i class="bi bi-trash3 me-3 fs-5"></i>
                     <span>Xóa đoạn chat</span>
+                </button>
+
+                <button class="list-group-item list-group-item-action d-flex align-items-center py-3 text-danger" id="btnDissolveGroup">
+                    <i class="bi bi-person-x me-3 fs-5"></i>
+                    <span>Giải tán nhóm</span>
                 </button>
             </div>
         </div>

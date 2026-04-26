@@ -18,7 +18,7 @@ return new class extends Migration
           ->constrained()
           ->cascadeOnDelete();
 
-    $table->foreignId('sender_id')
+    $table->foreignId('sender_id')->nullable()
           ->constrained('users')
           ->cascadeOnDelete();
 
@@ -26,7 +26,7 @@ return new class extends Migration
     $table->timestamp('read_at')->nullable();
     $table->timestamp('created_at')->useCurrent();
     $table->string('status')->default('show');
-
+    $table->string('type')->default('text')->after('content');
     $table->timestamps();
 });
 

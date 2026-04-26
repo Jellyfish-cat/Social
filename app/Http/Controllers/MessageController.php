@@ -92,13 +92,18 @@ class MessageController extends Controller
         }
                 // Đóng gói payload gửi đi qua Websocket
         $chatData = [
-            'id'          => $message->id,
-            'content'     => $message->content,
-            'sender_id'   => $message->sender_id,
-            'receiver_id' => $id, // ID người nhận (chính là $id từ tham số hàm)
-            'created_at'  => $message->created_at->format('H:i d/m'),
-            'media'       => $mediaList,
-            'sender_avatar' => auth()->user()->profile->avatar ?? null,
+            'id'              => $message->id,
+            'content'         => $message->content,
+            'sender_id'       => $message->sender_id,
+            'sender_name'     => auth()->user()->profile->display_name ?? auth()->user()->name,
+            'sender_avatar'   => auth()->user()->profile->avatar ?? null,
+            'receiver_id'     => $id,
+            'is_group'        => false,
+            'conversation_id' => $message->conversation_id,
+            'created_at'      => $message->created_at->format('H:i d/m'),
+            'timestamp'       => $message->created_at->timestamp,
+            'media'           => $mediaList,
+            'type'            => $message->type,
         ];
         // Bắn event
         broadcast(new \App\Events\MessageSent((object) $chatData))->toOthers();
@@ -180,8 +185,10 @@ class MessageController extends Controller
                     'conversation_id' => $conversation->id,
                     'group_name'      => $conversation->name,
                     'group_avatar'    => $conversation->avatar,
-                    'receiver_id'     => $member->id, // Send to this specific member's private channel
+                    'receiver_id'     => $member->id,
+                    'type'            => $message->type,
                     'created_at'      => $message->created_at->format('H:i d/m'),
+                    'timestamp'       => $message->created_at->timestamp,
                     'media'           => $mediaList,
                 ];
                 broadcast(new \App\Events\MessageSent((object) $chatData))->toOthers();

@@ -23,6 +23,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'email_verified_at',
     ];
+    protected $appends = ['display_name'];
+
+    public function getDisplayNameAttribute()
+    {
+        return $this->profile->display_name ?? $this->name;
+    }
+
     public function profile()
     {
         return $this->hasOne(Profile::class);

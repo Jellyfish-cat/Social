@@ -303,6 +303,27 @@
         </div>
     </div>
 </div>
+{{-- DiceBear Avatar Library Modal --}}
+<div class="modal fade" id="avatarLibraryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-bottom-0">
+                <h6 class="modal-title fw-bold">Thư viện ảnh nhóm</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <div class="text-center mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" id="btnRefreshLibrary">
+                        <i class="bi bi-arrow-clockwise"></i> Đổi bộ khác
+                    </button>
+                </div>
+                <div id="avatarGrid" class="row g-3 justify-content-center">
+                    {{-- Avatar items will be injected here --}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Modal xem chi tiết bài viết -->
 <div class="modal fade back-to" id="postDetailModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 1290px;">

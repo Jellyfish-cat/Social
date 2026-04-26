@@ -83,9 +83,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/message/search', [MessageController::class, 'search'])->name('message.search');
     Route::post('/messages/read/{id}', [MessageController::class, 'is_Read']);
     // Group Chat Features
+    Route::get('/conversation/group/create', [ConversationController::class, 'createGroup'])->name('conversation.group.createUI');
     Route::post('/conversation/group/create', [ConversationController::class, 'storeGroup'])->name('conversation.group.create');
     Route::get('/message/group/chat/{id}', [ConversationController::class, 'groupTab'])->name('conversations.groupTab');
+    Route::get('/conversation/members/{id}', [ConversationController::class, 'getMembers'])->name('conversation.members');
     Route::post('/message/group/send/{convoId}', [MessageController::class, 'storeGroupMsg'])->name('message.group.store');
+    Route::get('/conversation/edit/{id}', [ConversationController::class, 'edit'])->name('conversation.edit');
+    Route::post('/conversation/group/update/{id}', [ConversationController::class, 'updateGroup'])->name('conversation.group.update');
+    Route::get('/conversation/leave/{id}', [ConversationController::class, 'leaveGroup'])->name('conversation.leave');
+    Route::post('/conversation/clear/{id}', [ConversationController::class, 'clearChat'])->name('conversation.clear');
     // --- Home ---
        // --- Profile ---
     Route::prefix('profile')->group(function () {

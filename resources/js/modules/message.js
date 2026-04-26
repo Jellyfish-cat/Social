@@ -95,6 +95,20 @@ if (msgPage) {
             bubble.textContent = text;
         }
 
+        row.dataset.id = 'temp-' + Date.now();
+        row.dataset.time = Math.floor(Date.now() / 1000);
+
+        // Kiểm tra thời gian để hiện phân cách (quá 1 tiếng = 3600s)
+        const lastMsgRow = chatBody.querySelector('.msg-bubble-row:last-of-type');
+        const now = parseInt(row.dataset.time);
+        if (!lastMsgRow || (now - parseInt(lastMsgRow.dataset.time || 0)) > 3600) {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'msg-bubble-time';
+            const d = new Date();
+            timeDiv.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+            chatBody.appendChild(timeDiv);
+        }
+
         row.appendChild(bubble);
         chatBody.appendChild(row);
 
@@ -117,7 +131,7 @@ if (msgPage) {
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const isGroup = window.currentItem ? window.currentItem.dataset.isGroup === 'true' : false;
-        const targetId = window.currentItem ? (window.currentItem.dataset.convoId || window.currentUserId) : window.currentUserId;
+        const targetId = window.currentUserId;
         const fetchUrl = isGroup ? `/message/group/send/${targetId}` : `/message/send/${targetId}`;
 
         if (typeof startLoading === 'function') startLoading();
@@ -245,67 +259,148 @@ if (msgPage) {
                 })
                 .listen('MessageSent', (e) => {
                     const incomingMsg = e.message;
+                    if (!incomingMsg) return;
+
                     const isGroupEvent = incomingMsg.is_group === true;
-                    let isMatch = false;
                     const currentType = window.currentItem ? window.currentItem.dataset.isGroup : 'false';
-                    const currentId = window.currentItem ? (window.currentItem.dataset.convoId || window.currentUserId) : null;
+                    let isMatch = false;
 
                     if (isGroupEvent) {
-                        isMatch = (currentType === 'true' && currentId == incomingMsg.conversation_id);
+                        isMatch = (currentType === 'true' && window.currentUserId == incomingMsg.conversation_id);
                     } else {
-                        isMatch = (currentType === 'false' && currentId == incomingMsg.sender_id);
+                        isMatch = (currentType === 'false' && window.currentUserId == incomingMsg.sender_id);
                     }
 
-                    if (isMatch) {
+                    if (isMatch && chatBody) {
+                        // Đánh dấu đã đọc ngay lập tức vì đang mở chat
                         const readId = isGroupEvent ? incomingMsg.conversation_id : incomingMsg.sender_id;
                         fetch(`/messages/read/${readId}`, {
                             method: 'POST',
                             headers: { "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content }
                         });
 
-                        const row = document.createElement('div');
-                        row.className = 'msg-bubble-row theirs mb-2 d-flex align-items-end';
-                        const avatarUrl = incomingMsg.sender_avatar ? `/storage/${incomingMsg.sender_avatar}` : '/storage/default-avatar.png';
-                        const avatarImg = document.createElement('img');
-                        avatarImg.src = avatarUrl;
-                        avatarImg.className = 'rounded-circle me-2';
-                        avatarImg.style.cssText = 'width: 28px; height: 28px; object-fit: cover;';
+                        if (incomingMsg.type === 'notification') {
+                            const existingNoti = chatBody.querySelector(`.msg-system-notification[data-id="${incomingMsg.id}"]`);
+                            if (!existingNoti) {
+                                const notiDiv = document.createElement('div');
+                                notiDiv.className = 'msg-system-notification d-flex justify-content-center my-3';
+                                notiDiv.dataset.id = incomingMsg.id;
+                                notiDiv.dataset.time = incomingMsg.timestamp;
+                                notiDiv.innerHTML = `<span class="px-3 py-1 bg-light text-muted small rounded-pill border" style="font-size: 11px;">${incomingMsg.content}</span>`;
+                                chatBody.appendChild(notiDiv);
+                            }
+                        } else {
+                            // Kiểm tra thời gian phân cách cho tin nhắn đến
+                            const lastMsgRow = chatBody.querySelector('.msg-bubble-row:last-of-type');
+                            const incomingTime = incomingMsg.timestamp;
+                            if (!lastMsgRow || (incomingTime - parseInt(lastMsgRow.dataset.time || 0)) > 3600) {
+                                const timeDiv = document.createElement('div');
+                                timeDiv.className = 'msg-bubble-time';
+                                timeDiv.textContent = incomingMsg.created_at; // Format H:i d/m đã có sẵn từ backend
+                                chatBody.appendChild(timeDiv);
+                            }
 
-                        const bubble = document.createElement('div');
-                        bubble.className = 'msg-bubble theirs';
-                        let mediaHtml = '';
-                        if (incomingMsg.media && incomingMsg.media.length > 0) {
-                            incomingMsg.media.forEach(m => {
-                                if (m.type === 'image') mediaHtml += `<img src="${m.file_path}" style="max-width:200px;border-radius:12px;" class="mb-1 d-block">`;
-                                else if (m.type === 'video') mediaHtml += `<video src="${m.file_path}" style="max-width:200px;border-radius:12px;" controls class="mb-1 d-block"></video>`;
-                            });
+                            const row = document.createElement('div');
+                            row.className = 'msg-bubble-row theirs mb-2 d-flex align-items-end';
+                            row.dataset.time = incomingMsg.timestamp;
+                            row.dataset.id = incomingMsg.id;
+                            const avatarUrl = incomingMsg.sender_avatar ? `/storage/${incomingMsg.sender_avatar}` : '/storage/default-avatar.png';
+
+                            let mediaHtml = '';
+                            if (incomingMsg.media && incomingMsg.media.length > 0) {
+                                incomingMsg.media.forEach(m => {
+                                    if (m.type === 'image') mediaHtml += `<img src="${m.file_path}" style="max-width:200px;border-radius:12px;" class="mb-1 d-block">`;
+                                    else if (m.type === 'video') mediaHtml += `<video src="${m.file_path}" style="max-width:200px;border-radius:12px;" controls class="mb-1 d-block"></video>`;
+                                });
+                            }
+
+                            let nameHtml = isGroupEvent ? `<div class="fw-bold mb-1" style="font-size: 0.75rem; color: #65676b;">${incomingMsg.sender_name || 'Người dùng'}</div>` : '';
+
+                            row.innerHTML = `
+                                <img src="${avatarUrl}" class="rounded-circle me-2" style="width: 28px; height: 28px; object-fit: cover;">
+                                <div class="msg-bubble theirs">
+                                    ${nameHtml}
+                                    ${mediaHtml}
+                                    ${incomingMsg.content ? `<div class="mt-1 messege-item">${incomingMsg.content}</div>` : ''}
+                                </div>
+                            `;
+                            chatBody.appendChild(row);
                         }
-                        bubble.innerHTML = mediaHtml;
-                        if (incomingMsg.content) bubble.innerHTML += `<div class="mt-1 messege-item">${incomingMsg.content}</div>`;
-
-                        row.appendChild(avatarImg);
-                        row.appendChild(bubble);
-                        chatBody.appendChild(row);
                         chatBody.scrollTop = chatBody.scrollHeight;
-                        row.dataset.id = incomingMsg.id;
                     }
 
-                    // Update Sidebar Preview logic stays similar but uses window.currentItem
-                    let selector = isGroupEvent
-                        ? `.convo-item[data-convo-id="${incomingMsg.conversation_id}"][data-is-group="true"]`
-                        : `.convo-item[data-user-id="${incomingMsg.sender_id}"][data-is-group="false"]`;
-                    let convoItem = document.querySelector(selector);
+                    // Cập nhật Sidebar
+                    const convoList = document.getElementById('msgConvoList');
+                    if (convoList) {
+                        const selector = isGroupEvent
+                            ? `.convo-item[data-convo-id="${incomingMsg.conversation_id}"][data-is-group="true"]`
+                            : `.convo-item[data-user-id="${incomingMsg.sender_id}"][data-is-group="false"]`;
+                        let convoItem = document.querySelector(selector);
 
-                    if (convoItem) {
-                        const preview = convoItem.querySelector('small.text-muted');
-                        let textPreview = incomingMsg.content || (incomingMsg.media?.length > 0 ? '📷 Đã gửi media' : '');
-                        if (preview) {
+                        if (convoItem) {
+                            const preview = convoItem.querySelector('small.text-muted');
+                            let senderPrefix = (isGroupEvent && incomingMsg.type !== 'notification') ? (incomingMsg.sender_name || 'Người dùng') + ': ' : '';
+                            let mediaText = (incomingMsg.media && incomingMsg.media.length > 0) ? `📷 Đã gửi ${incomingMsg.media.length} ảnh` : '';
+                            let textPreview = senderPrefix + (incomingMsg.content || mediaText);
+
+                            if (preview) {
+                                let shortText = textPreview.length > 30 ? textPreview.substring(0, 30) + '...' : textPreview;
+                                preview.innerHTML = isMatch ? shortText : `<strong>${shortText}</strong>`;
+                            }
+
+                            if (!isMatch) {
+                                convoItem.classList.add('unread');
+                                let badge = convoItem.querySelector('.msg-unread-count');
+                                if (badge) {
+                                    badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+                                } else {
+                                    const infoDiv = convoItem.querySelector('.flex-grow-1');
+                                    if (infoDiv) {
+                                        const newBadge = document.createElement('span');
+                                        newBadge.className = 'msg-unread-count badge bg-primary';
+                                        newBadge.textContent = '1';
+                                        infoDiv.appendChild(newBadge);
+                                    }
+                                }
+                            }
+                            convoList.prepend(convoItem);
+                        } else {
+                            // Tạo mới item nếu chưa có
+                            const isGroup = isGroupEvent;
+                            const displayName = isGroup ? (incomingMsg.group_name || 'Nhóm mới') : (incomingMsg.sender_name || 'Người dùng');
+                            const avatar = isGroup
+                                ? (incomingMsg.group_avatar ? `/storage/${incomingMsg.group_avatar}` : '/storage/default-avatar.png')
+                                : (incomingMsg.sender_avatar ? `/storage/${incomingMsg.sender_avatar}` : '/storage/default-avatar.png');
+                            const targetId = isGroup ? incomingMsg.conversation_id : incomingMsg.sender_id;
+
+                            let senderPrefix = (isGroup && incomingMsg.type !== 'notification') ? (incomingMsg.sender_name || 'Người dùng') + ': ' : '';
+                            let mediaText = (incomingMsg.media && incomingMsg.media.length > 0) ? `📷 Đã gửi ${incomingMsg.media.length} ảnh` : '';
+                            let textPreview = senderPrefix + (incomingMsg.content || mediaText);
                             let shortText = textPreview.length > 30 ? textPreview.substring(0, 30) + '...' : textPreview;
-                            preview.innerHTML = isMatch ? shortText : `<strong>${shortText}</strong>`;
+
+                            const newConvo = document.createElement('div');
+                            newConvo.className = 'd-flex align-items-center px-3 py-2 gap-2 convo-item unread';
+                            newConvo.dataset.name = displayName;
+                            newConvo.dataset.status = incomingMsg.content || '';
+                            newConvo.dataset.online = 'false';
+                            newConvo.dataset.isGroup = isGroup ? 'true' : 'false';
+                            newConvo.dataset.convoId = incomingMsg.conversation_id;
+                            newConvo.dataset.userId = targetId;
+
+                            newConvo.innerHTML = `
+                                <img src="${avatar}" class="rounded-circle flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">
+                                <div class="flex-grow-1 text-truncate">
+                                    <div class="fw-semibold">
+                                        ${displayName}
+                                        ${isGroup ? '<i class="bi bi-people text-muted ms-1" title="Nhóm"></i>' : ''}
+                                    </div>
+                                    <small class="text-muted"><strong>${shortText}</strong></small>
+                                    <span class="msg-unread-count badge bg-primary">1</span>
+                                </div>
+                                <small class="text-muted">Vừa xong</small>
+                            `;
+                            convoList.prepend(newConvo);
                         }
-                        if (!isMatch) convoItem.classList.add('unread');
-                        const convoList = document.getElementById('msgConvoList');
-                        if (convoList) convoList.prepend(convoItem);
                     }
                 });
         }

@@ -515,7 +515,7 @@ document.addEventListener('click', async function (e) {
         window.avatarTargetContext = e.target.id === 'btnShowEditAvatarLibrary' ? 'edit' : 'create';
         const libraryModalEl = document.getElementById('avatarLibraryModal');
         if (libraryModalEl) {
-            const modal = new bootstrap.Modal(libraryModalEl);
+            const modal = bootstrap.Modal.getOrCreateInstance(libraryModalEl);
             modal.show();
             loadAvatarLibrary();
         }

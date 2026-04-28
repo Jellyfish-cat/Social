@@ -227,7 +227,10 @@ class CommentController extends Controller
     }
     public function like_list(Request $request, $id)
     {
-        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        if (!$request->ajax()) {
+            return redirect()->back();
+        }
+        $layout = 'layouts.empty';
         $item = Comment::with(['likedUsers.profile'])->findOrFail($id);
         $values = $item->likedUsers; 
         return view('like.like-list', compact('values', 'item', 'layout'));

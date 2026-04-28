@@ -20,10 +20,33 @@
     <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
         <div style="width: 38px;"></div>
         <h6 class="fw-bold m-0 text-center flex-grow-1">Người đã thích</h6>
-        <button type="button" class="btn border-0 shadow-none p-2" data-bs-dismiss="modal">
+        <button type="button" class="btn border-0 shadow-none p-2" onclick="closeLikeModal(this)">
             <i class="bi bi-x-lg"></i>
         </button>
     </div>
+
+    <script>
+    function closeLikeModal(btn) {
+        // Tìm xem nút này có nằm trong modal không
+        const modalEl = btn.closest('.modal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
+            } else {
+                // Trường hợp hy hữu không lấy được instance, dùng phím tắt của BS
+                const closeBtn = document.createElement('button');
+                closeBtn.setAttribute('data-bs-dismiss', 'modal');
+                modalEl.appendChild(closeBtn);
+                closeBtn.click();
+                closeBtn.remove();
+            }
+        } else {
+            // Nếu không ở trong modal (trang mobile), quay lại trang trước
+            window.history.back();
+        }
+    }
+    </script>
 
     <!-- Search -->
     <div class="p-3 pb-2 border-bottom">

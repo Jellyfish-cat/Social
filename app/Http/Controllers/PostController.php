@@ -121,7 +121,7 @@ class PostController extends Controller
     // 4. Xem chi tiết
     public function detail(request $request, $id)
     {
-        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        $layout = $request->ajax() ? 'layouts.empty' : 'layouts.app';
         $post = Post::with([
             'user.profile', 'media', 'topics', 'likes', 'favorites',
             'comments' => function ($query) {
@@ -290,7 +290,10 @@ class PostController extends Controller
 
     public function like_list(Request $request, $id)
     {
-        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        if (!$request->ajax()) {
+            return redirect()->back();
+        }
+        $layout = 'layouts.empty';
         $item = Post::with(['likedUsers.profile'])->findOrFail($id);
         $values = $item->likedUsers; 
         return view('like.like-list', compact('values', 'item', 'layout'));

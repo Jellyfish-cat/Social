@@ -5,7 +5,6 @@ const showLoginModal = () => {
     
     if (!modalEl || !contentEl) return;
 
-    // Hiển thị loading trước (đã có spinner trong app.blade.php)
     let loginModal = bootstrap.Modal.getInstance(modalEl);
     if (!loginModal) {
         loginModal = new bootstrap.Modal(modalEl);

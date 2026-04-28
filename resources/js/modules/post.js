@@ -76,6 +76,7 @@ document.addEventListener("click", function (e) {
             finishLoading();
         });
 });
+
 // tính năng back lại 
 window.addEventListener('popstate', function (event) {
     const modalEl = document.querySelector(".back-to");

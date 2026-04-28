@@ -57,19 +57,20 @@ document.addEventListener("click", function (e) {
             document.getElementById("followDetailContent").innerHTML = html;
             const modalEl = document.getElementById("followDetailModal");
             const modal = new bootstrap.Modal(modalEl);
-            // 1. Lưu lại URL hiện tại (URL của profile) trước khi đổi
-            const originalUrl = window.location.href;
+            // modal.show(); (đã gọi bên dưới)
             modal.show();
-            history.pushState({ modaluserId: postID }, '', `/posts/like_list/${postID}`);
-            // 2. Thêm đoạn này để trả lại URL cũ khi đóng Modal
-            modalEl.addEventListener('hidden.bs.modal', function () {
-                // Chỉ set lại nếu URL vẫn đang là trang chi tiết bài viết
-                if (window.location.pathname.includes('/posts/like_list/')) {
-                    history.pushState(null, '', originalUrl);
-                }
-            }, { once: true });
         })
         .finally(() => {
             finishLoading();
         });
 });
+
+window.closeLikeModal = function() {
+    const modalEl = document.getElementById("followDetailModal");
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();
+        }
+    }
+};

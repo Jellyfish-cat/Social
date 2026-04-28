@@ -11,6 +11,15 @@ window.finishLoading = function () {
         if (bar) bar.style.width = "0%";
     }, 300);
 }
+
+// Cuộn lên đầu trang khi reload (chỉ áp dụng cho trang chủ)
+if (window.location.pathname === '/') {
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
 

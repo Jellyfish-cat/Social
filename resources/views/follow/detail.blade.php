@@ -28,7 +28,7 @@
     <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
         <div style="width: 38px;"></div> <!-- placeholder để cân bằng với nút close -->
         <h6 class="fw-bold m-0 text-center flex-grow-1" style="font-size: 16px;">{{ $user->relationLoaded('followers') ? 'Người theo dõi' : 'Đang theo dõi' }}</h6>
-        <button type="button" class="btn border-0 shadow-none p-2" data-bs-dismiss="modal" aria-label="Close">
+        <button type="button" class="btn border-0 shadow-none p-2" onclick="closeLikeModal(this)" aria-label="Close">
             <i class="bi bi-x-lg" style="font-size: 18px;"></i>
         </button>
     </div>
@@ -101,3 +101,25 @@
 </div>
 
 @endSection
+
+<script>
+if (typeof closeLikeModal !== 'function') {
+    window.closeLikeModal = function(btn) {
+        const modalEl = btn.closest('.modal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
+            } else {
+                const closeBtn = document.createElement('button');
+                closeBtn.setAttribute('data-bs-dismiss', 'modal');
+                modalEl.appendChild(closeBtn);
+                closeBtn.click();
+                closeBtn.remove();
+            }
+        } else {
+            window.history.back();
+        }
+    }
+}
+</script>

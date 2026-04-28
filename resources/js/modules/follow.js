@@ -70,27 +70,9 @@ document.addEventListener("click", function (e) {
             document.getElementById("followDetailContent").innerHTML = html;
             const modalEl = document.getElementById("followDetailModal");
             const modal = new bootstrap.Modal(modalEl);
-            // 1. Lưu lại URL hiện tại (URL của profile) trước khi đổi
-            const originalUrl = window.location.href;
             modal.show();
-            history.pushState({ modaluserId: userId }, '', `/follows/detail/${userId}`);
-            // 2. Thêm đoạn này để trả lại URL cũ khi đóng Modal
-            modalEl.addEventListener('hidden.bs.modal', function () {
-                // Chỉ set lại nếu URL vẫn đang là trang chi tiết bài viết
-                if (window.location.pathname.includes('/follows/detail/')) {
-                    history.pushState(null, '', originalUrl);
-                }
-            }, { once: true });
         })
         .finally(() => {
             finishLoading();
         });
-});
-// tính năng back lại 
-window.addEventListener('popstate', function (event) {
-    const modalEl = document.querySelector(".back-to-follow");
-    const modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
-    if (modal && modalEl && modalEl.classList.contains('show')) {
-        modal.hide();
-    }
 });

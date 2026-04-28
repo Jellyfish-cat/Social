@@ -58,7 +58,7 @@ class GoogleController extends Controller
             }
 
             Auth::login($user);
-            return redirect(route('profile.setup', 'layouts.app_detail'));
+            return redirect(route('profile.setup', 'layouts.app'));
 
         } catch (\Exception $e) {
             return redirect()->route('login')->withErrors(['email' => 'Có lỗi xảy ra khi đăng nhập Google.']);

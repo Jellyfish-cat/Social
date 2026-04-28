@@ -29,48 +29,37 @@ class ProfileController extends Controller
         } 
         $user = $profile->user;
         $posts = $user->posts()->latest()->get();
+        // 3. Gợi ý người dùng (Sử dụng Python AI Recommender)
         try {
-            $suggestedResults = collect();
-            $excludeUserIds = $user ? array_merge([$user->id], $followingIds) : $followingIds;
+            $aiResponse = \Illuminate\Support\Facades\Http::timeout(3)->get('http://127.0.0.1:8001/api/user_recommendations', [
+                'user_id' => auth()->id() ?: 0
+            ]);
 
-            if ($user) {
-                // --- Ưu tiên 0: Tương tác cũ (Chỉ cho Logged in) ---
-                $interactedUserIdsRaw = collect()
-                    ->merge(\App\Models\LikePost::where('user_id', $user->id)->with('post')->get()->pluck('post.user_id'))
-                    ->merge(\App\Models\Comment::where('user_id', $user->id)->with('post')->get()->pluck('post.user_id'))
-                    ->filter();
-
-                $sortedInteractedIds = $interactedUserIdsRaw->countBy()->sortDesc()->keys()->toArray();
-
-                if (!empty($sortedInteractedIds)) {
-                    $tier0 = User::whereIn('id', $sortedInteractedIds)
+            if ($aiResponse->successful()) {
+                $aiData = $aiResponse->json();
+                $recommendedUserIds = $aiData['recommended_user_ids'] ?? [];
+                
+                if (!empty($recommendedUserIds)) {
+                    $suggestedUsers = User::whereIn('id', $recommendedUserIds)
                         ->with('profile')
-                        ->whereNotIn('id', $excludeUserIds)
                         ->get()
-                        ->sortBy(function($u) use ($sortedInteractedIds) {
-                            return array_search($u->id, $sortedInteractedIds);
-                        })
-                        ->take(5);
-
-                    $suggestedResults = $suggestedResults->merge($tier0);
-                    $excludeUserIds = array_merge($excludeUserIds, $tier0->pluck('id')->toArray());
+                        ->sortBy(function($u) use ($recommendedUserIds) {
+                            return array_search($u->id, $recommendedUserIds);
+                        })->values();
+                } else {
+                    $suggestedUsers = User::where('id', '!=', auth()->id() ?: 0)
+                        ->where('role', 'user')
+                        ->with('profile')
+                        ->limit(5)->get();
                 }
+            } else {
+                throw new \Exception("AI Service Error");
             }
-
-            // --- Các tầng ưu tiên khác: Topic chung, Bạn chung, Phổ biến ---
-            // (Đơn giản hóa cho Guest: chỉ lấy người dùng phổ biến/mới nhất)
-            if ($suggestedResults->count() < 5) {
-                $tier3 = User::with('profile')
-                    ->whereNotIn('id', $excludeUserIds)
-                    ->limit(10)
-                    ->get();
-                $suggestedResults = $suggestedResults->merge($tier3);
-            }
-            
-            $suggestedUsers = $suggestedResults->unique('id')->take(5);
-
         } catch (\Exception $e) {
-            $suggestedUsers = User::with('profile')->limit(5)->get();
+            $suggestedUsers = User::where('id', '!=', auth()->id() ?: 0)
+                ->where('role', 'user')
+                ->with('profile')
+                ->limit(5)->get();
         }
         return view('profile.detail', compact('profile','user','posts','suggestedUsers'));
     }

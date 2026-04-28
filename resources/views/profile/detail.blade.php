@@ -34,11 +34,11 @@
             </div>
             {{-- Stats --}}
             <div class="d-flex gap-4 mb-3 align-items-center">
-                <div><strong>{{ $user->posts->count() }}</strong> bài viết</div>
+                <div><span>{{ $user->posts->count() }}</span> bài viết</div>
                 <button class="open-follow follow-count bg-transparent border-0 p-0" data-type="follower" data-id="{{$user->id}}">
-                   <strong>{{ $user->followers->count() ?? 0 }}</strong> người theo dõi</button>
+                   <span>{{ $user->followers->count() ?? 0 }}</span> người theo dõi</button>
                 <button class="open-follow following-count bg-transparent border-0 p-0" data-authid="{{$user->id}}"  data-type="following" data-id="{{$user->id}}">
-                   <strong>{{ $user->following->count() ?? 0 }}</strong> đang theo dõi</button>
+                   <span>{{ $user->following->count() ?? 0 }}</span> đang theo dõi</button>
                 
                 {{-- Blockchain Index --}}
                 <div class="d-flex align-items-center gap-1 text-primary shadow-sm px-2 py-1 rounded-pill bg-light" 
@@ -101,7 +101,12 @@
             </div>
         </div>
         <div class="col-lg-4 d-none d-lg-block">
-     @foreach($suggestedUsers as $u)
+            <div class="sidebar-sticky ps-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
+                </div>
+
+                @foreach($suggestedUsers as $u)
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <a href="{{ route('profile.detail', $u->id) }}" class="text-decoration-none">
                     <div class="d-flex align-items-center">
@@ -115,7 +120,8 @@
                     data-id="{{$u->id}}">Theo dõi</button>
                 </div>
                 @endforeach
-</div>
+            </div>
+        </div>
       
 <!-- Modal xem chi tiết người theo dõi -->
 <div class="modal fade back-to-follow" id="followDetailModal" tabindex="-1">
@@ -148,4 +154,4 @@
 
 @push('scripts')
     @vite(['resources/js/blockchain.js'])
-@endpush
+@endpush

@@ -16,7 +16,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(Request $request): View
     {
-        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        $layout = $request->ajax() ? 'layouts.empty' : 'layouts.app';
         return view('auth.login', compact('layout'));
     }
 

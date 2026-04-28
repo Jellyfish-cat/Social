@@ -78,7 +78,10 @@ class FollowController extends Controller
      */
     public function detail(request $request,$id)
        {
-        $layout = $request->ajax() ? 'layouts.app_detail' : 'layouts.app';
+        if (!$request->ajax()) {
+            return redirect()->back()->withInput();
+        }
+        $layout = 'layouts.empty';
         $type = request()->header('X-Type') ?: 'follower';
         $values=collect();
         $user=null;

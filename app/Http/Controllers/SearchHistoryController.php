@@ -113,81 +113,115 @@ class SearchHistoryController extends Controller
             ->orderBy('created_at', 'desc')->paginate(10);
             return view('admin.posts', compact('posts'));
         }
+        else {
+            // Giao diện cho User thường
+            $user = auth()->user();
+            // 1. Luôn lấy kết quả tìm kiếm theo từ khóa TRƯỚC (Để đảm bảo độ chính xác)
+            $posts = Post::where(function($q) use ($keyword) {
+                $q->where('content', 'LIKE', "%$keyword%")
+                  ->orWhereHas('user.profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"))
+                  ->orWhereHas('user', fn($query) => $query->where('name', 'LIKE', "%$keyword%"));
+            })->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
+            ->orderBy('created_at', 'desc')->get();
 
-        // Giao diện cho User thường
-        $posts = Post::where(function($q) use ($keyword) {
-            $q->where('content', 'LIKE', "%$keyword%")
-              ->orWhereHas('user.profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"))
-              ->orWhereHas('user', fn($query) => $query->where('name', 'LIKE', "%$keyword%"));
-        })->with(['user.profile', 'media', 'likes', 'comments', 'favorites'])
-        ->orderBy('created_at', 'desc')->get();
+            // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
+            try {
+                $aiResponse = \Illuminate\Support\Facades\Http::timeout(2)->get('http://127.0.0.1:8001/api/recommendations', [
+                    'user_id' => $user ? $user->id : 0
+                ]);
 
+                if ($aiResponse->successful()) {
+                    $aiData = $aiResponse->json();
+                    $recommendedIds = $aiData['recommended_post_ids'] ?? [];
+                    
+                    if (!empty($recommendedIds)) {
+                        // Lấy các bài AI gợi ý nhưng chưa có trong danh sách tìm kiếm
+                        $aiPosts = Post::whereIn('id', $recommendedIds)
+                            ->whereNotIn('id', $posts->pluck('id')->toArray())
+                            ->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
+                            ->limit(5) // Chỉ lấy thêm 5 bài gợi ý để tránh loãng kết quả tìm kiếm
+                            ->get();
+                        
+                        // Trộn thêm vào cuối danh sách bài viết
+                        $posts = $posts->concat($aiPosts);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Nếu AI lỗi, giữ nguyên kết quả tìm kiếm SQL
+            }
+      
         $checktopic = false;
         return view('search.result', compact('posts', 'keyword', 'checktopic'));
+    }
     }
     public function searchTab(Request $request, $type)
     {
         $keyword = $request->input('q');
         $user = auth()->user();
 
-        if ($type === 'post') {
-            // 1. Phân tích ngữ cảnh người dùng
-            $followingIds = $user ? $user->following()->pluck('users.id')->toArray() : [];
-            $interestedTopicIds = $user ? $user->likedPosts()
-                ->with(['post.topics'])
-                ->get()
-                ->flatMap(function ($like) {
-                    return ($like->post && $like->post->topics) ? $like->post->topics->pluck('id')->toArray() : [];
-                })
-                ->unique()
-                ->toArray() : [];
+        if ($type === 'post') { 
+            // 1. Luôn lấy kết quả tìm kiếm theo từ khóa TRƯỚC (Để đảm bảo độ chính xác)
+            $posts = Post::where(function($q) use ($keyword) {
+                $q->where('content', 'LIKE', "%$keyword%")
+                  ->orWhereHas('user.profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"))
+                  ->orWhereHas('user', fn($query) => $query->where('name', 'LIKE', "%$keyword%"));
+            })->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
+            ->orderBy('created_at', 'desc')->get();
 
-            $results = collect();
-            $excludeIds = [];
+            // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
+            try {
+                $aiResponse = \Illuminate\Support\Facades\Http::timeout(2)->get('http://127.0.0.1:8001/api/recommendations', [
+                    'user_id' => $user ? $user->id : 0
+                ]);
 
-            // Hàm tạo search builder chung
-            $baseSearch = function() use ($keyword) {
-                return Post::search($keyword)->where('status', 'show');
-            };
-
-            // Ưu tiên 1: Người đang theo dõi
-            if (!empty($followingIds)) {
-                $followingPosts = $baseSearch()
-                    ->whereIn('user_id', $followingIds)
-                    ->query(fn($q) => $q->with(['user.profile', 'topics', 'likes', 'comments', 'favorites']))
-                    ->get();
-                $results = $results->merge($followingPosts);
-                $excludeIds = $followingPosts->pluck('id')->toArray();
+                if ($aiResponse->successful()) {
+                    $aiData = $aiResponse->json();
+                    $recommendedIds = $aiData['recommended_post_ids'] ?? [];
+                    
+                    if (!empty($recommendedIds)) {
+                        // Lấy các bài AI gợi ý nhưng chưa có trong danh sách tìm kiếm
+                        $aiPosts = Post::whereIn('id', $recommendedIds)
+                            ->whereNotIn('id', $posts->pluck('id')->toArray())
+                            ->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
+                            ->limit(5) // Chỉ lấy thêm 5 bài gợi ý để tránh loãng kết quả tìm kiếm
+                            ->get();
+                        
+                        // Trộn thêm vào cuối danh sách bài viết
+                        $posts = $posts->concat($aiPosts);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Nếu AI lỗi, giữ nguyên kết quả tìm kiếm SQL
             }
 
-            // Ưu tiên 2: Chủ đề quan tâm
-            if (!empty($interestedTopicIds)) {
-                $topicPosts = $baseSearch()
-                    ->whereIn('topic_ids', $interestedTopicIds)
-                    ->query(fn($q) => $q->whereNotIn('id', $excludeIds)->with(['user.profile', 'topics', 'likes', 'comments', 'favorites']))
-                    ->get();
-                $results = $results->merge($topicPosts);
-                $excludeIds = array_merge($excludeIds, $topicPosts->pluck('id')->toArray());
-            }
-            // Ưu tiên 3: Các kết quả khác
-            $otherPosts = $baseSearch()
-                ->query(fn($q) => $q->whereNotIn('id', $excludeIds)->with(['user.profile', 'topics', 'likes', 'comments', 'favorites']))
-                ->get();
-            $posts = $results->merge($otherPosts);
             $checktopic = false;
             return view('search.partials.post-list', compact('posts', 'keyword', 'checktopic'));
         } 
         elseif ($type === 'people') {
+            // 1. Lấy danh sách ID người đang follow để ranking
             $followingIds = $user ? $user->following()->pluck('users.id')->toArray() : [];
-            $users = User::search($keyword)
-                ->where('role', 'user')
-                ->query(fn($q) => $q->with(['profile']))
+
+            // 2. Tìm kiếm người dùng khớp với từ khóa
+            $users = User::where('role', 'user')
+                ->where('status', 'show')
+                ->where(function($q) use ($keyword) {
+                    $q->where('name', 'LIKE', "%$keyword%")
+                      ->orWhereHas('profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"));
+                })
+                ->with(['profile', 'followers'])
                 ->get();
 
-            // Ranking: Đưa những người đang follow lên đầu
-            if (!empty($followingIds)) {
-                $users = $users->sortByDesc(fn($u) => in_array($u->id, $followingIds))->values();
-            }
+            // 3. RANKING: Xếp hạng các kết quả tìm được
+            $users = $users->sort(function($a, $b) use ($followingIds) {
+                // Ưu tiên 1: Người đang follow
+                $aFollowed = in_array($a->id, $followingIds);
+                $bFollowed = in_array($b->id, $followingIds);
+                if ($aFollowed && !$bFollowed) return -1;
+                if (!$aFollowed && $bFollowed) return 1;
+
+                // Ưu tiên 2: Người có nhiều follower hơn
+                return $b->followers->count() <=> $a->followers->count();
+            })->values();
 
             return view('search.partials.people-list', compact('users'));
         }
@@ -249,7 +283,7 @@ class SearchHistoryController extends Controller
                     ->limit(10)->get()]);
             }
         }
-        elseif ($user && $user->role === 'user' && $q) {
+        elseif ($user && $user->role === 'user') {
         // === LOGIC GỢI Ý MẶC ĐỊNH CHO USER (HOẶC KHI KHÔNG Ở TRANG QUẢN LÝ) ===
         $topics = collect();
         $users = collect();

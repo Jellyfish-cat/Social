@@ -24,6 +24,21 @@
                 <label for="report_reason" class="form-label text-muted">{{ __('Tại sao bạn báo cáo nội dung này?') }}</label>
                 <textarea class="form-control" id="report_reason" name="reason" rows="3" placeholder="{{ __('Vui lòng cung cấp thêm thông tin chi tiết...') }}"></textarea>
             </div>
+
+            @if(($target_type ?? '') === 'message')
+                <div class="mt-3 p-3 bg-light rounded-3 border">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="report_allow_view" name="allow_view" value="1">
+                        <label class="form-check-label fw-semibold text-primary" for="report_allow_view">
+                            {{ __('Cho phép quản trị viên xem xét hội thoại này') }}
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        <i class="bi bi-info-circle me-1"></i>
+                        {{ __('Bật tùy chọn này để Admin có thể xem ngữ cảnh các tin nhắn xung quanh nhằm xử lý báo cáo chính xác hơn.') }}
+                    </small>
+                </div>
+            @endif
         </div>
     </form>
 </div>

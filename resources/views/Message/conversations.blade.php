@@ -615,13 +615,17 @@
                         $lastMsg = $conversation->latestMessage;
                         $previewText = 'Chưa có tin nhắn';
                         if ($lastMsg) {
-                            $mediaCount = $lastMsg->media ? $lastMsg->media->count() : 0;
-                            if ($mediaCount > 0) {
-                                $previewText = $lastMsg->content 
-                                    ? $lastMsg->content 
-                                    : "📷 Đã gửi {$mediaCount} ảnh";
+                            if ($lastMsg->status === 'unsend') {
+                                $previewText = 'Tin nhắn đã bị thu hồi';
                             } else {
-                                $previewText = $lastMsg->content;
+                                $mediaCount = $lastMsg->media ? $lastMsg->media->count() : 0;
+                                if ($mediaCount > 0) {
+                                    $previewText = $lastMsg->content 
+                                        ? $lastMsg->content 
+                                        : "📷 Đã gửi {$mediaCount} ảnh";
+                                } else {
+                                    $previewText = $lastMsg->content;
+                                }
                             }
                         }
                     @endphp
@@ -732,11 +736,11 @@
                 <div class="msg-chat-body" id="msgChatBody">
             </div>
         {{-- Chat Footer --}}
-        <div class="chat-form" id="previewMediaContainer" style="display: {{ $status === 'hide' ? 'none' : 'block' }}">
+        <div class="chat-form" id="previewMediaContainer" style="display: {{ $status === 'hidden' ? 'none' : 'block' }}">
             <div class="preview-media d-flex gap-2 px-3 py-1 w-100" style="display:none;"></div>
         </div>
         
-        <div class="msg-chat-footer chat-form constantIcon" style="display: {{ $status === 'hide' ? 'none' : 'flex' }}">
+        <div class="msg-chat-footer chat-form constantIcon" style="display: {{ $status === 'hidden' ? 'none' : 'flex' }}">
             <input type="file" id="msg-file-input" name="file" hidden accept="image/*,video/*" multiple onchange="previewMessageFiles(this)">
             <button type="button" class="btn-image btn msg-input-icon constantIcon" title="Gửi ảnh"
                 onclick="event.preventDefault(); document.getElementById('msg-file-input').click();">
@@ -752,7 +756,7 @@
             </button>
         </div>
 
-        <div class="msg-chat-footer chat-form constantIcon justify-content-center" style="display: {{ $status === 'hide' ? 'flex' : 'none' }}">
+        <div class="msg-chat-footer chat-form constantIcon justify-content-center" style="display: {{ $status === 'hidden' ? 'flex' : 'none' }}">
             <div class="text-center text-muted py-3">
                 <i class="bi bi-lock-fill fs-6"></i>
                 <p class="mb-0 mt-1" id="lockedMessageText">

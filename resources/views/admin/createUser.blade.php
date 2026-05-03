@@ -22,8 +22,24 @@
                 <div class="row">
                     <!-- Username -->
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Tên đăng nhập</label>
-                        <input type="text" class="form-control" name="name" placeholder="Nhập tên đăng nhập..." required>
+                        <div class="mb-3 text-start">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="small text-muted mb-0">Tên người dùng</label>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="generateRandomUsername()">
+                                    <i class="bi bi-arrow-clockwise"></i> Ngẫu nhiên
+                                </button>
+                            </div>
+                            <input type="text" 
+                                   id="usernameInput"
+                                   name="name" 
+                                   class="form-control @error('name') is-invalid @enderror" 
+                                   placeholder="username_cua_ban" 
+                                   value="{{ old('name') }}" 
+                                   required>
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
                     <!-- Email -->
                     <div class="col-md-6 mb-3">

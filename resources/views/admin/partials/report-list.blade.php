@@ -1,5 +1,5 @@
 @php
-    $title = 'Danh sách báo cáo ' . ($type === 'post' ? 'bài viết' : ($type === 'people' ? 'thành viên' : 'bình luận'));
+    $title = 'Danh sách báo cáo ' . ($type === 'post' ? 'bài viết' : ($type === 'people' ? 'thành viên' : ($type === 'comment' ? 'bình luận' : 'tin nhắn')));
 @endphp
 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
     <span>{{ $title }}</span>
@@ -53,6 +53,23 @@
                             {{ Str::limit($value->target->content, 100) }}
                         </div>
                         <small class="text-muted">ID Bình luận: {{ $value->target->id }}</small>
+                    @elseif($type === 'message' && $value->target)
+                        <div class="text-truncate" style="max-width: 300px;">
+                            {{ Str::limit($value->target->content, 100) }}
+                        </div>
+                        <small class="text-muted">ID Tin nhắn: {{ $value->target->id }}</small>
+                        @php
+                            $conversation = $value->target->conversation;
+                        @endphp
+                        @if($conversation)
+                            <div class="mt-1">
+                                @if($conversation->allow_view)
+                                    <span class="badge bg-success-subtle text-success" style="font-size: 0.75em;"><i class="bi bi-unlock-fill me-1"></i>Đã cấp quyền xem</span>
+                                @else
+                                    <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.75em;"><i class="bi bi-lock-fill me-1"></i>Hội thoại riêng tư</span>
+                                @endif
+                            </div>
+                        @endif
                     @else
                         <span class="text-danger italic">Nội dung đã bị xóa hoặc không tồn tại</span>
                     @endif
@@ -99,10 +116,20 @@
                                 <i class="bi bi-eye"></i>
                             </a>
                             @elseif($type === 'comment' && $value->target)
-                            <a  class="btn btn-info btn-sm open-post" data-id="{{$value->target->post_id}}"
-                                data-scroll-comment-id="{{$value->target->id}}" data-action="reply" title="Xem trang cá nhân">
+                            <a class="btn btn-info btn-sm open-post" data-id="{{$value->target->post_id}}"
+                                data-scroll-comment-id="{{$value->target->id}}" data-action="reply" title="Xem bài viết">
                                 <i class="bi bi-eye"></i>
                             </a>
+                        @elseif($type === 'message' && $value->target && $value->target->conversation)
+                            @if($value->target->conversation->allow_view)
+                                <a href="{{ route('admin.conversations.show', $value->target->conversation_id) }}" class="btn btn-info btn-sm" title="Xem hội thoại">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            @else
+                                <button class="btn btn-secondary btn-sm disabled" title="Quyền riêng tư đã khóa">
+                                    <i class="bi bi-lock"></i>
+                                </button>
+                            @endif
                         @endif
 
                                  

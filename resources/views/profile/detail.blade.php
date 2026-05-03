@@ -1,9 +1,10 @@
 @extends('layouts.app')
 @section('content')
 
-<div class="container mt-5">
+<div class="container mt-3">
     {{-- HEADER PROFILE --}}
-    <div class="row align-items-center mb-5">
+    <div class="card post-card shadow-none post-item p-5 mb-3">
+    <div class="row align-items-center">
         {{-- Avatar --}}
         <div class="col-md-3 text-center">
             <div class="avatar-wrapper">
@@ -75,19 +76,22 @@
             @endif
         </div>
     </div>
+    </div>
     {{-- GRID POSTS --}}
-    <div class="container feed-container py-4 border-top pt-3">
+    <div class="container feed-container py-4 border-top border-2 border-0 pt-3">
             {{-- MENU --}}
-    <div class="row">
+    <div class="row g-3">
         <div class="col-lg-8">
-            <div class="mb-4 text-center">
+             <div class="card post-card shadow-none post-item p-3 mb-3">
+            <div class="text-center">
         <button class="me-4 fw-semibold post-profile active-tab"><i class="bi bi-grid-3x3"></i> Bài viết</button>
         <button class="text-muted me-4 comment-profile"><i class="bi bi-chat"></i> Bình Luận</button>
         <button class="text-muted me-4 fav-profile"><i class="bi bi-bookmark"></i> Đã lưu</button>
         <button class="text-muted  like-profile"><i class="bi bi-heart"></i> Yêu thích</button>
             </div>
+             </div>
             @if(auth::id() === $user->id )
-            <div class="card post-card p-3 mb-4">
+            <div class="card post-card p-3 mb-2">
                 <div class="d-flex align-items-center gap-3">
                     <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
                     <a href="{{ route('posts.create') }}" class="btn btn-light rounded-pill flex-grow-1 text-start text-muted border-0 bg-light py-2 px-3">
@@ -101,7 +105,8 @@
             </div>
         </div>
         <div class="col-lg-4 d-none d-lg-block">
-            <div class="sidebar-sticky ps-4">
+            <div class="sidebar-sticky ps-2">
+                <div class="card post-card shadow-none post-item p-3 mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
                 </div>
@@ -120,6 +125,7 @@
                     data-id="{{$u->id}}">Theo dõi</button>
                 </div>
                 @endforeach
+                </div>
             </div>
         </div>
       

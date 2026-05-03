@@ -17,9 +17,11 @@
                     <thead class="table-light text-center">
                         <tr>
                             <th width="5%">#</th>
-                            <th width="35%">thành viên</th>
+                            <th width="30%">Thành viên</th>
                             <th width="10%">Loại</th>
-                            <th width="15%">Vai trò hội thoại</th>
+                            <th width="10%">Phạm vi</th>
+                            <th width="15%">Quyền xem</th>
+                            <th width="10%">Trạng thái</th>
                             <th width="10%">Số tin nhắn</th>
                             <th width="15%">Hành động</th>
                         </tr>
@@ -32,44 +34,59 @@
                         </td>
                         <td class="text-start">
                             @foreach ($value->users as $item)
-                                {{ $item->profile->display_name ?? $item->email }},
+                                {{ $item->profile->display_name ?? $item->email }}{{ !$loop->last ? ',' : '' }}
                             @endforeach
                         </td>
-                             @if($value->type === 'private')
-                         <td class="text-start" >
-                        <span class="badge bg-warning text-dark">cá nhân</span>
-                        </td>
-                        @elseif($value->type === 'group')
-                         <td class="text-start" >
-                        <span class="badge bg-success">nhóm</span>
-                        </td>
-                        @endif
-                        </td>
-                            @if($value->users->first()->role === 'user')
-                         <td class="text-start" >
-                        <span class="badge bg-primary text-light">người dùng</span>
-                        </td>
-                        @elseif($value->users->first()->role === 'admin' || $value->users->first()->role === 'moderator')
-                         <td class="text-start" >
-                        <span class="badge bg-danger text-light">quản trị viên</span>
-                        </td>
-                        @endif
-                         <td class="text-center">
-                            {{ $value->messages_count   ?? 0 }}
+                        <td class="text-center">
+                            @if($value->type === 'private')
+                                <span class="badge bg-warning text-dark">Cá nhân</span>
+                            @elseif($value->type === 'group')
+                                <span class="badge bg-success">Nhóm</span>
+                            @endif
                         </td>
                         <td class="text-center">
-                            <a href="{{route("admin.conversations.show", $value->id)}}"
-                               class="btn btn-info btn-sm ">
-                                <i class="bi bi-eye"></i>
+                            @if($value->users->contains('role', "admin") || $value->users->contains('role', "moderator"))
+                                <span class="badge bg-success-subtle text-success">Nội bộ</span>
+                            @else
+                                <span class="badge bg-primary-subtle text-primary">Người dùng</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($value->allow_view)
+                                <span class="badge bg-info text-dark"><i class="bi bi-unlock-fill me-1"></i>Công khai</span>
+                            @else
+                                <span class="badge bg-secondary"><i class="bi bi-lock-fill me-1"></i>Riêng tư</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($value->status === 'show')
+                                <span class="badge bg-success">Hoạt động</span>
+                            @else
+                                <span class="badge bg-danger">Đã ẩn</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            {{ $value->messages_count ?? 0 }}
+                        </td>
+                        <td class="text-center">
+                            @if($value->allow_view || $value->users->contains('role', 'admin') || $value->users->contains('role', 'moderator'))
+                                <a href="{{route("admin.conversations.show", $value->id)}}"
+                                   class="btn btn-info btn-sm" title="Xem chi tiết">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            @else
+                                <button class="btn btn-secondary btn-sm disabled" title="Quyền riêng tư đã khóa">
+                                    <i class="bi bi-lock"></i>
+                                </button>
+                            @endif
+                            <a class="btn btn-danger btn-sm btn-delete-conversation" data-id="{{ $value->id }}" title="Xóa hội thoại">
+                                <i class="bi bi-trash"></i>
                             </a>
-                                  <a  class="btn btn-danger btn-sm btn-delete-conversation"
-                                data-id="{{ $value->id }}">
-                                    <i class="bi bi-trash"></i></a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted p-4">
+                        <td colspan="7" class="text-center text-muted p-4">
                             Chưa có hộp thoại
                         </td>
                     </tr>
@@ -78,11 +95,9 @@
                 </table>
             </div>
         </div>
-                    <div class="p-3 d-flex justify-content-center">
-             {{ $conversations->links() }}
+        <div class="p-3 d-flex justify-content-center">
+            {{ $conversations->links() }}
         </div>
-
-
     </div>
 </div>
 @endsection 

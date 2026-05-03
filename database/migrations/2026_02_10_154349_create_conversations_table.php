@@ -16,9 +16,10 @@ return new class extends Migration
     $table->string('type'); // private | group
     $table->string('name')->nullable();
     $table->string('avatar')->nullable();
-    $table->timestamp('created_at')->useCurrent();
     $table->string('status')->default('show');
-    $table->string('createUser');
+    $table->boolean('allow_view')->default(false);
+    $table->foreignId('createUser')->nullable()->constrained('users')->cascadeOnDelete();
+    $table->timestamps();
     $table->timestamp('deleted_at')->nullable();
 });
 

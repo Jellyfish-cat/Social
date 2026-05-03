@@ -23,11 +23,11 @@ return new class extends Migration
           ->cascadeOnDelete();
 
     $table->text('content')->nullable();
+    $table->string('type')->default('text');
     $table->timestamp('read_at')->nullable();
     $table->timestamp('created_at')->useCurrent();
+    $table->timestamp('updated_at')->nullable();
     $table->string('status')->default('show');
-    $table->string('type')->default('text')->after('content');
-    $table->timestamps();
 });
 
     }

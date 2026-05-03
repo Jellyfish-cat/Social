@@ -53,9 +53,13 @@
 </head>
 <body>
 <div class="d-flex flex-column flex-md-row ">
+    @php
+        $needsSetup = Auth::check() && (!Auth::user()->profile || !Auth::user()->profile->display_name);
+    @endphp
+
     <!-- Sidebar -->
-    <nav class="bg-white border-end shadow-sm  d-flex flex-column p-3 flex-shrink-0 sidebar-hover"  style="height: 100vh; overflow: hidden;">
-        <a class="navbar-brand fw-bold fs-4 mb-4 mt-2 d-flex align-items-center text-dark text-decoration-none" href="{{ route('home') }}" style="letter-spacing: -1px; padding-left: 0.2rem;">
+    <nav class="bg-white border-end shadow-sm d-flex flex-column p-3 flex-shrink-0 sidebar-hover {{ $needsSetup ? 'pe-none opacity-50' : '' }}"  style="height: 100vh; overflow: hidden;">
+        <a class="navbar-brand fw-bold fs-4 mb-4 mt-2 d-flex align-items-center text-dark text-decoration-none" href="{{ $needsSetup ? '#' : route('home') }}" style="letter-spacing: -1px; padding-left: 0.2rem;">
             <img src="{{ asset('storage/'.'logo.png') }}" class=" fs-3 text-primary" style="max-width: 70px; text-align: center;"></i> 
             <span class="nav-text ms-2">GUNPLA SOCIAL</span>
         </a>
@@ -108,6 +112,12 @@
                         {{ $globalUnreadNotifications }}
                     </span>
                 </a>
+                <li class="nav-item">
+                <a href="#" onclick="event.preventDefault(); window.openWelcomeModal();" class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light" style="gap: 5px;">
+                    <i class="bi bi-list-check" style="min-width: 40px; text-align: center;"></i>
+                    <span class="nav-text">Quy định chung</span>
+                </a>
+            </li>
         </ul>
         @elseif(auth()->user()?->role === 'admin' || auth()->user()?->role === 'moderator')
     <ul class="nav nav-pills flex-column mb-auto gap-2">
@@ -115,7 +125,7 @@
     @if(auth()->user()?->role === 'admin')
     <li class="nav-item">
         <a href="{{route('admin.dashboard')}}"  
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.dashboard') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-speedometer2" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">Dashboard</span>
         </a>
@@ -124,7 +134,7 @@
      {{-- Quản lý bài viết --}}
     <li class="nav-item">
         <a href="{{route('admin.topics')}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.topics') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-tags" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">chủ đề</span>
         </a>
@@ -132,7 +142,7 @@
     {{-- Quản lý bài viết --}}
     <li class="nav-item">
         <a href="{{route('admin.posts')}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.posts') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-file-earmark-text" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">Bài viết</span>
         </a>
@@ -142,7 +152,7 @@
     {{-- Quản lý user --}}
     <li class="nav-item">
         <a href="{{route('admin.users')}}"  
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.users') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-person-circle" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">Người dùng</span>
         </a>
@@ -151,28 +161,30 @@
         {{-- Quản lý bài viết --}}
     <li class="nav-item">
         <a href="{{route('admin.comments')}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.comments') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-chat-left-text" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">Bình luận</span>
         </a>
     </li>
+    @if(auth()->user()?->role === 'admin')
         <li class="nav-item">
         <a href="{{route('admin.conversations')}}"  
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.conversations') || request()->routeIs('admin.conversations.show') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-people" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">Hộp thoại</span>
         </a>
     </li>
     <li class="nav-item">
         <a href="{{route('admin.messages')}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.messages') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-chat-square-dots" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">Tin nhắn</span>
         </a>
     </li>
+    @endif
                 <li class="nav-item">
         <a href="{{route('admin.searchs')}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.searchs') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-clock-history" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text">Lịch sử tìm kiếm</span>
         </a>
@@ -183,7 +195,7 @@
     @endphp
     <li class="nav-item">
         <a  href="{{route('admin.reports', 'pending')}}"
-           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light">
+           class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.reports') ? 'bg-primary text-white' : '' }}">
             <i class="bi bi-flag" style="min-width: 40px; text-align: center;"></i>
             <span class="nav-text flex-grow-1">Báo cáo</span>
             <span class="badge bg-danger rounded-pill {{ $totalReports > 0 ? '' : 'd-none' }}">
@@ -191,6 +203,15 @@
             </span>
         </a>
     </li>
+    @if(auth()->user()?->role === 'admin')
+        <li class="nav-item">
+            <a href="{{ route('admin.logs') }}"
+                class="nav-link text-dark fs-5 d-flex align-items-center px-2 py-2 rounded-3 hover-bg-light {{ request()->routeIs('admin.logs') ? 'bg-primary text-white' : '' }}">
+                <i class="bi bi-activity" style="min-width: 40px; text-align: center;"></i>
+                <span class="nav-text">Nhật ký</span>
+            </a>
+        </li>
+    @endif
 </ul>
         @else
         <ul class="nav nav-pills flex-column mb-auto gap-2">
@@ -275,11 +296,11 @@
     </nav>
     <!-- Main Content -->
     <div class="flex-grow-1 w-100 main-content">
-            <form action="{{ route('search.result') }}" method="GET" class="search-wrapper search-form"  onsubmit="return this.q.value.trim() !== ''">
+            <form action="{{ route('search.result') }}" method="GET" class="search-wrapper search-form mb-1 {{ $needsSetup ? 'pe-none opacity-50' : '' }}"  onsubmit="return this.q.value.trim() !== ''">
     <div class="search-wrapper">
         <nav class="search-navbar shadow-sm rounded-5">
             <div class="search-input-wrapper">
-                <button type="button" class="btn-Search  search-icon">
+                <button type="button" class="btn-Search search-icon">
                     <i class="bi bi-search"></i>
                 </button>
                 <input autocomplete="off" type="text" name="q" 
@@ -294,7 +315,7 @@
     </div>
 </form>
 
-        <div class="container-fluid">
+        <div class="container-fluid ">
             <div class="row justify-content-center">
                 <div id="content-area" class="col-12 col-lg-10 col-xl-9"> 
                      @yield('content')
@@ -333,7 +354,18 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
+
+<!-- Modal Chào mừng & Quy định -->
+<div class="modal fade" id="welcomeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 overflow-hidden">
+            <div class="modal-body p-0" id="welcomeContent">
+                <!-- Nội dung quy định sẽ load vào đây -->
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Modal Chia sẻ bài viết -->
 <div class="modal fade" id="sharePostModal" tabindex="-1" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
@@ -437,6 +469,15 @@
     
 </script>
     @stack('scripts')
+    @if(session()->has('show_welcome'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (window.openWelcomeModal) {
+                    window.openWelcomeModal(true);
+                }
+            });
+        </script>
+    @endif
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 <footer>

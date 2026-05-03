@@ -6,9 +6,37 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Scout\Searchable;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Post extends Model
 {
-    use HasFactory, Searchable;
+    use HasFactory, Searchable, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['content', 'status', 'pinned', 'is_comment_enabled', 'updated_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
+    /**
+     * Tùy chỉnh dữ liệu trước khi lưu vào log
+     */
+    public function tapActivity(\Spatie\Activitylog\Models\Activity $activity, string $eventName)
+    {
+        if ($eventName === 'updated' || $eventName === 'created') {
+            $properties = $activity->properties->toArray();
+            $properties['attributes']['topic_list'] = $this->topic_list;
+            $activity->properties = collect($properties);
+        }
+    }
+
+    public function getTopicListAttribute()
+    {
+        return $this->topics->pluck('name')->implode(', ');
+    }
 
     protected $fillable = [
         'user_id',
@@ -16,7 +44,6 @@ class Post extends Model
         'is_comment_enabled',
         'pinned',
         'status',
-        'shared_post_id'
     ];
 
     public function user()
@@ -48,11 +75,7 @@ class Post extends Model
     {
         return $this->belongsToMany(Topic::class);
     }
-    // Share bài viết
-    public function sharedPost()
-    {
-        return $this->belongsTo(Post::class, 'shared_post_id');
-    }
+
     public function likedUsers()
     {
         return $this->belongsToMany(User::class, 'like_posts', 'post_id', 'user_id');

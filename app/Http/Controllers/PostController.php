@@ -22,7 +22,7 @@ class PostController extends Controller
     {
         $posts = Post::with(['user.profile', 'topics', 'media'])
                     ->withCount(['comments', 'likes', 'favorites'])
-                    ->orderBy('created_at', 'desc')->where('status', 'show')
+                    ->orderBy('created_at', 'desc')
                     ->paginate(10);
 
         return view('admin.posts', compact('posts'));
@@ -55,7 +55,7 @@ class PostController extends Controller
             // Kiểm duyệt nội dung
             $moderation = $moderator->analyze($request->content);
             if ($moderation->is_toxic) {
-                $post->status = 'hide';
+                $post->status = 'hidden';
             }
 
             $post->save();
@@ -176,7 +176,7 @@ class PostController extends Controller
         // Kiểm duyệt nội dung khi cập nhật
         $moderation = $moderator->analyze($request->content);
         if ($moderation->is_toxic) {
-            $post->status = 'hide';
+            $post->status = 'hidden';
             
             // Tạo báo cáo nếu chưa có báo cáo tự động cho bài này hoặc cập nhật lý do
             Report::updateOrCreate(
@@ -198,13 +198,15 @@ class PostController extends Controller
             $post->status = 'show';
         }
 
-        $post->save();
-
         $topicIds = array_filter(explode(',', $request->topic_ids ?? ''));
         foreach (array_filter(explode(',', $request->new_topics ?? '')) as $name) {
             $topicIds[] = Topic::firstOrCreate(['name' => strtolower(trim($name))])->id;
         }
         $post->topics()->sync(array_slice(array_unique($topicIds), 0, 3));
+
+        // Cập nhật timestamp và lưu để chắc chắn kích hoạt sự kiện 'updated' cho Activity Log
+        $post->updated_at = now();
+        $post->save(); 
 
         if ($request->deleted_media_ids) {
             $ids = explode(',', $request->deleted_media_ids);

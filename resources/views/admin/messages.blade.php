@@ -39,9 +39,13 @@
                         <td class="text-start" >
                             {{ Str::limit($value->content, 120) }}
                         </td>
-                        @if($value->status === 'hide')
+                        @if($value->status === 'unsend')
                          <td class="text-start" >
-                        <span class="badge bg-warning text-dark">thu hồi</span>
+                        <span class="badge bg-warning text-dark">Thu hồi</span>
+                        </td>
+                        @elseif($value->status === 'hidden')
+                         <td class="text-start" >
+                        <span class="badge bg-danger">Đã ẩn</span>
                         </td>
                         @elseif($value->status === 'show')
                          <td class="text-start" >
@@ -63,10 +67,10 @@
                                 ->where('id', '!=', $value->sender->id)
                                 ->first();
                             @endphp
-                            {{ $otherUser->profile->display_name ?? 'Người dùng' }}
-                             @if($otherUser->role === 'user')
+                            {{ $otherUser?->profile?->display_name ?? 'Người dùng' }}
+                             @if($otherUser?->role === 'user')
                         <i class="bi bi-person-fill text-primary"></i>
-                        @elseif($otherUser->role === 'admin' || $otherUser->role === 'moderator')
+                        @elseif($otherUser?->role === 'admin' || $otherUser?->role === 'moderator')
                         <i class="bi bi-shield-fill-check text-danger"></i>
                         @endif
                         </td>
@@ -99,7 +103,6 @@
                             @endif
                         </td>
                         <td class="text-center">
-
                                   <a  class="btn btn-danger btn-sm btn-delete-message"
                                 data-id="{{ $value->id }}">
                                     <i class="bi bi-trash"></i></a>

@@ -71,10 +71,28 @@ class ProfileController extends Controller
     public function storeSetup(Request $request)
     {
         $request->validate([
-            'display_name'=>'required|max:50',
-            'avatar'=>'nullable|image',
-            'bio'=>'nullable|max:255'
+            'name' => [
+                'required', 
+                'string', 
+                'max:255', 
+                'unique:users,name,' . Auth::id(), 
+                'regex:/^\S*$/', 
+                'alpha_dash' // Chỉ cho phép chữ cái, số, dấu gạch ngang và gạch dưới
+            ],
+            'display_name' => 'required|max:50',
+            'avatar' => 'nullable|image',
+            'bio' => 'nullable|max:255'
+        ], [
+            'name.regex' => 'Tên người dùng không được chứa khoảng trắng.',
+            'name.unique' => 'Tên người dùng này đã được sử dụng.',
+            'name.alpha_dash' => 'Tên người dùng chỉ được chứa chữ cái, số, dấu gạch ngang và gạch dưới.'
         ]);
+
+        $user = Auth::user();
+        
+        // Cập nhật trường name (username) trong bảng users
+        $user->name = $request->name;
+        $user->save();
 
         $avatarPath = null;
         if($request->hasFile('avatar')){
@@ -91,6 +109,7 @@ class ProfileController extends Controller
             ]
         );
 
+        session(['show_welcome' => true]);
         return redirect()->route('home');
     }
 

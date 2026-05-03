@@ -5,13 +5,13 @@
     <div class="msg-header d-flex flex-column align-items-center  py-4 border-bottom">
 
         {{-- Avatar --}}
-        <img src="{{ asset('storage/' . ($otherUser->profile->avatar ?? 'default-avatar.png')) }}"
+        <img src="{{ asset('storage/' . (optional($otherUser->profile)->avatar ?? 'default-avatar.png')) }}"
             class="rounded-circle mb-2"
             style="width:80px;height:80px;object-fit:cover;">
 
         {{-- Name --}}
         <div class="fw-semibold fs-5">
-            {{ $otherUser->profile->display_name }}
+            {{ optional($otherUser->profile)->display_name ?? $otherUser->name }}
         </div>
 
         {{-- Username / info --}}
@@ -43,7 +43,7 @@
         {{-- Username / info --}}
         <div class="text-muted small mb-3">
             @foreach ($conversation->users as $item)
-                <a href="{{ route('profile.detail', $item->id) }}">{{ $item->profile->display_name ?? $item->email }}</a>,
+                <a href="{{ route('profile.detail', $item->id) }}">{{ optional($item->profile)->display_name ?? $item->name ?? $item->email }}</a>{{ !$loop->last ? ',' : '' }}
             @endforeach
         </div>
 
@@ -79,29 +79,46 @@
              data-id="{{ $msg->id }}" 
              data-time="{{ $msg->created_at->timestamp }}">
 
-            @if($msg->sender_id == auth()->id() && $msg->status !== 'hide' && (!$otherUser || $otherUser->status !== 'hidden'))
-                <button class="btn-unsend-msg p-0 border-0 bg-transparent text-muted order-1" 
-                        onclick="unsendMsg(this, {{ $msg->id }})" 
-                        title="Thu hồi tin nhắn"
-                        style="font-size: 0.8rem; margin: 0 5px;">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                </button>
+            @if($msg->status !== 'unsend')
+                <div class="dropdown order-1">
+                    <i class="bi bi-three-dots cursor-pointer text-muted p-1" data-bs-toggle="dropdown" 
+                       style="font-size: 0.8rem; margin: 0 5px;" title="Tùy chọn"></i>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        @if($msg->sender_id == auth()->id() && (!$otherUser || $otherUser->status !== 'hidden'))
+                            <li>
+                                <a class="dropdown-item small" href="javascript:void(0)" onclick="unsendMsg(this, {{ $msg->id }})">
+                                    <i class="bi bi-arrow-counterclockwise me-2"></i>Thu hồi
+                                </a>
+                            </li>
+                        @endif
+                        @if($msg->sender_id != auth()->id())
+                            <li>
+                                <a class="dropdown-item small text-danger open-report" href="javascript:void(0)" 
+                                   data-type="message" data-id="{{ $msg->id }}">
+                                    <i class="bi bi-flag me-2"></i>Báo cáo
+                                </a>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
             @endif
 
             @if($msg->sender_id != auth()->id())
-                <img src="{{ asset('storage/' . ($msg->sender->profile->avatar ?? 'default-avatar.png')) }}"
+                <img src="{{ asset('storage/' . (optional($msg->sender->profile)->avatar ?? 'default-avatar.png')) }}"
                     class="msg-bubble-avatar">
             @endif
 
             <div class="msg-bubble {{ $msg->sender_id == auth()->id() ? 'mine' : 'theirs' }}">
                 @if($conversation->type === 'group' && $msg->sender_id != auth()->id())
                     <div class="fw-bold mb-1" style="font-size: 0.75rem; color: #65676b;">
-                        {{ $msg->sender->profile->display_name ?? $msg->sender->name }}
+                        {{ optional($msg->sender->profile)->display_name ?? $msg->sender->name }}
                     </div>
                 @endif
-                @if($msg->status === 'hide')
+                @if($msg->status === 'unsend')
                     <div class="text-muted small fst-italic">Tin nhắn đã bị thu hồi</div>
-                @else
+                @elseif($msg->status === 'hidden')
+                  <div class="text-muted small fst-italic">Tin nhắn đã bị xóa do vi phạm</div>
+                    @else
                     @foreach($msg->media as $media)
                         @if($media->type === 'image')
                             <a href="{{ asset('storage/' . $media->file_path) }}" 

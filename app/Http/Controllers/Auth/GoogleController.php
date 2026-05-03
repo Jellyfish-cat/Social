@@ -19,7 +19,7 @@ class GoogleController extends Controller
     public function handleGoogleCallback()
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
             
             // 1. Tìm user theo google_id
             $user = User::where('google_id', $googleUser->getId())->first();
@@ -36,32 +36,37 @@ class GoogleController extends Controller
                     ]);
                 } else {
                     // 3. Nếu mail cũng chưa có, tạo User mới và mặc định đã xác minh
+                    // Chuyển tên Google thành username không dấu cách
+                    $username = Str::slug($googleUser->getName(), '_');
+                    if (User::where('name', $username)->exists()) {
+                        $username = $username . '_' . Str::random(4);
+                    }
+
                     $user = User::create([
-                        'name' => $googleUser->getName(),
+                        'name' => $username,
                         'email' => $googleUser->getEmail(),
                         'google_id' => $googleUser->getId(),
-                        'password' => Hash::make(Str::random(16)), // Mật khẩu ngẫu nhiên
+                        'password' => Hash::make(Str::random(16)), 
                         'status' => 'show', 
                         'email_verified_at' => now(),
                     ]);
 
-                    // Nếu hệ thống của bạn có bảng Profile, tạo luôn ở đây
-                    if (method_exists($user, 'profile')) {
-                        $user->profile()->create([
-                            'display_name' => $googleUser->getName(),
-                        ]);
-                    }
+                    // Tạo Profile mới
+                    $user->profile()->create([
+                        'display_name' => $googleUser->getName() ?? $username,
+                    ]);
                 }
             } elseif ($user->email_verified_at == null) {
-                // Nếu User đã có google_id nhưng chưa xác minh email (trường hợp hiếm)
                 $user->update(['email_verified_at' => now()]);
             }
 
             Auth::login($user);
-            return redirect(route('profile.setup', 'layouts.app'));
+            return redirect()->route('profile.setup');
 
         } catch (\Exception $e) {
-            return redirect()->route('login')->withErrors(['email' => 'Có lỗi xảy ra khi đăng nhập Google.']);
+            \Log::error('Google Login Error: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return redirect()->route('login')->withErrors(['email' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
         }
     }
 }

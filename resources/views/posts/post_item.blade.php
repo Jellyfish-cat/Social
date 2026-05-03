@@ -1,11 +1,11 @@
 <div class="card post-card shadow-none post-item" data-id="{{ $post->id }}">
     <div class="p-3 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('profile.detail', $post->user->id) }}" >
-            <img src="{{ asset('storage/' . ($post->user->profile->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
+            <a href="{{ $post->user ? route('profile.detail', $post->user->id) : '#' }}" >
+            <img src="{{ asset('storage/' . ($post->user?->profile?->avatar ?? 'default-avatar.png')) }}" class="avatar-circle">
             </a>
             <div>
-                <div class="fw-bold small">{{ $post->user->profile->display_name ?? $post->user->name }}</div>
+                <div class="fw-bold small">{{ $post->user?->profile?->display_name ?? $post->user?->name ?? 'Người dùng' }}</div>
                 
                 <div class="text-muted" style="font-size: 13px;">
                 @if($post->topics->count())
@@ -20,20 +20,20 @@
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            @if(!Auth::check() || $post->user->id != Auth::id())
-                @if(Auth::check() && $post->user->followers->contains(Auth::id()))
+            @if(!Auth::check() || ($post->user?->id) != Auth::id())
+                @if(Auth::check() && ($post->user?->followers?->contains(Auth::id())))
                     <button class="btn btn-light rounded-3 fw-semibold px-3 btn-sm follow-btn" 
-                    data-id="{{$post->user->id}}">Đang Theo dõi</button>
+                    data-id="{{$post->user?->id}}">Đang Theo dõi</button>
                 @else
                     <button class="btn btn-primary rounded-3 fw-semibold px-3 btn-sm follow-btn require-login" 
-                    data-id="{{$post->user->id}}">Theo dõi</button>
+                    data-id="{{$post->user?->id}}">Theo dõi</button>
                 @endif
             @endif
 
             <div class="dropdown">
                 <i class="bi bi-three-dots cursor-pointer" data-bs-toggle="dropdown"></i>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                    @if(Auth::check() && ($post->user->id === Auth::id() || auth()->user()->role === 'admin'))
+                    @if(Auth::check() && (($post->user?->id) === Auth::id() || auth()->user()->role === 'admin'))
                     <li><a class="dropdown-item small btn-edit-post" href="javascript:void(0)" data-id="{{ $post->id }}">Chỉnh sửa</a></li>
                     <li>
                         <a class="dropdown-item small btn-delete" data-id="{{ $post->id }}">
@@ -88,7 +88,7 @@
     
     <div class="p-3 pb-0">
         <div class="post-caption small mb-1">
-            <span class="fw-bold me-1">{{ $post->user->profile->display_name ?? $post->user->name }}</span>
+            <span class="fw-bold me-1">{{ $post->user?->profile?->display_name ?? $post->user?->name ?? 'Người dùng' }}</span>
             <span class="post-content-text-{{ $post->id }}">{!! nl2br(e($post->content)) !!}</span>
         </div>
           <div class="d-flex justify-content-between mb-2">
@@ -117,9 +117,9 @@
         </div>
         <div class="d-flex justify-content-between mb-2">
             <button class="open-like fw-bold small like-count"
-                    data-authid="{{$post->user->id}}"
+                    data-authid="{{$post->user?->id}}"
                     data-post-id="{{ $post->id }}">
-                {{ number_format($post->likes->count() ?? 0) }} lượt thích
+                {{ number_format($post->likes?->count() ?? 0) }} lượt thích
         </button>
             <div class="fw-bold small comment-count" data-post-id="{{ $post->id }}">
                 {{ number_format($post->comments->count() ?? 0) }} bình luận

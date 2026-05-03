@@ -9,7 +9,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     let btnId = currentType === "people" ? "people-tab" :
         currentType === "comment" ? "comment-tab" :
-            "post-tab";
+            currentType === "message" ? "message-tab" :
+                "post-tab";
 
     currentReportTab = currentType;
     const tabBtn = document.getElementById(btnId);
@@ -55,6 +56,14 @@ document.addEventListener("click", function (e) {
         loadReportTab("comment");
         setActiveReportTab(commentTab);
         updateReportHistory("comment");
+        return;
+    }
+
+    const messageTab = e.target.closest("#message-tab");
+    if (messageTab) {
+        loadReportTab("message");
+        setActiveReportTab(messageTab);
+        updateReportHistory("message");
         return;
     }
 });
@@ -114,7 +123,8 @@ window.addEventListener("popstate", function (e) {
         if (type !== currentReportTab) {
             let btnId = type === "people" ? "people-tab" :
                 type === "comment" ? "comment-tab" :
-                    "post-tab";
+                    type === "message" ? "message-tab" :
+                        "post-tab";
 
             const tabBtn = document.getElementById(btnId);
             if (tabBtn) setActiveReportTab(tabBtn);

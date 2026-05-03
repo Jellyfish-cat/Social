@@ -13,14 +13,8 @@ return new class extends Migration
     {
         Schema::create('search_history', function (Blueprint $table) {
     $table->id();
-
-    $table->foreignId('user_id')
-          ->constrained()
-          ->cascadeOnDelete();
-
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
     $table->string('keyword');
-
-    $table->timestamp('created_at')->useCurrent();
     $table->timestamps();
 });
 

@@ -61,22 +61,22 @@
                 </div>
                     <div class="media-bottom p-3">
         <div class="small">
-            <b>{{ $post->user->profile->display_name ?? $post->user->email }}</b>
+            <b>{{ $post->user?->profile?->display_name ?? $post->user?->email ?? 'Người dùng' }}</b>
             {{ $post->content }}
         </div>
     </div>
 </div>
                 <div class="info-column">
                     <div class="d-flex align-items-center p-3 border-bottom">
-                         <a href="{{ route('profile.detail', $post->user->id) }}" >
-                        <img src="{{ $post->user->profile->avatar 
+                         <a href="{{ $post->user ? route('profile.detail', $post->user->id) : '#' }}" >
+                        <img src="{{ $post->user?->profile?->avatar 
                                     ? asset('storage/'.$post->user->profile->avatar) 
                                     : 'https://i.pravatar.cc/150' }}"
                             class="user-avatar me-3">
                          </a>
                         <div>
                             <div class="fw-bold small">
-                                {{ $post->user->profile->display_name ?? $post->user->email }}
+                                {{ $post->user?->profile?->display_name ?? $post->user?->email ?? 'Người dùng' }}
                             </div>
                             <div class="text-muted" style="font-size:12px;">
                                 {{ $post->created_at->diffForHumans() }}
@@ -95,8 +95,8 @@
                         {{-- Comments --}}
                 @foreach($post->comments->where('parent_comment_id', null) as $comment)
                 <div class="comment-item position-relative d-flex" data-comment-id="{{ $comment->id }}">
-                     <a href="{{ route('profile.detail', $comment->user->id) }}" >
-                    <img src="{{ $comment->user->profile->avatar 
+                     <a href="{{ $comment->user ? route('profile.detail', $comment->user->id) : '#' }}" >
+                    <img src="{{ $comment->user?->profile?->avatar 
                     ? asset('storage/'.$comment->user->profile->avatar) 
                     : 'https://i.pravatar.cc/150' }}"
                     class="rounded-circle me-2"></a>
@@ -104,14 +104,14 @@
                    
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="fw-bold small">
-                        {{ $comment->user->profile->display_name ?? $comment->user->email }}
+                        {{ $comment->user?->profile?->display_name ?? $comment->user?->email ?? 'Người dùng' }}
                     </div>
                     <div class="dropdown">
                         <i class="bi bi-three-dots cursor-pointer text-muted"
                         data-bs-toggle="dropdown"></i>
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                            @if(Auth::check() && ($comment->user->id === Auth::id() || auth()->user()->role === 'admin'))
+                            @if(Auth::check() && (($comment->user?->id) === Auth::id() || auth()->user()->role === 'admin'))
                             <li>
                                 <a class="dropdown-item small btn-delete-comment"
                                 data-id="{{ $comment->id }}">
@@ -119,7 +119,7 @@
                                 </a>
                             </li>
                             @endif
-                            @if(!Auth::check() || $comment->user->id !== Auth::id())
+                            @if(!Auth::check() || ($comment->user?->id) !== Auth::id())
                             <li><hr class="dropdown-divider"></li>
                             <li><button class="dropdown-item small text-danger open-report require-login" data-type="comment" data-id="{{ $comment->id }}">Báo cáo</button></li>
                             @endif
@@ -157,15 +157,15 @@
                 </span>
                 {{-- Like comment list --}}
                  <button class="open-like-comment small like-count like-comment-count me-3" style="font-size:13px;"
-                                data-authid="{{$comment->user->id}}"
+                                data-authid="{{$comment->user?->id}}"
                                 data-comment-id="{{ $comment->id }}">
-                            {{ number_format($comment->likes->count() ?? 0) }} lượt thích
+                            {{ number_format($comment->likes?->count() ?? 0) }} lượt thích
                 </button>
                 {{-- Reply button --}}
                 <button class="btn-reply require-login" style="font-size:13px;"
                     data-comment-id="{{ $comment->id }}"
-                    data-username="{{ $comment->user->profile->display_name }}"
-                    data-user-id="{{ $comment->user->id }}"
+                    data-username="{{ $comment->user?->profile?->display_name ?? 'Người dùng' }}"
+                    data-user-id="{{ $comment->user?->id }}"
                     data-post-id="{{ $post->id }}">
                     Trả lời
                 </button>
@@ -173,7 +173,7 @@
                 <div class="ms-auto d-flex" style="gap:2px;">
                 <button type="button"
                     class="btn-comment-like btn-sm p-0 text-muted small require-login" data-comment-id="{{ $comment->id }}"
-                    data-username="{{ $comment->user->profile->display_name }}"
+                    data-username="{{ $comment->user?->profile?->display_name ?? 'Người dùng' }}"
                     data-post-id="{{ $post->id }}">
                     @if(Auth::check() && $comment->likes->contains('user_id', auth()->id()))
                         <i class="bi bi-heart-fill action-icon fs-6 me-2 text-danger"></i>
@@ -183,7 +183,7 @@
                 </button>
                 <button type="button"
                     class="btn btn-sm p-0 text-muted small" data-comment-id="{{ $comment->id }}"
-                    data-username="{{ $comment->user->profile->display_name }}"
+                    data-username="{{ $comment->user?->profile?->display_name ?? 'Người dùng' }}"
                     data-post-id="{{ $post->id }}">
                     
                 </button>
@@ -200,8 +200,8 @@
     <div class="reply-list d-none" id="reply-{{ $comment->id }}">
         @foreach($replies as $reply)
             <div class="comment-item position-relative d-flex mt-3 ms-1" data-comment-id="{{ $reply->id }}">
-                 <a href="{{ route('profile.detail', $reply->user->id) }}" >
-                <img src="{{ $reply->user->profile->avatar 
+                 <a href="{{ $reply->user ? route('profile.detail', $reply->user->id) : '#' }}" >
+                <img src="{{ $reply->user?->profile?->avatar 
                             ? asset('storage/'.$reply->user->profile->avatar) 
                             : 'https://i.pravatar.cc/150' }}"
                     class="rounded-circle me-2"
@@ -209,14 +209,14 @@
                 <div class="w-100 "style="min-width:0;">
                     <div class="d-flex justify-content-between align-items-center">
                     <div class="fw-bold small">
-                        {{ $reply->user->profile->display_name ?? $reply->user->email }}
+                        {{ $reply->user?->profile?->display_name ?? $reply->user?->email ?? 'Người dùng' }}
                     </div>
                     <div class="dropdown">
                         <i class="bi bi-three-dots cursor-pointer text-muted"
                         data-bs-toggle="dropdown"></i>
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                            @if(Auth::check() && ($reply->user->id === Auth::id() || auth()->user()->role === 'admin'))
+                            @if(Auth::check() && (($reply->user?->id) === Auth::id() || auth()->user()->role === 'admin'))
                             <li>
                                 <a class="dropdown-item small btn-delete-comment"
                                 data-id="{{ $reply->id }}">
@@ -224,7 +224,7 @@
                                 </a>
                             </li>
                             @endif
-                            @if(!Auth::check() || $reply->user->id !== Auth::id())
+                            @if(!Auth::check() || ($reply->user?->id) !== Auth::id())
                             <li><hr class="dropdown-divider"></li>
                             <li><button class="dropdown-item small text-danger open-report require-login" data-type="comment" data-id="{{ $reply->id }}">Báo cáo</button></li>
                             @endif
@@ -252,22 +252,22 @@
                 {{-- Like comment list --}}
                 <button class="open-like-comment btn-reply-list me-3 like-comment-count" style="font-size:13px;"
                     data-comment-id="{{ $reply->id }}"
-                    data-username="{{ $reply->user->profile->display_name }}"
+                    data-username="{{ $reply->user?->profile?->display_name ?? 'Người dùng' }}"
                     data-post-id="{{ $post->id }}">
-                    {{ $reply->likes->count() }} lượt thích
+                    {{ $reply->likes?->count() ?? 0 }} lượt thích
                 </button>
                 {{-- Reply button --}}
                 <button class="btn-reply require-login" style="font-size:13px;"
                     data-comment-id="{{ $reply->id }}"  
-                    data-username="{{ $reply->user->profile->display_name }}"
-                    data-user-id="{{ $reply->user->id }}"
+                    data-username="{{ $reply->user?->profile?->display_name ?? 'Người dùng' }}"
+                    data-user-id="{{ $reply->user?->id }}"
                     data-post-id="{{ $post->id }}">
                     Trả lời
                 </button>
                 <div class="ms-auto d-flex" style="gap:2px;">
                 <button type="button"
                     class="btn-comment-like btn-sm p-0 text-muted small require-login"  data-comment-id="{{ $reply->id }}"
-                    data-username="{{ $reply->user->profile->display_name }}"
+                    data-username="{{ $reply->user?->profile?->display_name ?? 'Người dùng' }}"
                     data-post-id="{{ $post->id }}">
                     @if(Auth::check() && $reply->likes->contains('user_id', auth()->id()))
                         <i class="bi bi-heart-fill action-icon fs-6 me-2 text-danger"></i>
@@ -277,7 +277,7 @@
                 </button>
                 <button type="button"
                     class="btn btn-sm p-0 text-muted small" data-comment-id="{{ $reply->id }}"
-                    data-username="{{ $reply->user->profile->display_name }}"
+                    data-username="{{ $reply->user?->profile?->display_name ?? 'Người dùng' }}"
                     data-post-id="{{ $post->id }}">
               
                 </button>
@@ -319,9 +319,9 @@
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                         <button class="open-like fw-bold small like-count"
-                                data-authid="{{$post->user->id}}"
+                                data-authid="{{$post->user?->id}}"
                                 data-post-id="{{ $post->id }}">
-                            {{ number_format($post->likes->count() ?? 0) }} lượt thích
+                            {{ number_format($post->likes?->count() ?? 0) }} lượt thích
                     </button>
                         <div class="fw-bold small comment-post-count" data-post-id="{{ $post->id }}">
                             {{ number_format($post->comments->count() ?? 0) }} bình luận

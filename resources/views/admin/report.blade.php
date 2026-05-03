@@ -18,6 +18,9 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link text-dark hover-bg-light rounded-pill fw-semibold px-4" id="comment-tab"  type="button" role="tab"><i class="bi bi-chat-left-text me-2"></i>Bình luận</button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link text-dark hover-bg-light rounded-pill fw-semibold px-4" id="message-tab"  type="button" role="tab"><i class="bi bi-chat-left-text me-2"></i>Tin nhắn</button>
+                    </li>
                 </ul>
             </div>
             <div class="card shadow-sm" id="report-results-container" data-tab={{$tab}}>
@@ -36,6 +39,6 @@
 </style>
 
 @push('scripts')
-<script type="module" src="{{ asset('resources/js/modules/report.js') }}"></script>
+@vite(['resources/js/modules/report.js'])
 @endpush
 @endsection

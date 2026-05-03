@@ -132,7 +132,7 @@ class HomeController extends Controller
                     $suggestedUsers = User::where('id', '!=', $user ? $user->id : 0)
                         ->where('role', 'user')
                         ->with('profile')
-                        ->limit(10)->get();
+                        ->limit(8)->get();
                 }
             } else {
                 throw new \Exception("AI Service Error");
@@ -141,7 +141,7 @@ class HomeController extends Controller
             $suggestedUsers = User::where('id', '!=', $user ? $user->id : 0)
                 ->where('role', 'user')
                 ->with('profile')
-                ->limit(10)->get();
+                ->limit(8)->get();
         }
         
         if (!$user || $user->role === 'user') {

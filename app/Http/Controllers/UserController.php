@@ -21,7 +21,7 @@ class UserController extends Controller
                     'followers',
                     'following'  
                 ])
-                ->orderBy('created_at', 'desc')->where('status', 'show')
+                ->orderBy('created_at', 'desc')
                 ->paginate(10);
         return view('admin.users', compact('users'));
     }
@@ -40,13 +40,24 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:users',
+            'name' => [
+                'required', 
+                'string', 
+                'max:255', 
+                'unique:users,name', 
+                'regex:/^\S*$/', 
+                'alpha_dash' 
+            ],
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|in:admin,moderator,user',
             'display_name' => 'nullable|string|max:255',
             'bio' => 'nullable|string|max:1000',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ], [
+            'name.regex' => 'Tên người dùng không được chứa khoảng trắng.',
+            'name.unique' => 'Tên người dùng này đã được sử dụng.',
+            'name.alpha_dash' => 'Tên người dùng chỉ được chứa chữ cái, số, dấu gạch ngang và gạch dưới.'
         ]);
 
         // 1. Create User
@@ -119,7 +130,7 @@ class UserController extends Controller
             ], 404);
         }
         
-        $user->status = 'hide';
+        $user->status = 'hidden';
         $user->save();
         Report::create([
             'user_id' => auth()->id(),

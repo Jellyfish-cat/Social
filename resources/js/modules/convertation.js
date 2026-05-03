@@ -108,11 +108,11 @@ if (msgPage) {
         }
 
         if (previewContainer) {
-            previewContainer.style.display = (convoStatus === 'hide') ? 'none' : 'block';
+            previewContainer.style.display = (convoStatus === 'hidden') ? 'none' : 'block';
         }
 
         footers.forEach(footer => {
-            if (convoStatus === 'hide') {
+            if (convoStatus === 'hidden') {
                 if (footer.classList.contains('justify-content-center')) {
                     footer.style.display = 'flex';
                 } else {

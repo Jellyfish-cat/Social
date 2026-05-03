@@ -21,13 +21,14 @@
                     <thead class="table-light text-center">
                         <tr>
                             <th width="5%">#</th>
-                            <th width="35%">Nội dung</th>
+                            <th width="30%">Nội dung</th>
                             <th width="10%">Người đăng</th>
-                            <th width="18%">Media</th>
-                            <th width="8%">Lượt thích</th>
-                            <th width="8%">Lượt lưu</th>
-                            <th width="8%">Lượt bình luận</th>
-                            <th width="120">Hành động</th>
+                            <th width="10%">Trạng thái</th>
+                            <th width="15%">Media</th>
+                            <th width="5%">Thích</th>
+                            <th width="5%">Lưu</th>
+                            <th width="5%">Bình luận</th>
+                            <th width="15%">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,6 +42,13 @@
                         </td>
                         <td>
                             {{ $value->user->profile->display_name ?? $value->user->email }}
+                        </td>
+                        <td class="text-center">
+                            @if($value->status === 'show')
+                                <span class="badge bg-success">Hiển thị</span>
+                            @else
+                                <span class="badge bg-danger">Đã ẩn</span>
+                            @endif
                         </td>
                         <td class="text-center">
                             @php

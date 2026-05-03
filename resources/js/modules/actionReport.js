@@ -53,7 +53,7 @@ document.addEventListener("click", function (e) {
         if (!reason && category && category !== 'Other') {
             reason = categoryInput.options[categoryInput.selectedIndex].text;
         }
-        
+
         if (!category) {
             alert('Vui lòng chọn danh mục báo cáo.');
             return;
@@ -64,11 +64,13 @@ document.addEventListener("click", function (e) {
             return;
         }
 
+        const allowViewInput = document.getElementById('report_allow_view');
         const formData = {
             target_id: document.getElementById('report_target_id').value,
             target_type: document.getElementById('report_target_type').value,
             category: category,
-            reason: reason
+            reason: reason,
+            allow_view: allowViewInput ? (allowViewInput.checked ? 1 : 0) : 0
         };
 
         submitBtn.disabled = true;
@@ -109,7 +111,7 @@ document.addEventListener("change", function (e) {
         const val = e.target.value;
         const container = document.getElementById('report_reason_container');
         const reasonInput = document.getElementById('report_reason');
-        
+
         if (container && reasonInput) {
             container.style.display = 'block';
             if (val === 'Other') {

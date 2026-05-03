@@ -21,8 +21,6 @@ if (window.location.pathname === '/') {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
-
     document.querySelectorAll('.video-link').forEach(link => {
         const video = document.createElement('video');
         video.src = link.href + "#t=0.5";
@@ -77,5 +75,75 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-
 });
+
+window.openWelcomeModal = function (force = false) {
+    const contentArea = document.getElementById("welcomeContent");
+    const modalEl = document.getElementById("welcomeModal");
+    if (!contentArea || !modalEl) return;
+
+    if (typeof startLoading === 'function') startLoading();
+
+    fetch('/welcome', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(res => res.text())
+        .then(html => {
+            contentArea.innerHTML = html;
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+
+            // Xử lý kích hoạt nút OKE dựa trên checkbox
+            const checkbox = document.getElementById('agreeCheckbox');
+            const okButton = document.getElementById('okButton');
+            if (checkbox && okButton) {
+                checkbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        okButton.classList.remove('disabled');
+                        okButton.style.opacity = '1';
+                        okButton.style.pointerEvents = 'auto';
+                    } else {
+                        okButton.classList.add('disabled');
+                        okButton.style.opacity = '0.5';
+                        okButton.style.pointerEvents = 'none';
+                    }
+                });
+
+                // Cảnh báo khi người dùng định reload hoặc rời trang (chỉ khi force = true)
+                const preventReload = (e) => {
+                    e.preventDefault();
+                    e.returnValue = '';
+                };
+                
+                if (force) {
+                    window.addEventListener('beforeunload', preventReload);
+                }
+
+                // Khi nhấn OKE, gửi request xóa session để không hiện lại khi reload
+                okButton.addEventListener('click', function () {
+                    // Hủy bỏ cảnh báo reload
+                    if (force) {
+                        window.removeEventListener('beforeunload', preventReload);
+                    }
+
+                    fetch('/welcome/dismiss', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(() => {
+                            console.log("Đã xác nhận quy định.");
+                        })
+                        .catch(err => console.error("Lỗi xóa session welcome:", err));
+                });
+            }
+        })
+        .catch(err => console.error("Lỗi tải quy định:", err))
+        .finally(() => {
+            if (typeof finishLoading === 'function') finishLoading();
+        });
+};

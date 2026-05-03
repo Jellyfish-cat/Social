@@ -54,9 +54,8 @@ class DashboardController extends Controller
         // 3. Pie Chart: Interaction Ratio
         $likesCount = LikePost::count();
         $commentsCount = Comment::count();
-        $sharesCount = Post::whereNotNull('shared_post_id')->count();
         $messagesCount = Message::count();
-        $interactionData = [$likesCount, $commentsCount, $sharesCount, $messagesCount];
+        $interactionData = [$likesCount, $commentsCount, $messagesCount];
 
         // 4. Pie Chart: Active vs Inactive (Active = logged/updated in last 7 days)
         $activeUsers = User::where('updated_at', '>=', now()->subDays(7))->count();
@@ -71,15 +70,11 @@ class DashboardController extends Controller
         $cmtsDaily = Comment::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
             ->where('created_at', '>=', now()->subDays(6))
             ->groupBy('date')->get()->pluck('count', 'date');
-        $sharesDaily = Post::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
-            ->whereNotNull('shared_post_id')
-            ->where('created_at', '>=', now()->subDays(6))
-            ->groupBy('date')->get()->pluck('count', 'date');
 
         $engagementTrendData = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
-            $total = ($likesDaily[$date] ?? 0) + ($cmtsDaily[$date] ?? 0) + ($sharesDaily[$date] ?? 0);
+            $total = ($likesDaily[$date] ?? 0) + ($cmtsDaily[$date] ?? 0);
             $engagementTrendData[] = $total;
         }
 

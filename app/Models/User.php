@@ -10,9 +10,20 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Scout\Searchable;
 
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, Searchable;
+    use HasFactory, Notifiable, Searchable, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'role', 'status'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
      protected $fillable = [
         'name',

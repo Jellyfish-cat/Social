@@ -193,7 +193,7 @@ if (msgPage) {
     window.unsendMsg = function (btn, msgId) {
         if (!confirm('Bạn muốn thu hồi tin nhắn này?')) return;
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(`/message/destroy/${msgId}`, {
+        fetch(`/message/unsend/${msgId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
@@ -279,6 +279,14 @@ if (msgPage) {
                             headers: { "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content }
                         });
 
+                        // Cập nhật ảnh đại diện trên Header nếu là thông báo đổi ảnh
+                        if (incomingMsg.type === 'notification' && incomingMsg.group_avatar) {
+                            const headerAvatar = document.getElementById('chatAvatar');
+                            if (headerAvatar) {
+                                headerAvatar.src = `/storage/${incomingMsg.group_avatar}`;
+                            }
+                        }
+
                         if (incomingMsg.type === 'notification') {
                             const existingNoti = chatBody.querySelector(`.msg-system-notification[data-id="${incomingMsg.id}"]`);
                             if (!existingNoti) {
@@ -346,6 +354,12 @@ if (msgPage) {
                             if (preview) {
                                 let shortText = textPreview.length > 30 ? textPreview.substring(0, 30) + '...' : textPreview;
                                 preview.innerHTML = isMatch ? shortText : `<strong>${shortText}</strong>`;
+                            }
+
+                            // Cập nhật ảnh đại diện ở Sidebar
+                            if (incomingMsg.group_avatar) {
+                                const sideImg = convoItem.querySelector('img');
+                                if (sideImg) sideImg.src = `/storage/${incomingMsg.group_avatar}`;
                             }
 
                             if (!isMatch) {

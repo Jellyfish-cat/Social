@@ -43,11 +43,17 @@ class SearchHistoryController extends Controller
                     'keyword' => $keyword
                 ]);
             }
+            
+            // Ghi log hoạt động tìm kiếm của người dùng
+            activity()
+                ->event('search')
+                ->tap(function ($activity) { $activity->user_id = auth()->id(); })
+                ->withProperties(['keyword' => $keyword])
+                ->log('search');
         }
 
         // XỬ LÝ TÌM KIẾM CHO ADMIN/MODERATOR
-        if ($user->role === 'admin' || $user->role === 'moderator') {
-            
+        if ($user && ($user->role === 'admin' || $user->role === 'moderator')) {
             // --- 0. ƯU TIÊN NGỮ CẢNH HIỆN TẠI (REFERER) ---
             if (str_contains($referer, '/admin/messages')) {
                 $messages = Message::where(fn($sub) => $sub->where('content', 'LIKE', "%$keyword%")
@@ -104,7 +110,13 @@ class SearchHistoryController extends Controller
                 return view('admin.report', compact('values', 'tab', 'type', 'item', 'delete'));
             }
 
-            // Mặc định: Quản lý bài viết (nếu không ở trang cụ thể nào)
+            // Ghi log hoạt động tìm kiếm của Admin/Moderator
+            activity()
+                ->event('search_admin')
+                ->tap(function ($activity) { $activity->user_id = auth()->id(); })
+                ->withProperties(['keyword' => $keyword, 'referer' => $referer])
+                ->log('search_admin');
+
             $posts = Post::where(function($q) use ($keyword) {
                 $q->where('content', 'LIKE', "%$keyword%")
                   ->orWhereHas('user.profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"))
@@ -115,7 +127,6 @@ class SearchHistoryController extends Controller
         }
         else {
             // Giao diện cho User thường
-            $user = auth()->user();
             // 1. Luôn lấy kết quả tìm kiếm theo từ khóa TRƯỚC (Để đảm bảo độ chính xác)
             $posts = Post::where(function($q) use ($keyword) {
                 $q->where('content', 'LIKE', "%$keyword%")
@@ -435,6 +446,12 @@ class SearchHistoryController extends Controller
                 'message' => 'Không tìm thấy từ khóa'
             ], 404);
         }
+
+        activity()
+            ->event('delete_search')
+            ->tap(function ($activity) { $activity->user_id = auth()->id(); })
+            ->withProperties(['keyword' => $searchHistory->keyword])
+            ->log('delete_search');
 
         $searchHistory->delete();
         $searchHistorylist = SearchHistory::latest()->get();

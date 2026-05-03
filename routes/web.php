@@ -17,6 +17,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\SearchHistoryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\ShareController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
@@ -42,6 +43,13 @@ Route::get('/lang/{locale}', function ($locale) {
 |--------------------------------------------------------------------------
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/welcome', function () {
+    return view('welcome');
+})->name('welcome');
+Route::post('/welcome/dismiss', function () {
+    session()->forget('show_welcome');
+    return response()->json(['success' => true]);
+})->name('welcome.dismiss');
 Route::get('profile/detail/{id}', [ProfileController::class, 'detail'])->name('profile.detail');
 Route::get('posts/detail/{id}', [PostController::class, 'detail'])->name('posts.detail');
 Route::get('posts/like_list/{id}', [PostController::class, 'like_list'])->name('posts.like_list');
@@ -114,7 +122,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/latest/{id}', [CommentController::class, 'latest']);
         Route::delete('/destroy/{id}', [CommentController::class, 'destroy'])->name('comments.destroy');
     });
-    Route::delete('/message/destroy/{id}', [MessageController::class, 'destroy'])->name('message.destroy');
+    Route::delete('/message/unsend/{id}', [MessageController::class, 'unsend'])->name('message.unsend');
     Route::delete('/conversation/destroy/{id}', [ConversationController::class, 'destroy'])->name('conversation.destroy');
     Route::delete('/reports/destroy/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
     //USER
@@ -185,6 +193,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
      Route::middleware(['checkRole:admin'])->prefix('admin')->group(function () {
          Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+         Route::get('/logs', [ActivityLogController::class, 'index'])->name('admin.logs');
 
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');
     Route::get('/users/create', [UserController::class, 'create'])->name('admin.users.create');

@@ -27,7 +27,7 @@ return [
 
     // Action taken when toxic content is detected
     'action' => [
-        'status' => 'hide', // Hide content from timeline
+        'status' => 'hidden', // Hide content from timeline
         'auto_report' => true, // Create a report entry in the database
     ],
 ];

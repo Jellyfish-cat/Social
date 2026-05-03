@@ -30,15 +30,23 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Tạo username tạm thời từ email (ví dụ: ducp9@gmail.com -> ducp9)
+        $username = explode('@', $request->email)[0];
+        
+        // Nếu username đã tồn tại, thêm chuỗi ngẫu nhiên
+        if (User::where('name', $username)->exists()) {
+            $username = $username . '_' . \Illuminate\Support\Str::random(4);
+        }
+
         $user = User::create([
-            'name' => $request->name,
+            'name' => $username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'status' => 'show', // Trạng thái mặc định
         ]);
 
         event(new Registered($user));

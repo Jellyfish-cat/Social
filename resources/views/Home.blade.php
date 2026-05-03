@@ -1,14 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<style>
-    
-    
 
-</style>
-
-<div class="container feed-container py-4" >
-    <div class="row">
+<div class="container feed-container pt-1 pb-4" >
+    <div class="row g-3">
         <div class="col-lg-8">
             <div class="card post-card p-3 mb-4">
                 <div class="d-flex align-items-center gap-3">
@@ -28,19 +23,21 @@
             @endforelse
         </div>
         <div class="col-lg-4 d-none d-lg-block">
-    <div class="sidebar-sticky ps-4">
+    <div class="sidebar-sticky ps-3">
                 <!-- <div class="col-lg-4 d-none d-lg-block" id="comment-panel">
-                <div class="sidebar-sticky ps-4"> -->
+                <div class="sidebar-sticky ps-2"> -->
                 @if(Auth::check())
-                <div class="d-flex align-items-center mb-4">
+                    <div class="card post-card shadow-none post-item p-3 mb-4">
+                <div class="d-flex align-items-center">
                     <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="rounded-circle" style="width: 56px; height: 56px; object-fit: cover;">
                     <div class="ms-3">
                         <div class="fw-bold">{{ auth()->user()->profile->display_name ?? auth()->user()->name }}</div>
                         <div class="text-muted small">{{ auth()->user()->name }}</div>
                     </div>
                 </div>
+                </div>
                 @endif
-
+                <div class="card post-card shadow-none post-item p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
                 </div>
@@ -59,6 +56,7 @@
                     data-id="{{$u->id}}">Theo dõi</button>
                 </div>
                 @endforeach
+                </div>
             </div>
         </div>
     </div>

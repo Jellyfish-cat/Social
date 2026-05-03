@@ -22,15 +22,15 @@
                     <thead class="table-light text-center">
                         <tr>
                             <th width="5%">#</th>
-                            <th width="10%">Tên đăng nhập</th>
-                            <th width="10%">Email</th>
+                            <th width="10%">Username</th>
+                            <th width="15%">Email</th>
                             <th width="10%">Tên hiển thị</th>
                             <th width="10%">Avatar</th>
-                            <th width="10%">Tiểu sử</th>
-                            <th width="10%">Ngườ theo dõi</th>
-                            <th width="10%">Đang theo dõi</th>
-                            <th width="8%">Quyền hạn</th>
-                            <th width="120">Hành động</th>
+                            <th width="10%">Follower</th>
+                            <th width="10%">Following</th>
+                            <th width="10%">Quyền</th>
+                            <th width="10%">Trạng thái</th>
+                            <th width="10%">Hành động</th>
                         </tr>
                     </thead>
                     <tbody id="user-body">
@@ -64,39 +64,47 @@
                                 <span class="text-muted">Không có</span>
                             @endif
                         </td>
-                        <td class="text-start"> 
-                            {{ Str::limit($value->profile->bio ?? "không có" , 20) }}
-                        </td>
-
                         <td class="text-center">
-                            <button class="open-follow"  data-type="follower" data-id="{{$value->id}}">
-                    <a class="follow-count" data-authid="{{$value->id}}">{{ $value->followers_count   ?? 0 }}</a>
-                   </button>
+                            <button class="btn btn-link p-0 open-follow" data-type="follower" data-id="{{$value->id}}">
+                                <span class="follow-count" data-authid="{{$value->id}}">{{ $value->followers_count ?? 0 }}</span>
+                            </button>
                         </td>
                         <td class="text-center">
-                            <button class="open-follow"  data-type="following" data-id="{{$value->id}}">
-                    <a class="following-count" data-authid="{{$value->id}}">{{ $value->following_count   ?? 0 }}</a>
-                   </button>
-                        <td class="text-center">
-                            {{ $value->role   ?? 'user' }}
-                        </td>
+                            <button class="btn btn-link p-0 open-follow" data-type="following" data-id="{{$value->id}}">
+                                <span class="following-count" data-authid="{{$value->id}}">{{ $value->following_count ?? 0 }}</span>
+                            </button>
                         </td>
                         <td class="text-center">
-                            <a 
-                               class="btn btn-info btn-sm " href="{{ route('profile.detail', $value->id ?? '') }}" >
+                            @if($value->role === 'admin')
+                                <span class="badge bg-danger">Admin</span>
+                            @elseif($value->role === 'moderator')
+                                <span class="badge bg-warning text-dark">Mod</span>
+                            @else
+                                <span class="badge bg-primary">User</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($value->status === 'show')
+                                <span class="badge bg-success">Hoạt động</span>
+                            @else
+                                <span class="badge bg-danger">Bị khóa</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            <a class="btn btn-info btn-sm" href="{{ route('profile.detail', $value->id ?? '') }}" title="Xem chi tiết">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a 
-                               class="btn btn-warning btn-sm " href="{{ route('profile.edit', $value->id ?? '') }}" >
+                            <a class="btn btn-warning btn-sm" href="{{ route('profile.edit', $value->id ?? '') }}" title="Chỉnh sửa">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                                  <a  class="btn btn-danger btn-sm btn-delete-user"
-                                data-id="{{ $value->id }}" data-type="destroy">
-                                    <i class="bi bi-trash"></i></a>
-                                    <a  class="btn btn-danger btn-sm btn-delete-user"
-                                data-id="{{ $value->id }}" data-type="hide">
-                                <i class="bi bi-eye-slash"></i></a>
-                        
+                            <a class="btn btn-danger btn-sm btn-delete-user" data-id="{{ $value->id }}" data-type="destroy" title="Xóa vĩnh viễn">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            @if($value->status === 'show')
+                                <a class="btn btn-danger btn-sm btn-delete-user" data-id="{{ $value->id }}" data-type="hidden" title="Khóa tài khoản">
+                                    <i class="bi bi-eye-slash"></i>
+                                </a>
+                            @endif
                         </td>
                     </tr>
                     @empty

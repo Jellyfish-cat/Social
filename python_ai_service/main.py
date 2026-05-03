@@ -40,30 +40,37 @@ GLOBAL_CACHE = {
     "df_posts": None,
     "tfidf_matrix": None,
     "tfidf_model": None,
+    "user_item_matrix": None, # Cache cho Collaborative Filtering
     "last_updated": 0
 }
-CACHE_TTL = 300 # Cập nhật dữ liệu bài viết mới sau mỗi 5 phút
+CACHE_TTL = 300 # Cập nhật dữ liệu mới sau mỗi 5 phút
 
 def get_cached_data():
     global GLOBAL_CACHE
     now = time.time()
     
-    # Nếu chưa có cache hoặc cache quá hạn, thực hiện tính toán sẵn (Pre-calculation)
     if GLOBAL_CACHE["df_posts"] is None or (now - GLOBAL_CACHE["last_updated"]) > CACHE_TTL:
         try:
             conn = get_db_connection()
+            # Cập nhật query để lấy thêm role của user (phục vụ Cold Start)
             query_posts = """
-                SELECT p.id, p.user_id, p.content, p.created_at,
+                SELECT p.id, p.user_id, p.content, p.created_at, u.role as author_role,
                        COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ' '), '') as topics,
                        (SELECT COUNT(*) FROM like_posts WHERE post_id = p.id) as like_count,
                        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count
                 FROM posts p
+                JOIN users u ON p.user_id = u.id
                 LEFT JOIN post_topic pt ON p.id = pt.post_id
                 LEFT JOIN topics t ON pt.topic_id = t.id
                 WHERE p.status = 'show'
                 GROUP BY p.id
             """
             df_posts = pd.read_sql(query_posts, conn)
+            
+            # Lấy ma trận User-Item cho Collaborative Filtering
+            query_likes = "SELECT user_id, post_id FROM like_posts"
+            df_likes = pd.read_sql(query_likes, conn)
+            
             conn.close()
 
             if not df_posts.empty:
@@ -74,12 +81,18 @@ def get_cached_data():
                 GLOBAL_CACHE["df_posts"] = df_posts
                 GLOBAL_CACHE["tfidf_matrix"] = tfidf_matrix
                 GLOBAL_CACHE["tfidf_model"] = tfidf
+                
+                # Tạo ma trận User-Item (User-Post Interaction)
+                if not df_likes.empty:
+                    user_item_matrix = df_likes.pivot_table(index='user_id', columns='post_id', aggfunc='size', fill_value=0)
+                    GLOBAL_CACHE["user_item_matrix"] = user_item_matrix
+                
                 GLOBAL_CACHE["last_updated"] = now
-                print(f"[AI CACHE] Pre-calculated {len(df_posts)} posts.")
+                print(f"[AI CACHE] Pre-calculated {len(df_posts)} posts and User-Item matrix.")
         except Exception as e:
             print(f"[AI CACHE ERROR] {str(e)}")
             
-    return GLOBAL_CACHE["df_posts"], GLOBAL_CACHE["tfidf_matrix"], GLOBAL_CACHE["tfidf_model"]
+    return GLOBAL_CACHE["df_posts"], GLOBAL_CACHE["tfidf_matrix"], GLOBAL_CACHE["user_item_matrix"]
 
 @app.get("/api/recommendations", response_model=RecommendResponse)
 def get_recommendations(user_id: int):
@@ -87,11 +100,12 @@ def get_recommendations(user_id: int):
         now = datetime.now()
 
         # 1. LOAD CACHE
-        df_posts, tfidf_matrix, _ = get_cached_data()
+        df_posts, tfidf_matrix, user_item_matrix = get_cached_data()
         if df_posts is None or df_posts.empty:
             return {"status": "success", "user_id": user_id, "recommended_post_ids": [], "algorithm": "none"}
 
         df_posts = df_posts.copy()
+        is_cold_start = False
 
         # 2. LOAD USER DATA
         conn = get_db_connection()
@@ -107,6 +121,10 @@ def get_recommendations(user_id: int):
         """, conn)
 
         interacted_ids = df_interacted['post_id'].astype(int).tolist()
+        
+        # Kiểm tra Cold Start (Người dùng mới chưa có tương tác)
+        if not interacted_ids:
+            is_cold_start = True
 
         all_topics = pd.read_sql(f"""
             SELECT DISTINCT t.name FROM like_posts lp
@@ -142,10 +160,31 @@ def get_recommendations(user_id: int):
 
         conn.close()
 
-        # 3. CONTENT SIMILARITY
-        cosine_sim = np.zeros(len(df_posts))
+        # 3. COLLABORATIVE FILTERING (Người dùng tương đồng)
+        cf_scores = {}
+        if user_item_matrix is not None and user_id in user_item_matrix.index:
+            try:
+                # Tính Cosine Similarity giữa user hiện tại và các user khác
+                user_vector = user_item_matrix.loc[[user_id]]
+                similarities = cosine_similarity(user_vector, user_item_matrix).flatten()
+                
+                # Lấy Top 10 người dùng giống nhất (bỏ qua chính mình)
+                similar_users_idx = similarities.argsort()[-11:-1][::-1]
+                similar_user_ids = user_item_matrix.index[similar_users_idx]
+                
+                # Tìm các bài viết mà những người này đã thích nhưng user hiện tại chưa thấy
+                for sim_uid in similar_user_ids:
+                    weight = similarities[user_item_matrix.index.get_loc(sim_uid)]
+                    liked_posts = user_item_matrix.columns[user_item_matrix.loc[sim_uid] > 0]
+                    for pid in liked_posts:
+                        if pid not in interacted_ids:
+                            cf_scores[pid] = cf_scores.get(pid, 0) + (weight * 500)
+            except Exception as e:
+                print(f"[CF ERROR] {str(e)}")
 
-        if not df_interacted.empty:
+        # 4. CONTENT SIMILARITY
+        cosine_sim = np.zeros(len(df_posts))
+        if not is_cold_start:
             idx_map = {pid: i for i, pid in enumerate(df_posts['id'])}
             indices, weights = [], []
 
@@ -159,14 +198,13 @@ def get_recommendations(user_id: int):
             if indices:
                 vectors = tfidf_matrix[indices]
                 weights = np.array(weights).reshape(-1, 1)
-                user_vector = np.asarray(vectors.multiply(weights).sum(axis=0) / weights.sum())
-                cosine_sim = cosine_similarity(user_vector, tfidf_matrix).flatten()
+                user_vector_tfidf = np.asarray(vectors.multiply(weights).sum(axis=0) / weights.sum())
+                cosine_sim = cosine_similarity(user_vector_tfidf, tfidf_matrix).flatten()
 
         df_posts['content_score'] = cosine_sim
 
-        # 4. RANKING
+        # 5. RANKING
         scores = []
-
         for _, row in df_posts.iterrows():
             pid = int(row['id'])
 
@@ -174,10 +212,21 @@ def get_recommendations(user_id: int):
                 scores.append(-999999)
                 continue
 
+            # --- Logic Cold Start ---
+            cold_start_bonus = 0
+            if is_cold_start:
+                # Ưu tiên bài viết có nhiều like (Popularity)
+                cold_start_bonus += row['like_count'] * 10
+                # Ưu tiên bài viết từ Admin/Moderator
+                if row['author_role'] in ['admin', 'moderator']:
+                    cold_start_bonus += 2000
+            
+            # --- Logic Collaborative Filtering ---
+            collab_score = cf_scores.get(pid, 0)
+
             # Topic
             topics = row['topics'].lower().split()
             topic_score = 0
-
             if any(t in topics for t in recent_topics):
                 topic_score = 3000
             elif any(t in topics for t in all_topics):
@@ -207,33 +256,30 @@ def get_recommendations(user_id: int):
 
             total = (
                 row['content_score'] * 250
+                + collab_score      # Cộng điểm Collaborative Filtering
+                + cold_start_bonus  # Cộng điểm Cold Start
                 + topic_score
                 + social_score
                 + engagement_score
                 + freshness_score
                 + exploration_score
             )
-
             scores.append(total)
 
         df_posts['score'] = scores
 
-        # 5. SORT + DIVERSITY
+        # 6. SORT + DIVERSITY
         df_sorted = df_posts[df_posts['score'] > -1000].sort_values(by='score', ascending=False)
-
         result, topic_count = [], {}
 
         for _, row in df_sorted.iterrows():
             topics = row['topics'].lower().split()
-
             if any(topic_count.get(t, 0) >= 3 for t in topics):
                 continue
 
             result.append(int(row['id']))
-
             for t in topics:
                 topic_count[t] = topic_count.get(t, 0) + 1
-
             if len(result) >= 50:
                 break
 
@@ -241,7 +287,7 @@ def get_recommendations(user_id: int):
             "status": "success",
             "user_id": user_id,
             "recommended_post_ids": result,
-            "algorithm": "modular_hybrid_v6"
+            "algorithm": "hybrid_v7_collaborative_coldstart"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -348,7 +394,7 @@ def get_user_recommendations(user_id: int):
         return {
             "status": "success",
             "user_id": user_id,
-            "recommended_user_ids": [u for u, _ in scores[:10]],
+            "recommended_user_ids": [u for u, _ in scores[:8]],
             "algorithm": "hybrid_user_ranking_v1"
         }
 

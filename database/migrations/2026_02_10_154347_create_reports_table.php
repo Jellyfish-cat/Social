@@ -24,7 +24,7 @@ return new class extends Migration
 
             $table->text('reason')->nullable(); 
             $table->string('status')->default('pending');
-            $table->unsignedBigInteger('resolved_by')->nullable(); 
+            $table->foreignId('resolved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('resolved_at')->nullable(); 
 
             $table->timestamps();

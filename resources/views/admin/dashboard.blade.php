@@ -256,7 +256,7 @@
                     <div class="col-lg-8 mb-4">
                         <div class="card shadow-sm border-0 rounded-4 h-100">
                             <div class="card-header border-0 bg-white pt-4">
-                                <h5 class="fw-bold mb-0">Xu hướng tương tác (Like+CMT+Share)</h5>
+                                <h5 class="fw-bold mb-0">Xu hướng tương tác (Like+CMT)</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="engagementTrendsChart" height="350"></canvas>
@@ -425,10 +425,10 @@
         new Chart(document.getElementById('interactionRatioChart'), {
             type: 'doughnut',
             data: {
-                labels: ['Thích', 'Bình luận', 'Chia sẻ', 'Tin nhắn'],
+                labels: ['Thích', 'Bình luận', 'Tin nhắn'],
                 datasets: [{
                     data: @json($interactionData),
-                    backgroundColor: ['#0d6efd', '#ffc107', '#198754', '#d63384']
+                    backgroundColor: ['#0d6efd', '#ffc107', '#d63384']
                 }]
             },
             options: { 

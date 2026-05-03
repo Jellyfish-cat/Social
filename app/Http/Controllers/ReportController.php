@@ -5,6 +5,8 @@ use App\Models\Report;
 use App\Models\Post;
 use App\Models\Comment;
 use App\Models\User;
+use App\Models\Message;
+use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
@@ -21,12 +23,15 @@ class ReportController extends Controller
         if (!in_array($tab, ['pending', 'resolved', 'dismissed'])) {
             $tab = 'pending';
         }
-         $item='report-item';
-         $delete='btn-delete-report';
+        $targetType = 'App\Models\Post';
+        $type = 'post';
+        $item = 'report-item';
+        $delete = 'btn-delete-report';
+
         // Default to post reports for the initial page load
         if ($tab === 'pending') {
             $values = Report::selectRaw('target_type, target_id, count(id) as total_reports, max(created_at) as last_reported_at, max(category) as category, max(reason) as reason, max(id) as id, max(status) as status')
-                ->where('target_type', 'App\Models\Post')
+                ->where('target_type', $targetType)
                 ->where('status', 'pending')
                 ->groupBy('target_type', 'target_id')
                 ->orderBy('last_reported_at', 'desc')
@@ -35,28 +40,39 @@ class ReportController extends Controller
             $values->getCollection()->each(function ($report) {
                 $modelClass = $report->target_type;
                 if(class_exists($modelClass)) {
-                    $report->setRelation('target', $modelClass::find($report->target_id));
+                    $query = $modelClass::query();
+                    if ($modelClass === 'App\Models\Message') {
+                        $query->with('conversation');
+                    }
+                    $report->setRelation('target', $query->find($report->target_id));
                 }
             });
         } else {
-            $values = Report::with(['user.profile', 'target'])
-                ->where('target_type', 'App\Models\Post')->where('status',$tab)
+            $values = Report::with(['user.profile', 'target' => function($morphTo) {
+                    $morphTo->morphWith([
+                        Message::class => ['conversation'],
+                    ]);
+                }])
+                ->where('target_type', $targetType)
+                ->where('status', $tab)
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
 
             $itemMap = [
-                'post' => 'post-item',
-                'people' => 'user-item',
-                'comment' => 'comment-item'
+                'post' => 'post-item report-item',
+                'people' => 'user-item report-item',
+                'comment' => 'comment-item report-item',
+                'message' => 'message-item report-item'
             ];
             $deleteMap = [
                 'post' => 'btn-delete',
                 'people' => 'btn-delete-user',
-                'comment' => 'btn-delete-comment'
+                'comment' => 'btn-delete-comment',
+                'message' => 'btn-delete-message'
             ];
 
-            $item = $itemMap['post'];
-            $delete = $deleteMap['post'];
+            $item = $itemMap[$type] ?? 'post-item';
+            $delete = $deleteMap[$type] ?? 'btn-delete';
         }
         
         $type = 'post';
@@ -78,6 +94,7 @@ class ReportController extends Controller
             'post' => 'App\Models\Post',
             'people' => 'App\Models\User',
             'comment' => 'App\Models\Comment', 
+            'message' => 'App\Models\Message',
         ];
         $targetType = $targetTypeMap[$type] ?? 'App\Models\Post';
         $item='report-item';
@@ -96,7 +113,11 @@ class ReportController extends Controller
                 // We'll hydrate the target manually
                 $modelClass = $report->target_type;
                 if(class_exists($modelClass)) {
-                    $report->setRelation('target', $modelClass::find($report->target_id));
+                    $query = $modelClass::query();
+                    if ($modelClass === 'App\Models\Message') {
+                        $query->with('conversation');
+                    }
+                    $report->setRelation('target', $query->find($report->target_id));
                 }
             });
         } else {
@@ -109,12 +130,14 @@ class ReportController extends Controller
             $itemMap = [
                 'post' => 'post-item report-item',
                 'people' => 'user-item report-item',
-                'comment' => 'comment-item report-item'
+                'comment' => 'comment-item report-item',
+                'message' => 'message-item report-item'
             ];
             $deleteMap = [
                 'post' => 'btn-delete',
                 'people' => 'btn-delete-user',
-                'comment' => 'btn-delete-comment'
+                'comment' => 'btn-delete-comment',
+                'message' => 'btn-delete-message'
             ];
             $item = $itemMap[$type] ?? 'post-item';
             $delete = $deleteMap[$type] ?? 'btn-delete';
@@ -150,7 +173,8 @@ class ReportController extends Controller
         $validTypes = [
             'post' => 'App\Models\Post',
             'comment' => 'App\Models\Comment',
-            'user' => 'App\Models\User'
+            'user' => 'App\Models\User',
+            'message' => 'App\Models\Message'
         ];
 
         // Format target_type to Full Model Class 
@@ -169,6 +193,14 @@ class ReportController extends Controller
             'status' => 'pending',
         ]);
 
+        // Nếu là báo cáo tin nhắn và người dùng cho phép xem hội thoại
+        if ($mapKey === 'message' && $request->allow_view) {
+            $message = Message::find($request->target_id);
+            if ($message && $message->conversation_id) {
+                Conversation::where('id', $message->conversation_id)->update(['allow_view' => true]);
+            }
+        }
+
         // Thông báo đến role=admin và moderator khi có report đến
         $staff = User::whereIn('role', ['admin', 'moderator'])->get();
         $reporterName = Auth::user()->name ?? 'Người dùng';
@@ -176,6 +208,7 @@ class ReportController extends Controller
         if ($mapKey === 'post') $targetName = 'bài viết';
         if ($mapKey === 'comment') $targetName = 'bình luận';
         if ($mapKey === 'user') $targetName = 'người dùng';
+        if ($mapKey === 'message') $targetName = 'tin nhắn';
 
         foreach ($staff as $member) {
             $notification = Notification::create([
@@ -263,6 +296,9 @@ class ReportController extends Controller
                 } elseif ($report->target_type === Comment::class) {
                     $typeLabel = 'bình luận';
                     $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
+                } elseif ($report->target_type === Message::class) {
+                    $typeLabel = 'tin nhắn';
+                    $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
                 } elseif ($report->target_type === User::class) {
                     $typeLabel = 'tài khoản';
                     $email = 'chúng tôi đã gửi mail cho bạn, hãy kiểm tra email để biết thêm chi tiết';
@@ -299,7 +335,13 @@ class ReportController extends Controller
 
             if ($owner) {
                 $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
-                $typeLabel = ($report->target_type === User::class) ? 'tài khoản' : (($report->target_type === Post::class) ? 'bài viết' : 'bình luận');
+                $typeLabelMap = [
+                    User::class => 'tài khoản',
+                    Post::class => 'bài viết',
+                    Comment::class => 'bình luận',
+                    Message::class => 'tin nhắn'
+                ];
+                $typeLabel = $typeLabelMap[$report->target_type] ?? 'nội dung';
                 $preview = ($report->target_type !== User::class) ? ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"' : '';
 
                 $notif = Notification::create([

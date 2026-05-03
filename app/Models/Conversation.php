@@ -8,7 +8,7 @@ class Conversation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['type', 'status', 'name', 'avatar', 'createUser'];
+    protected $fillable = ['type', 'status', 'name', 'avatar', 'createUser', 'allow_view'];
 
     public function creator()
     {

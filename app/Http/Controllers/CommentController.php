@@ -23,7 +23,7 @@ class CommentController extends Controller
                     'replies',    // Tạo ra biến comments_count
                     'likes'    // Tạo ra biến likes_count
                 ])
-                ->orderBy('created_at', 'desc')->where('status', 'show')
+                ->orderBy('created_at', 'desc')
                 ->paginate(10);
         return view('admin.comments', compact('comments'));
     }
@@ -64,7 +64,7 @@ class CommentController extends Controller
                     // Kiểm duyệt nội dung
                     $moderation = $moderator->analyze($request->content);
                     if ($moderation->is_toxic) {
-                        $comment->status = 'hide';
+                        $comment->status = 'hidden';
                         $comment->save();
 
                         // Tạo báo cáo đã xử lý
@@ -84,7 +84,7 @@ class CommentController extends Controller
                         return response()->json([
                             'success' => true,
                             'message' => 'Bình luận đã được gửi (đang chờ kiểm duyệt hoặc bị ẩn)',
-                            'status' => 'hide'
+                            'status' => 'hidden'
                         ]);
                     }
 

@@ -156,3 +156,17 @@ document.addEventListener("submit", function (e) {
             });
     }
 });
+
+// Logic tạo tên người dùng ngẫu nhiên
+window.generateRandomUsername = function() {
+    const prefixes = ['user', 'social', 'member', 'dev', 'pro'];
+    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const randomNumber = Math.floor(1000 + Math.random() * 9000);
+    const randomString = Math.random().toString(36).substring(7);
+    
+    const randomUsername = `${randomPrefix}_${randomString}${randomNumber}`;
+    const input = document.getElementById('usernameInput');
+    if (input) {
+        input.value = randomUsername;
+    }
+}

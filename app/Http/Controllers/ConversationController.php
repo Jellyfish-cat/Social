@@ -99,6 +99,13 @@ class ConversationController extends Controller
     {
         $keyword = $request->q;
         if (!$keyword) return [];
+        
+        // Ghi log hoạt động tìm kiếm người dùng để nhắn tin
+        activity()
+            ->event('search_user_convo')
+            ->causedBy(auth()->user())
+            ->withProperties(['keyword' => $keyword])
+            ->log("riêng tư");
 
         $role = auth()->user()->role;
 
@@ -244,12 +251,15 @@ class ConversationController extends Controller
                 ->paginate(10);
         return view('admin.conversations', compact('conversations'));
     }
+
     public function show($id)
     {
-        $messages = Message::where('conversation_id', $id)->with(['media','sender']) // Lấy thông tin người đăng, chủ đề và danh sách ảnh/video
+        $conversation = Conversation::findOrFail($id);
+        
+        $messages = Message::where('conversation_id', $id)->with(['media','sender']) 
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
-        return view('admin.messages', compact('messages'));
+        return view('admin.messages', compact('messages', 'conversation'));
     }
 
     public function createGroup()
@@ -324,7 +334,7 @@ class ConversationController extends Controller
                 }
             }
         }
-        $conversation->update(['status' => 'hide']);
+        $conversation->update(['status' => 'hidden']);
         return response()->json([
             'success' => true,
             'message' => 'Đã giải tán nhóm',

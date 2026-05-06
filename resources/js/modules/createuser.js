@@ -9,9 +9,9 @@ window.updateSTT = function () {
     });
 };
 // Handle "Thêm mới" button click for Users
-const btnShowCreateUser = document.getElementById("btn-show-create-user");
-if (btnShowCreateUser) {
-    btnShowCreateUser.addEventListener("click", function () {
+const btnShowcreator_id = document.getElementById("btn-show-create-user");
+if (btnShowcreator_id) {
+    btnShowcreator_id.addEventListener("click", function () {
         startLoading();
         fetch("/admin/users/create")
             .then(res => res.text())
@@ -19,7 +19,7 @@ if (btnShowCreateUser) {
                 const container = document.getElementById("create-container");
                 if (container) {
                     container.innerHTML = html;
-                    btnShowCreateUser.classList.add("d-none");
+                    btnShowcreator_id.classList.add("d-none");
                 }
             })
             .catch(err => console.error(err))
@@ -31,8 +31,8 @@ if (btnShowCreateUser) {
 document.addEventListener("click", function (e) {
     if (e.target && e.target.id === "btn-cancel-user") {
         document.getElementById("create-container").innerHTML = "";
-        if (btnShowCreateUser) {
-            btnShowCreateUser.classList.remove("d-none");
+        if (btnShowcreator_id) {
+            btnShowcreator_id.classList.remove("d-none");
         }
     }
 });
@@ -42,7 +42,7 @@ document.addEventListener("change", function (e) {
     if (e.target && e.target.id === "avatarInput") {
         const input = e.target;
         const previewWrap = document.getElementById("avatarPreview");
-        
+
         if (previewWrap && input.files && input.files[0]) {
             const previewImg = previewWrap.querySelector("img");
             const reader = new FileReader();
@@ -81,9 +81,9 @@ document.addEventListener("submit", function (e) {
                 if (data.success) {
                     const user = data.data;
                     const profile = user.profile || {};
-                    
+
                     // Format avatar HTML
-                    const avatarHtml = profile.avatar 
+                    const avatarHtml = profile.avatar
                         ? `<a href="/storage/${profile.avatar}" data-fancybox="gallery-${profile.avatar}">
                                 <img src="/storage/${profile.avatar}" class="img-thumbnail" style="width:200px;height:100px;object-fit:cover">
                           </a>`
@@ -135,8 +135,8 @@ document.addEventListener("submit", function (e) {
 
                     // Clear and hide form
                     document.getElementById("create-container").innerHTML = "";
-                    if (btnShowCreateUser) {
-                        btnShowCreateUser.classList.remove("d-none");
+                    if (btnShowcreator_id) {
+                        btnShowcreator_id.classList.remove("d-none");
                     }
 
                     if (window.Swal) {
@@ -158,12 +158,12 @@ document.addEventListener("submit", function (e) {
 });
 
 // Logic tạo tên người dùng ngẫu nhiên
-window.generateRandomUsername = function() {
+window.generateRandomUsername = function () {
     const prefixes = ['user', 'social', 'member', 'dev', 'pro'];
     const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const randomNumber = Math.floor(1000 + Math.random() * 9000);
     const randomString = Math.random().toString(36).substring(7);
-    
+
     const randomUsername = `${randomPrefix}_${randomString}${randomNumber}`;
     const input = document.getElementById('usernameInput');
     if (input) {

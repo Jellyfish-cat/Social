@@ -1,3 +1,5 @@
+window.msgSelectedFiles = window.msgSelectedFiles || [];
+
 // Xóa 1 ảnh theo index
 window.deleteMessageMedia = function (index) {
     window.msgSelectedFiles.splice(index, 1);
@@ -38,6 +40,7 @@ window.previewMessageFiles = function (input) {
     if (!files.length) return;
 
     const MAX_FILES = 5;
+    if (!window.msgSelectedFiles) window.msgSelectedFiles = [];
     const remaining = MAX_FILES - window.msgSelectedFiles.length;
     if (remaining <= 0) {
         alert(`Tối đa ${MAX_FILES} file mỗi lần gửi.`);
@@ -58,10 +61,11 @@ window.previewMessageFiles = function (input) {
 
 // ===== MESSAGE LOGIC (MOVED FROM CONVERTATION.JS) =====
 const msgPage = document.getElementById('msgPage');
+const msgInput = document.getElementById('msgInput');
+const chatBody = document.getElementById('msgChatBody');
+const msgSendBtn = document.getElementById('msgSendBtn');
+
 if (msgPage) {
-    const msgInput = document.getElementById('msgInput');
-    const chatBody = document.getElementById('msgChatBody');
-    const msgSendBtn = document.getElementById('msgSendBtn');
 
     window.sendMessage = function () {
         const text = msgInput.value.trim();
@@ -212,41 +216,44 @@ if (msgPage) {
             .catch(err => console.error('Lỗi thu hồi:', err));
     };
 
-    // ===== Emoji Picker =====
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('#emojiBtn, .msg-input-icon');
-        if (btn) {
-            e.preventDefault();
-            const formContainer = btn.closest('.constantIcon');
-            if (!formContainer) return;
-            const iconInput = formContainer.querySelector('#msgInput, textarea[name="content"], input[type="text"]');
-            const pickerContainer = formContainer.querySelector('#emojiPicker');
-            if (!pickerContainer || !iconInput) return;
-            pickerContainer.style.display = pickerContainer.style.display === 'none' ? 'block' : 'none';
-            if (pickerContainer.style.display === 'block' && pickerContainer.childElementCount === 0) {
-                const picker = new EmojiMart.Picker({
-                    onEmojiSelect: (emoji) => {
-                        iconInput.value += emoji.native;
-                        iconInput.focus();
-                    }
-                });
-                pickerContainer.appendChild(picker);
-            }
-            return;
-        }
-        document.querySelectorAll('#emojiPicker').forEach(pickerContainer => {
-            if (pickerContainer.style.display === 'block') {
-                const formContainer = pickerContainer.closest('form, .d-flex.align-items-center');
-                const relatedBtn = formContainer ? formContainer.querySelector('#emojiBtn, .msg-input-icon') : null;
-                if (!pickerContainer.contains(e.target) && (!relatedBtn || !relatedBtn.contains(e.target))) {
-                    pickerContainer.style.display = 'none';
-                }
-            }
-        });
-    });
+}
 
-    // ===== Echo Real-time =====
-    const authUserId = document.querySelector('meta[name="auth-user-id"]')?.content;
+// ===== Emoji Picker =====
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#emojiBtn, .msg-input-icon');
+    if (btn) {
+        e.preventDefault();
+        const formContainer = btn.closest('.constantIcon');
+        if (!formContainer) return;
+        const iconInput = formContainer.querySelector('#msgInput, textarea[name="content"], input[type="text"]');
+        const pickerContainer = formContainer.querySelector('#emojiPicker');
+        if (!pickerContainer || !iconInput) return;
+        pickerContainer.style.display = pickerContainer.style.display === 'none' ? 'block' : 'none';
+        if (pickerContainer.style.display === 'block' && pickerContainer.childElementCount === 0) {
+            const picker = new EmojiMart.Picker({
+                onEmojiSelect: (emoji) => {
+                    iconInput.value += emoji.native;
+                    iconInput.focus();
+                }
+            });
+            pickerContainer.appendChild(picker);
+        }
+        return;
+    }
+    document.querySelectorAll('#emojiPicker').forEach(pickerContainer => {
+        if (pickerContainer.style.display === 'block') {
+            const formContainer = pickerContainer.closest('form, .d-flex.align-items-center');
+            const relatedBtn = formContainer ? formContainer.querySelector('#emojiBtn, .msg-input-icon') : null;
+            if (!pickerContainer.contains(e.target) && (!relatedBtn || !relatedBtn.contains(e.target))) {
+                pickerContainer.style.display = 'none';
+            }
+        }
+    });
+});
+
+// ===== Echo Real-time =====
+const authUserId = document.querySelector('meta[name="auth-user-id"]')?.content;
+if (msgPage) {
     setTimeout(() => {
         if (window.Echo && authUserId) {
             window.Echo.private(`chat.${authUserId}`)
@@ -424,6 +431,6 @@ if (msgPage) {
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.btn-delete-message');
     if (btn) {
-        // ... giữ nguyên code delete message cũ của bạn ở trên
+
     }
 });

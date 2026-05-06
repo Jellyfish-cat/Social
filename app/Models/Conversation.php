@@ -8,11 +8,11 @@ class Conversation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['type', 'status', 'name', 'avatar', 'createUser', 'allow_view'];
+    protected $fillable = ['type', 'status', 'name', 'avatar', 'creator_id ', 'allow_view'];
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'createUser');
+        return $this->belongsTo(User::class, 'creator_id ');
     }
 
     public function users()

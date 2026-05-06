@@ -60,7 +60,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="bg-white bg-opacity-25 rounded-circle p-3"><i class="bi bi-people fs-3"></i></div>
                                 <div class="ms-3">
-                                    <h6 class="mb-1 opacity-75 small uppercase">Tổng User</h6>
+                                    <h6 class="mb-1 opacity-75 small uppercase">Tổng người dùng</h6>
                                     <h3 class="mb-0 fw-bold">{{ $totalUsersCount }}</h3>
                                 </div>
                             </div>
@@ -71,7 +71,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="bg-white bg-opacity-25 rounded-circle p-3"><i class="bi bi-file-earmark-text fs-3"></i></div>
                                 <div class="ms-3">
-                                    <h6 class="mb-1 opacity-75 small">Tổng Post</h6>
+                                    <h6 class="mb-1 opacity-75 small">Tổng bài viết</h6>
                                     <h3 class="mb-0 fw-bold">{{ $totalPostsCount }}</h3>
                                 </div>
                             </div>
@@ -82,7 +82,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="bg-dark bg-opacity-10 rounded-circle p-3"><i class="bi bi-chat-left-text fs-3"></i></div>
                                 <div class="ms-3">
-                                    <h6 class="mb-1 opacity-75 small">Tổng Comment</h6>
+                                    <h6 class="mb-1 opacity-75 small">Tổng bình luận</h6>
                                     <h3 class="mb-0 fw-bold">{{ $totalCommentsCount }}</h3>
                                 </div>
                             </div>
@@ -524,7 +524,7 @@
                 labels: @json($growthLabels),
                 datasets: [
                     {
-                        label: 'Tổng Users',
+                        label: 'Tổng người dùng',
                         data: @json($userGrowth),
                         borderColor: '#0d6efd',
                         backgroundColor: '#0d6efd',

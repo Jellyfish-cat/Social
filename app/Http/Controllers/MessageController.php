@@ -18,11 +18,12 @@ class MessageController extends Controller
         // Chỉ hiển thị tin nhắn trong các hội thoại có mặt Staff
         $messages = Message::whereHas('conversation.users', function($q) {
                 $q->whereIn('role', ['admin', 'moderator']);
-            })
+            })->whereDoesntHave('conversation.users', function ($q) {
+    $q->whereNotIn('role', ['admin', 'moderator']);
+})
             ->with(['media','sender'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-            
         return view('admin.messages', compact('messages'));
     }
     

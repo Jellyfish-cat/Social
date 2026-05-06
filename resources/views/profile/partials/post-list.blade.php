@@ -1,6 +1,7 @@
 @php
-    $pinnedPost = $posts->where('pinned', 1)->first();
-    $normalPosts = $posts->where('pinned', '!=', 1);
+    $showPinned = isset($tab) && $tab === 'posts';
+    $pinnedPost = $showPinned ? $posts->where('pinned', 1)->first() : null;
+    $normalPosts = $showPinned ? $posts->where('pinned', '!=', 1) : $posts;
 @endphp
 
 @if($pinnedPost)

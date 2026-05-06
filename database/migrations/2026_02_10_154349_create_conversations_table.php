@@ -18,7 +18,7 @@ return new class extends Migration
     $table->string('avatar')->nullable();
     $table->string('status')->default('show');
     $table->boolean('allow_view')->default(false);
-    $table->foreignId('createUser')->nullable()->constrained('users')->cascadeOnDelete();
+    $table->foreignId('creator_id ')->nullable()->constrained('users')->cascadeOnDelete();
     $table->timestamps();
     $table->timestamp('deleted_at')->nullable();
 });

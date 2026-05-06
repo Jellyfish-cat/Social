@@ -57,8 +57,10 @@ class DashboardController extends Controller
         $messagesCount = Message::count();
         $interactionData = [$likesCount, $commentsCount, $messagesCount];
 
-        // 4. Pie Chart: Active vs Inactive (Active = logged/updated in last 7 days)
-        $activeUsers = User::where('updated_at', '>=', now()->subDays(7))->count();
+        // 4. Pie Chart: Active vs Inactive (Active = đăng nhập trong 7 ngày gần đây)
+        $activeUsers = User::whereNotNull('last_login_at')
+            ->where('last_login_at', '>=', now()->subDays(7))
+            ->count();
         $totalUsers = User::count();
         $inactiveUsers = max(0, $totalUsers - $activeUsers);
         $userStatusData = [$activeUsers, $inactiveUsers];

@@ -349,7 +349,7 @@ window.previewCommentFiles = function (input) {
                 <img src="${e.target.result}" width="150" class="rounded">
                 <button type="button"
                     class="btn btn-sm position-absolute top-0 end-0 remove-single-media shadow remove-small"
-                    onclick="this.parentElement.remove(); input.value=''">
+                    onclick="const form = this.closest('.comment-form'); if(form) form.querySelector('input[type=file]').value=''; this.parentElement.remove();">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
@@ -360,7 +360,7 @@ window.previewCommentFiles = function (input) {
                 <video src="${e.target.result}" width="200" controls class="rounded"></video>
                <button type="button"
                     class="btn btn-sm position-absolute top-0 end-0 remove-single-media shadow remove-small"
-                    onclick="this.parentElement.remove(); input.value=''">
+                    onclick="const form = this.closest('.comment-form'); if(form) form.querySelector('input[type=file]').value=''; this.parentElement.remove();">
                     <i class="bi bi-x"></i>
                 </button>
             </div>

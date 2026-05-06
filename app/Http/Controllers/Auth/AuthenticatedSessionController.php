@@ -39,6 +39,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Cập nhật thời gian đăng nhập cuối cùng
+        Auth::user()->update(['last_login_at' => now()]);
+
         return redirect()->intended(route('home', absolute: false));
     }
 

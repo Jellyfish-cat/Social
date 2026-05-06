@@ -332,9 +332,9 @@
                             <form class="d-flex flex-column comment-form require-login-form">
                                 @csrf
                                 <div class="preview-media d-flex flex-wrap gap-2 mb-2"></div>
-                                <div class="d-flex align-items-center w-100 constantIcon">
-                                    <button class="msg-input-icon" title="Emoji" id="emojiBtn"><i class="bi bi-emoji-smile fs-5"></i></button>
-                                        <div class="mb-5 me-2" id="emojiPicker" style="position:absolute; bottom:60px; right:100px; display:none;"></div>
+                                <div class="d-flex align-items-center w-100 constantIcon position-relative">
+                                    <button class="msg-input-icon btn-sm btn" type="button" title="Emoji" id="emojiBtn"><i class="bi bi-emoji-smile fs-5"></i></button>
+                                        <div class="mb-2 me-2" id="emojiPicker" style="position:absolute; bottom:100%; left:0; z-index:1000; display:none;"></div>
                                     <input type="file" id="comment-file-{{ $post->id }}" name="file" hidden onchange="previewCommentFiles(this)">
                                     <button type="button" class="btn-image btn"
                                          onclick="event.preventDefault(); document.getElementById('comment-file-{{ $post->id }}').click();">

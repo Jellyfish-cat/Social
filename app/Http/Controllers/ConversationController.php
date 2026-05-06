@@ -160,7 +160,7 @@ class ConversationController extends Controller
             'name' => $request->name,
             'avatar' => $avatarPath,
             'status' => 'show',
-            'createUser' => auth()->id()
+            'creator_id ' => auth()->id()
         ]);
 
         // Đảm bảo user tạo nhóm cũng nằm trong danh sách thành viên
@@ -347,7 +347,7 @@ class ConversationController extends Controller
         $conversation = Conversation::whereHas('users', function ($q) {
             $q->where('user_id', auth()->id());
         })->with('users.profile')->findOrFail($id);
-        $creator=$conversation->createUser;
+        $creator=$conversation->creator_id ;
         return response()->json([
             'success' => true,
             'creator' => $creator,
@@ -499,10 +499,10 @@ class ConversationController extends Controller
         ]);
 
         $newLeaderNoti = null;
-        if ($conversation->createUser == auth()->id()) {
+        if ($conversation->creator_id  == auth()->id()) {
             $nextLeader = $conversation->users->where('id', '!=', auth()->id())->first();
             if ($nextLeader) {
-                $conversation->update(['createUser' => $nextLeader->id]);
+                $conversation->update(['creator_id ' => $nextLeader->id]);
                 $newLeaderNoti = Message::create([
                     'conversation_id' => $conversation->id,
                     'sender_id' => null,

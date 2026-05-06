@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('status')->default('show');
             $table->string('google_id')->nullable()->unique()->after('email');
             $table->rememberToken();
+            $table->timestamp('last_login_at')->nullable()->after('email_verified_at');
             $table->timestamps();
         });
 

@@ -34,7 +34,6 @@ class ProfileController extends Controller
             $aiResponse = \Illuminate\Support\Facades\Http::timeout(3)->get('http://127.0.0.1:8001/api/user_recommendations', [
                 'user_id' => auth()->id() ?: 0
             ]);
-
             if ($aiResponse->successful()) {
                 $aiData = $aiResponse->json();
                 $recommendedUserIds = $aiData['recommended_user_ids'] ?? [];
@@ -196,20 +195,27 @@ class ProfileController extends Controller
             ->latest()
             ->get();
 
-        return view('profile.partials.post-list', compact('posts'));
+        return view('profile.partials.post-list', [
+            'posts' => $posts,
+            'tab' => 'posts'
+        ]);
     }
 
     public function favorites($id)
     {
         $user = User::findOrFail($id);
 
-        $posts = Post::whereHas('favorites', function ($q) use ($user) {
-            $q->where('user_id', $user->id)->where('status','show');
-        })
-        ->latest()
-        ->get();
+        $posts = Post::join('favorites', 'posts.id', '=', 'favorites.post_id')
+            ->where('favorites.user_id', $user->id)
+            ->where('posts.status', 'show')
+            ->orderBy('favorites.created_at', 'desc')
+            ->select('posts.*')
+            ->get();
 
-        return view('profile.partials.post-list', compact('posts'));
+        return view('profile.partials.post-list', [
+            'posts' => $posts,
+            'tab' => 'favorites'
+        ]);
     }
     public function comments($id)
     {
@@ -222,12 +228,16 @@ class ProfileController extends Controller
         public function likes($id)
     {
         $user = User::findOrFail($id);
-        $posts = Post::whereHas('likes', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })
-        ->latest()
-        ->get();
+        $posts = Post::join('like_posts', 'posts.id', '=', 'like_posts.post_id')
+            ->where('like_posts.user_id', $user->id)
+            ->where('posts.status', 'show')
+            ->orderBy('like_posts.created_at', 'desc')
+            ->select('posts.*')
+            ->get();
 
-        return view('profile.partials.post-list', compact('posts'));
+        return view('profile.partials.post-list', [
+            'posts' => $posts,
+            'tab' => 'likes'
+        ]);
     }
 }

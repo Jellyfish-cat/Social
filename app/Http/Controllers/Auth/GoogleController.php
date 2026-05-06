@@ -61,6 +61,7 @@ class GoogleController extends Controller
             }
 
             Auth::login($user);
+            $user->update(['last_login_at' => now()]);
             return redirect()->route('profile.setup');
 
         } catch (\Exception $e) {

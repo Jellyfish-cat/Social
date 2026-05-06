@@ -65,12 +65,12 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-link p-0 open-follow" data-type="follower" data-id="{{$value->id}}">
+                            <button class="btn p-0 open-follow" data-type="follower" data-id="{{$value->id}}">
                                 <span class="follow-count" data-authid="{{$value->id}}">{{ $value->followers_count ?? 0 }}</span>
                             </button>
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-link p-0 open-follow" data-type="following" data-id="{{$value->id}}">
+                            <button class="btn p-0 open-follow" data-type="following" data-id="{{$value->id}}">
                                 <span class="following-count" data-authid="{{$value->id}}">{{ $value->following_count ?? 0 }}</span>
                             </button>
                         </td>

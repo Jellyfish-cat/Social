@@ -8,6 +8,8 @@ class ActivityLog extends SpatieActivity
 {
     protected $table = 'activity_log'; // Tên bảng cấu hình ở migration
 
+    const UPDATED_AT = null;
+
     // Định nghĩa lại quan hệ với User (thay thế cho causer đa hình)
     public function user()
     {
@@ -22,9 +24,11 @@ class ActivityLog extends SpatieActivity
                 $activity->user_id = $activity->causer_id;
             }
             
-            // Remove the polymorphic causer columns before saving to DB
+            // Remove columns that don't exist in our custom schema
             unset($activity->causer_id);
             unset($activity->causer_type);
+            unset($activity->log_name);
+            unset($activity->description);
         });
     }
 }

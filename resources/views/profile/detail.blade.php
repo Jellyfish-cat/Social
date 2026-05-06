@@ -40,16 +40,6 @@
                    <span>{{ $user->followers->count() ?? 0 }}</span> người theo dõi</button>
                 <button class="open-follow following-count bg-transparent border-0 p-0" data-authid="{{$user->id}}"  data-type="following" data-id="{{$user->id}}">
                    <span>{{ $user->following->count() ?? 0 }}</span> đang theo dõi</button>
-                
-                {{-- Blockchain Index --}}
-                <div class="d-flex align-items-center gap-1 text-primary shadow-sm px-2 py-1 rounded-pill bg-light" 
-                     id="blockchain-stats" 
-                     data-profile-id="{{ $user->id }}"
-                     style="font-size: 0.85rem; cursor: help;" title="Dữ liệu từ Blockchain Ganache">
-                    <i class="bi bi-shield-check"></i>
-                    <strong id="blockchain-value">...</strong>
-                    <span class="text-muted small">BC Index</span>
-                </div>
             </div>
             {{-- Bio --}}
             <div>
@@ -158,6 +148,4 @@
 
 @endsection
 
-@push('scripts')
-    @vite(['resources/js/blockchain.js'])
-@endpush
+

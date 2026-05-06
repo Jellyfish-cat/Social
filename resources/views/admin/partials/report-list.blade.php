@@ -142,9 +142,13 @@
                              <button class="btn btn-danger btn-sm {{$delete}}" data-id="{{ $tab === 'pending' ? $value->id : $value->target_id }}" title="Xóa {{ $tab === 'pending' ? 'báo cáo' : 'nội dung' }}">
                             <i class="bi bi-trash"></i>
                         </button>
+                        @if ($tab === 'resolved')
                                 <button class="btn btn-success btn-sm btn-check-report" data-id="{{ $value->id }}" data-action="restore" title="Khôi phục trạng thái chờ duyệt báo cáo">
                                     <i class="bi bi-arrow-counterclockwise"></i>
                                 </button>
+                            @else
+                                <a class="btn btn-warning btn-sm btn-check-report cursor-pointer text-white" data-id="{{ $value->id }}" data-action="hide" title="Ẩn nội dung"><i class="bi bi-eye-slash me-2"></i></a>
+                            @endif
                             @endif
                     </div>
                 </td>

@@ -126,14 +126,9 @@ class SearchHistoryController extends Controller
             return view('admin.posts', compact('posts'));
         }
         else {
-            // Giao diện cho User thường
-            // 1. Luôn lấy kết quả tìm kiếm theo từ khóa TRƯỚC (Để đảm bảo độ chính xác)
-            $posts = Post::where(function($q) use ($keyword) {
-                $q->where('content', 'LIKE', "%$keyword%")
-                  ->orWhereHas('user.profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"))
-                  ->orWhereHas('user', fn($query) => $query->where('name', 'LIKE', "%$keyword%"));
-            })->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
-            ->orderBy('created_at', 'desc')->get();
+            // 1. Tìm bài viết bằng Meilisearch
+            $posts = Post::search($keyword)->get();
+            $posts->load(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics']);
 
             // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
             try {
@@ -146,19 +141,16 @@ class SearchHistoryController extends Controller
                     $recommendedIds = $aiData['recommended_post_ids'] ?? [];
                     
                     if (!empty($recommendedIds)) {
-                        // Lấy các bài AI gợi ý nhưng chưa có trong danh sách tìm kiếm
                         $aiPosts = Post::whereIn('id', $recommendedIds)
                             ->whereNotIn('id', $posts->pluck('id')->toArray())
                             ->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
-                            ->limit(5) // Chỉ lấy thêm 5 bài gợi ý để tránh loãng kết quả tìm kiếm
+                            ->limit(5)
                             ->get();
-                        
-                        // Trộn thêm vào cuối danh sách bài viết
                         $posts = $posts->concat($aiPosts);
                     }
                 }
             } catch (\Exception $e) {
-                // Nếu AI lỗi, giữ nguyên kết quả tìm kiếm SQL
+
             }
       
         $checktopic = false;
@@ -171,13 +163,9 @@ class SearchHistoryController extends Controller
         $user = auth()->user();
 
         if ($type === 'post') { 
-            // 1. Luôn lấy kết quả tìm kiếm theo từ khóa TRƯỚC (Để đảm bảo độ chính xác)
-            $posts = Post::where(function($q) use ($keyword) {
-                $q->where('content', 'LIKE', "%$keyword%")
-                  ->orWhereHas('user.profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"))
-                  ->orWhereHas('user', fn($query) => $query->where('name', 'LIKE', "%$keyword%"));
-            })->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
-            ->orderBy('created_at', 'desc')->get();
+            // 1. Tìm bài viết bằng Meilisearch
+            $posts = Post::search($keyword)->get();
+            $posts->load(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics']);
 
             // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
             try {
@@ -212,15 +200,10 @@ class SearchHistoryController extends Controller
             // 1. Lấy danh sách ID người đang follow để ranking
             $followingIds = $user ? $user->following()->pluck('users.id')->toArray() : [];
 
-            // 2. Tìm kiếm người dùng khớp với từ khóa
-            $users = User::where('role', 'user')
-                ->where('status', 'show')
-                ->where(function($q) use ($keyword) {
-                    $q->where('name', 'LIKE', "%$keyword%")
-                      ->orWhereHas('profile', fn($query) => $query->where('display_name', 'LIKE', "%$keyword%"));
-                })
-                ->with(['profile', 'followers'])
-                ->get();
+            // 2. Tìm kiếm người dùng bằng Meilisearch
+            $users = User::search($keyword)->get();
+            $users = $users->filter(fn($u) => $u->role === 'user' && $u->status === 'show');
+            $users->load(['profile', 'followers']);
 
             // 3. RANKING: Xếp hạng các kết quả tìm được
             $users = $users->sort(function($a, $b) use ($followingIds) {
@@ -294,102 +277,72 @@ class SearchHistoryController extends Controller
                     ->limit(10)->get()]);
             }
         }
-        elseif ($user && $user->role === 'user') {
-        // === LOGIC GỢI Ý MẶC ĐỊNH CHO USER (HOẶC KHI KHÔNG Ở TRANG QUẢN LÝ) ===
-        $topics = collect();
-        $users = collect();
-        $posts = collect();
-
-        $histories = SearchHistory::where('user_id', auth()->id())
-            ->latest('updated_at')
-            ->limit(5)
-            ->get();
-
-        if (!$q) {
-            return response()->json([
-                'history' => $histories,
-                'topics' => [],
-                'users' => [],
-                'posts' => []
-            ]);
-        }
-        if ($user) {
-            $followingIds = $user->following()->pluck('users.id')->toArray();
-            $interestedTopicIds = \App\Models\LikePost::where('user_id', $user->id)
-                ->with(['post.topics'])
-                ->get()
-                ->flatMap(function ($like) {
-                    if ($like->post && $like->post->topics) {
-                        return $like->post->topics->pluck('id')->toArray();
-                    }
-                    return [];
-                })
-                ->unique()
-                ->toArray();
-        }
-        $topics = Topic::search($q)->take(5)->get();
-        $users = User::search($q)->where('role', 'user')->get();
-        $users = $users->sortByDesc(fn($u) => in_array($u->id, $followingIds))
-                       ->take(5)
-                       ->values();
-        $results = collect();
-        $excludeIds = [];
-        $postSearch = function() use ($q) {
-            return Post::search($q)
-                ->where('status', 'show')
-                ->orderBy('created_at', 'desc');
-        };
-        if (!empty($followingIds)) {
-            $followingPosts = $postSearch()
-                ->whereIn('user_id', $followingIds)
-                ->query(fn($query) => $query->with(['user.profile', 'topics']))
-                ->take(5)
-                ->get();
-            $results = $results->merge($followingPosts);
-            $excludeIds = $followingPosts->pluck('id')->toArray();
-        }
-
-        if (!empty($interestedTopicIds)) {
-            $topicPosts = $postSearch()
-                ->whereIn('topic_ids', $interestedTopicIds)
-                ->query(fn($query) => $query->with(['user.profile', 'topics'])->whereNotIn('id', $excludeIds))
-                ->take(5)
-                ->get();
-            $results = $results->merge($topicPosts);
-            $excludeIds = array_merge($excludeIds, $topicPosts->pluck('id')->toArray());
-        }
-
-        $otherPosts = $postSearch()
-            ->query(fn($query) => $query->with(['user.profile', 'topics'])->whereNotIn('id', $excludeIds))
-            ->take(5)
-            ->get();
-
-        $posts = $results->merge($otherPosts)->take(5);
-
-
-        } else {
-            // Đối với khách: không có lịch sử tìm kiếm
-            $histories = collect(); 
+        else {
             $topics = collect();
             $users = collect();
             $posts = collect();
-            if ($q) {
-                $topics = Topic::search($q)->take(5)->get();
-                $users = User::search($q)->where('role', 'user')->take(5)->get();
-                $posts = Post::search($q)
-                    ->where('status', 'show')
-                    ->query(fn($query) => $query->with(['user.profile', 'topics']))
-                    ->orderBy('created_at', 'desc')
-                    ->take(5)
+            $histories = collect();
+
+            if ($user && $user->role === 'user') {
+                $histories = SearchHistory::where('user_id', auth()->id())
+                    ->latest('updated_at')
+                    ->limit(5)
                     ->get();
             }
+
+            if (!$q) {
+                return response()->json([
+                    'history' => $histories,
+                    'topics' => [],
+                    'users' => [],
+                    'posts' => []
+                ]);
+            }
+
+
+            $topics = Topic::search($q)->take(5)->get(); 
+            $candUserIds = User::search($q)->where('role', 'user')->take(50)->keys()->toArray();
+            $candPostIds = Post::search($q)->where('status', 'show')->take(50)->keys()->toArray();
+            // 1. Mặc định: Lấy 5 kết quả đầu từ Meilisearch làm phương án dự phòng (Fallback)
+            $users = User::whereIn('id', array_slice($candUserIds, 0, 5))->with('profile')->get();
+            $posts = Post::whereIn('id', array_slice($candPostIds, 0, 5))
+                        ->with(['user.profile', 'topics'])
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+            // 2. Nếu là User thường -> Thử gọi AI để sắp xếp (Ranking) lại kết quả
+            if ($user && $user->role === 'user') {
+                try {
+                    $response = \Illuminate\Support\Facades\Http::timeout(3)->post('http://127.0.0.1:8001/api/rank_search_results', [
+                        'user_id' => $user->id,
+                        'cand_user_ids' => $candUserIds,
+                        'cand_post_ids' => $candPostIds
+                    ]);
+
+                    if ($response->successful()) {
+                        $data = $response->json();
+                        if (!empty($data['user_ids'])) {
+                            $topIds = array_slice($data['user_ids'], 0, 5);
+                            $users = User::whereIn('id', $topIds)->with('profile')->get();
+                            $users = $users->sortBy(fn($user) => array_search($user->id, $topIds))->values();
+                        }
+                        if (!empty($data['post_ids'])) {
+                            $topIds = array_slice($data['post_ids'], 0, 5);
+                            $posts = Post::whereIn('id', $topIds)->with(['user.profile', 'topics'])->get();
+                            $posts = $posts->sortBy(fn($post) => array_search($post->id, $topIds))->values();
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // AI lỗi thì giữ nguyên kết quả mặc định ở trên
+                }
+            }
+            return response()->json([
+                'history' => $histories,
+                'topics' => $topics,
+                'users' => $users,
+                'posts' => $posts
+            ]);
         }
-        return response()->json([
-            'history' => $histories,
-            'topics' => $topics,
-            'users' => $users,
-            'posts' => $posts
-        ]);
     }
     /**
      * Show the form for creating a new resource.

@@ -3,8 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Report;  
+use App\Models\Report;
+use App\Models\Post;
+use App\Models\Comment;
+use App\Models\Conversation;
+use App\Models\Message;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -21,7 +27,7 @@ class UserController extends Controller
                     'followers',
                     'following'  
                 ])
-                ->orderBy('created_at', 'desc')->where('status', 'show')
+                ->orderBy('created_at', 'desc')
                 ->paginate(10);
         return view('admin.users', compact('users'));
     }
@@ -31,7 +37,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('admin.creator_id ');
+        return view('admin.createUser');
     }
 
     /**
@@ -117,7 +123,7 @@ class UserController extends Controller
     {
         //
     }
-     public function hide($id)
+    public function hide(Request $request, $id)
     {
         $user = User::find($id);
         if (auth()->user()->role !== 'admin' ){
@@ -130,25 +136,55 @@ class UserController extends Controller
             ], 404);
         }
         
-        $user->status = 'hidden';
+        $type = $request->type; // 'hide' hoặc 'show'
+        $newStatus = ($type === 'hide') ? 'hidden' : 'show';
+        $user->status = $newStatus;
         $user->save();
-        Report::create([
-            'user_id' => auth()->id(),
-            'target_id' => $user->id,
-            'target_type' => User::class,
-            'category' => 'admin',
-            'reason' => 'Admin khóa tài khoản người dùng',
-            'status' => 'resolved',
-            'resolved_by' => auth()->id(),
-            'resolved_at' => now(),
-        ]);
 
-        $userslist = User::latest()->get();
+        if ($newStatus === 'hidden') {
+            Post::where('user_id', $user->id)->update(['status' => 'hidden']);
+            Comment::where('user_id', $user->id)->update(['status' => 'hidden']);
+            
+            Report::create([
+                'user_id' => auth()->id(),
+                'target_id' => $user->id,
+                'target_type' => User::class,
+                'category' => 'admin',
+                'reason' => 'Admin khóa tài khoản người dùng',
+                'status' => 'resolved',
+                'resolved_by' => auth()->id(),
+                'resolved_at' => now(),
+            ]);
+
+            // Gửi mail thông báo
+            try {
+                $displayName = $user->profile->display_name ?? $user->name;
+                Mail::raw("Chào {$displayName},\n\nTài khoản của bạn đã bị khóa do vi phạm các tiêu chuẩn cộng đồng của chúng tôi.\n\nNếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng phản hồi lại email này để được hỗ trợ giải quyết.\n\nTrân trọng,\nĐội ngũ Admin.", function ($message) use ($user) {
+                    $message->to($user->email)
+                            ->subject('Thông báo khóa tài khoản')
+                            ->replyTo(config('mail.from.address'), config('app.name'));
+                });
+            } catch (\Exception $e) {
+                \Log::error("Lỗi gửi mail khóa tài khoản: " . $e->getMessage());
+            }
+        } else {
+            Post::where('user_id', $user->id)
+                ->whereDoesntHave('reports', function($q) {
+                    $q->where('status', 'resolved');
+                })
+                ->update(['status' => 'show']);
+
+            Comment::where('user_id', $user->id)
+                ->whereDoesntHave('reports', function($q) {
+                    $q->where('status', 'resolved');
+                })
+                ->update(['status' => 'show']);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $userslist,
-            'count' => User::count(),
-            'message' => 'Đã khóa tài khoản thành công'
+            'status' => $newStatus,
+            'message' => ($newStatus === 'hidden') ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản'
         ]);
     }
 
@@ -157,26 +193,96 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        // Đã có middleware checkRole:admin ở web.php nên không cần check ở đây nữa
-        $users = User::find($id);
+        $user = User::with(['profile', 'posts.media', 'comments', 'conversations'])->find($id);
         if (auth()->user()->role !== 'admin' ){
             abort(403, 'Bạn không có quyền');
         }
-        if (!$users) {
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy topic'
+                'message' => 'Không tìm thấy người dùng'
             ], 404);
         }
 
+        // 1. Xóa file Avatar
+        if ($user->profile && $user->profile->avatar) {
+            Storage::disk('public')->delete($user->profile->avatar);
+        }
+
+        // 2. Xóa file Media trong các bài viết (Posts)
+        foreach ($user->posts as $post) {
+            foreach ($post->media as $m) {
+                if ($m->file_path) {
+                    Storage::disk('public')->delete($m->file_path);
+                }
+            }
+        }
+
+        // 3. Xóa file Media trong các bình luận (Comments)
+        foreach ($user->comments as $comment) {
+            if ($comment->media_path) {
+                Storage::disk('public')->delete($comment->media_path);
+            }
+        }
+
+        // 4. Chuyển quyền chủ nhóm cho thành viên khác và thông báo
+        Conversation::where('creator_id', $id)->update(['creator_id' => null]);
+        $groupConvos = Conversation::where('type', 'group')
+            ->where('creator_id', $id)
+            ->with('users')
+            ->get();
+
+        foreach ($groupConvos as $convo) {
+            $nextLeader = $convo->users->where('id', '!=', $id)->first();
+            if ($nextLeader) {
+                $convo->update(['creator_id' => $nextLeader->id]);
+                // Gửi thông báo hệ thống vào nhóm
+                Message::create([
+                    'conversation_id' => $convo->id,
+                    'sender_id' => null,
+                    'content' => ($nextLeader->profile->display_name ?? $nextLeader->name) . ' đã được chỉ định làm trưởng nhóm mới do chủ nhóm cũ bị xóa.',
+                    'type' => 'notification'
+                ]);
+            } else {
+                $convo->update(['creator_id' => null]);
+            }
+        }
+
+        // 5. Xóa Media của các tin nhắn đã gửi
+        $messages = Message::where('sender_id', $id)->with('media')->get();
+        foreach ($messages as $msg) {
+            foreach ($msg->media as $mm) {
+                if ($mm->file_path) {
+                    Storage::disk('public')->delete($mm->file_path);
+                }
+            }
+        }
+
+        // 5. Xóa Hội thoại cá nhân (Private Conversations)
+        foreach ($user->conversations as $convo) {
+            if ($convo->type === 'private') {
+                $convoMessages = Message::where('conversation_id', $convo->id)->with('media')->get();
+                foreach ($convoMessages as $cm) {
+                    foreach ($cm->media as $cmm) {
+                        if ($cmm->file_path) {
+                            Storage::disk('public')->delete($cmm->file_path);
+                        }
+                    }
+                }
+                $convo->delete(); 
+            }
+      
+        }
+
         Report::where('target_id', $id)->where('target_type', User::class)->delete();
-        $users->delete();
+        $user->delete();
+
         $userslist = User::latest()->get();
         return response()->json([
             'success' => true,
             'data' => $userslist,
             'count' => User::count(),
-            'message' => 'Xóa thành công'
+            'message' => 'Đã xóa vĩnh viễn người dùng và dọn dẹp toàn bộ dữ liệu liên quan'
         ]);
     }
 }

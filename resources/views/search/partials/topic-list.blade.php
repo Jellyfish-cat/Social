@@ -1,10 +1,5 @@
 <div class="card shadow-sm border-0 rounded-4 p-3 mb-4">
     <h5 class="fw-bold mb-3 px-2">Kết quả Chủ đề</h5>
-    @php
-        $post_count = App\Models\Post::whereHas('topics', function ($q) use ($topics) {
-            $q->whereIn('topics.id', $topics->pluck('id'));
-        })->count();
-    @endphp
     @if(isset($topics) && $topics->count() > 0)
         <!-- Giao diện hiển thị danh sách dạng lưới (Grid) -->
         <div class="row g-3 px-2">
@@ -20,7 +15,7 @@
                                 {{ $topic->name }}
                             </h6>
                             <span class="text-muted small">
-                                {{ number_format($post_count ?? 0) }} bài viết
+                                {{ number_format($topic->posts_count ?? 0) }} bài viết
                             </span>
                         </div>
                     </div>

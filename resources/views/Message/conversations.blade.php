@@ -614,7 +614,12 @@
 
                         $lastMsg = $conversation->latestMessage;
                         $previewText = 'Chưa có tin nhắn';
-                        if ($lastMsg) {
+
+                        $currentStatus = $isGroup ? ($conversation->status ?? 'show') : ($otherUser->status ?? 'show');
+                        
+                        if ($currentStatus === 'hidden') {
+                            $previewText = $isGroup ? 'Nhóm này đã bị giải tán' : 'Tài khoản này đã bị khóa do vi phạm';
+                        } elseif ($lastMsg) {
                             if ($lastMsg->status === 'unsend') {
                                 $previewText = 'Tin nhắn đã bị thu hồi';
                             } else {
@@ -632,10 +637,11 @@
                  <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item {{ $conversation->unread_count > 0 ? 'unread' : '' }}"
                          data-name="{{ $displayName }}"
                          data-status="{{ $lastMsg->content ?? '' }}"
-                         data-convo-status="{{ $conversation->status ?? 'show' }}"
+                         data-convo-status="{{ $isGroup ? ($conversation->status ?? 'show') : ($otherUser->status ?? 'show') }}"
                          data-online="false"
                          data-is-group="{{ $isGroup ? 'true' : 'false' }}"
                          data-convo-id="{{ $conversation->id }}"
+                         data-creator-id="{{ $conversation->creator_id }}"
                          data-user-id="{{ $targetId }}">
                         <img src="{{ $avatar }}"
                              class="rounded-circle flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">

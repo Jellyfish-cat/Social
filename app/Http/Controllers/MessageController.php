@@ -42,7 +42,7 @@ class MessageController extends Controller
     {
         $request->validate([
             'content' => 'nullable|string|max:1000',
-            'files'   => 'nullable|array|max:10',
+            'files'   => 'nullable|array|max:5',
             'files.*' => 'file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi|max:204800',
         ]);
 
@@ -52,7 +52,25 @@ class MessageController extends Controller
         }
 
         $authId = auth()->id();
-        $user = User::findorfail($id);
+        $user = User::findOrFail($id);
+        $authUser = auth()->user();
+
+        if ($authUser->role === 'user') {
+            // User thường chỉ được nhắn cho User thường
+            if ($user->role !== 'user') {
+                return response()->json(['success' => false, 'error' => 'Bạn không thể nhắn tin trực tiếp cho Ban quản trị'], 403);
+            }
+        } else {
+       
+            if (!in_array($user->role, ['admin', 'moderator'])) {
+                return response()->json(['success' => false, 'error' => 'Ban quản trị chỉ có thể nhắn tin cho nhân viên'], 403);
+            }
+        }
+
+        // Kiểm tra trạng thái người nhận
+        if ($user->status === 'hidden') {
+            return response()->json(['success' => false, 'error' => 'Tài khoản này đã bị khóa do vi phạm'], 403);
+        }
 
         // Tìm conversation giữa 2 user
         $conversation = Conversation::whereHas('users', function ($q) use ($authId) {
@@ -125,6 +143,7 @@ class MessageController extends Controller
                 'id'         => $message->id,
                 'content'    => $message->content,
                 'sender_id'  => $message->sender_id,
+                'conversation_id' => $message->conversation_id,
                 'created_at' => $message->created_at->format('H:i d/m'),
                 'media'      => $mediaList,
             ],
@@ -135,7 +154,7 @@ class MessageController extends Controller
     {
         $request->validate([
             'content' => 'nullable|string|max:1000',
-            'files'   => 'nullable|array|max:10',
+            'files'   => 'nullable|array|max:5',
             'files.*' => 'file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi|max:204800',
         ]);
 
@@ -148,6 +167,11 @@ class MessageController extends Controller
             ->whereHas('users', fn($q) => $q->where('user_id', $authId))
             ->with('users.profile')
             ->findOrFail($convoId);
+
+        // Kiểm tra trạng thái nhóm
+        if ($conversation->status === 'hidden') {
+            return response()->json(['success' => false, 'error' => 'Nhóm này đã bị giải tán'], 403);
+        }
 
         $message = Message::create([
             'conversation_id' => $conversation->id,
@@ -265,33 +289,6 @@ class MessageController extends Controller
         return response()->json($messages);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Message $message)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Message $message)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Message $message)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function unsend($id)
     {
         $message = Message::with('conversation.users')->findOrFail($id);
@@ -300,18 +297,60 @@ class MessageController extends Controller
             return response()->json(['success' => false, 'message' => 'Bạn không có quyền'], 403);
         }
 
+        if ($message->status === 'unsend') {
+            return response()->json(['success' => true, 'message' => 'Tin nhắn đã được thu hồi trước đó']);
+        }
+
         // Chuyển status sang unsend instead of delete
         $message->update(['status' => 'unsend']);
 
-        $receiver = $message->conversation->users->where('id', '!=', $message->sender_id)->first();
+        // Ghi log hoạt động
+        activity()
+            ->performedOn($message)
+            ->event('unsend_message')
+            ->causedBy(auth()->user())
+            ->log("đã thu hồi tin nhắn");
+
+        $receivers = $message->conversation->users->where('id', '!=', auth()->id());
         
-        if ($receiver) {
+        foreach ($receivers as $receiver) {
             broadcast(new \App\Events\MessageDeleted($message->id, $receiver->id))->toOthers();
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Thu hồi tin nhắn thành công'
+        ]);
+    }
+    public function destroy($id)
+    {
+        // Chỉ Admin hoặc Moderator mới có quyền xóa tin nhắn vi phạm
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            return response()->json(['success' => false, 'message' => 'Bạn không có quyền thực hiện hành động này'], 403);
+        }
+
+        $message = Message::with('media')->findOrFail($id);
+        
+        // 1. Xóa toàn bộ file Media vật lý
+        foreach ($message->media as $mm) {
+            if ($mm->file_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($mm->file_path);
+            }
+        }
+
+        // 2. Ghi log hoạt động (dành cho Admin/Moderator)
+        activity()
+            ->performedOn($message)
+            ->event('delete_message_admin')
+            ->causedBy(auth()->user())
+            ->log("đã xóa vĩnh viễn tin nhắn do vi phạm");
+
+        // 3. Xóa vĩnh viễn bản ghi (Cascade sẽ xóa message_media rows)
+        $message->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã xóa vĩnh viễn tin nhắn do vi phạm'
         ]);
     }
 }

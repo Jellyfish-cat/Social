@@ -52,11 +52,16 @@ class TopicController extends Controller
     public function show($id)
     {
         $topic = Topic::findOrFail($id);
-        $posts = $topic->posts()->latest()->get();
+        $posts = $topic->posts()
+            ->where('status', 'show')
+            ->whereHas('user', function($q) {
+                $q->where('status', 'show');
+            })
+            ->latest()
+            ->get();
         $checktopic= true;
         $display_name = $topic->name;
         return view('search.partials.post-list', compact('posts','checktopic','display_name'));
-
     }
 
     /**

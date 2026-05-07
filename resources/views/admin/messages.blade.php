@@ -103,9 +103,9 @@
                             @endif
                         </td>
                         <td class="text-center">
-                                  <a  class="btn btn-danger btn-sm btn-delete-message"
-                                data-id="{{ $value->id }}">
-                                    <i class="bi bi-trash"></i></a>
+                            <button class="btn btn-danger btn-sm btn-delete-message" data-id="{{ $value->id }}" title="Xóa vĩnh viễn">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </td>
                     </tr>
                     @empty

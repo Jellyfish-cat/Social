@@ -86,12 +86,12 @@ class FollowController extends Controller
         $values=collect();
         $user=null;
         if($type == "follower"){
-            $user = User::with('followers.profile')->findOrFail($id);
-            $values = $user->followers;
+            $user = User::findOrFail($id);
+            $values = $user->followers()->where('status', 'show')->with('profile')->get();
         }
         else if($type == "following"){
-            $user = User::with('following.profile')->findOrFail($id);
-            $values = $user->following;
+            $user = User::findOrFail($id);
+            $values = $user->following()->where('status', 'show')->with('profile')->get();
         }
         return view('follow.detail', compact('values', 'user', 'layout'));
     }

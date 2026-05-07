@@ -230,7 +230,6 @@
                             @endif
                         </ul>
                     </div>
-
                 </div>
                     <div class="small ms-1 content">
                         {!! preg_replace(
@@ -324,7 +323,7 @@
                             {{ number_format($post->likes?->count() ?? 0) }} lượt thích
                     </button>
                         <div class="fw-bold small comment-post-count" data-post-id="{{ $post->id }}">
-                            {{ number_format($post->comments->count() ?? 0) }} bình luận
+                            {{ number_format($post->comments_count ?? 0) }}  bình luận
                         </div>
                     </div>
                         {{-- Form comment --}}

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
 use App\Models\Report;
 use App\Services\ContentModerationService;
+use Illuminate\Support\Facades\Storage;
 class CommentController extends Controller
 {
     /**
@@ -123,9 +124,13 @@ class CommentController extends Controller
                         }
                     }
                     if ($request->hasFile('file')) {
+                        // ✅ Validate extension + MIME type
+                        $request->validate([
+                            'file' => 'file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,mov|max:20480',
+                        ]);
                         $file = $request->file('file');
-                        $fileName = time().'_'.$file->getClientOriginalName();
-                        $path = $file->storeAs('comments/media', $fileName, 'public');
+                        // ✅ hashName() – tên ngẫu nhiên, không giữ extension gốc từ client
+                        $path = $file->storeAs('comments/media', $file->hashName(), 'public');
                         $comment->media_path = $path;
                         $comment->save();
                     }
@@ -206,6 +211,11 @@ class CommentController extends Controller
             ], 404);
         }
 
+        // 1. Xóa file vật lý nếu có
+        if ($comment->media_path) {
+            Storage::disk('public')->delete($comment->media_path);
+        }
+
         \App\Models\Report::where('target_id', $id)->where('target_type', Comment::class)->delete();
         $comment->delete();
         $commentlist = Comment::latest()->get();
@@ -216,22 +226,16 @@ class CommentController extends Controller
             'message' => 'Xóa thành công'
         ]);
     }
-    public function like($id)
-    {
-    Comment::firstOrCreate([
-        'user_id' => auth()->id(),
-        'comment_id' => $id
-    ]);
-
-    return back();
-    }
+   
     public function like_list(Request $request, $id)
     {
         if (!$request->ajax()) {
             return redirect()->back();
         }
         $layout = 'layouts.empty';
-        $item = Comment::with(['likedUsers.profile'])->findOrFail($id);
+        $item = Comment::with(['likedUsers' => function($q) {
+            $q->where('status', 'show')->with('profile');
+        }])->findOrFail($id);
         $values = $item->likedUsers; 
         return view('like.like-list', compact('values', 'item', 'layout'));
     } 

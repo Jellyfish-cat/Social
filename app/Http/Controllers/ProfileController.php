@@ -28,7 +28,11 @@ class ProfileController extends Controller
             abort(403, 'Tài khoản này đã bị khóa hoặc không tồn tại');
         } 
         $user = $profile->user;
-        $posts = $user->posts()->latest()->get();
+        $posts = $user->posts()
+            ->with(['user.profile', 'topics', 'media', 'likes'])
+            ->withCount(['comments', 'likes', 'favorites'])
+            ->latest()
+            ->get();
         // 3. Gợi ý người dùng (Sử dụng Python AI Recommender)
         try {
             $aiResponse = \Illuminate\Support\Facades\Http::timeout(3)->get('http://127.0.0.1:8001/api/user_recommendations', [
@@ -190,6 +194,9 @@ class ProfileController extends Controller
     public function posts($id)
     {
         $user = User::findOrFail($id);
+        if ($user->status === 'hidden' && auth()->user()->role !== 'admin') {
+            return response()->json(['posts' => []]); 
+        }
         $posts = $user->posts()->where('status','show')
             ->orderBy('pinned', 'desc')
             ->latest()
@@ -206,8 +213,10 @@ class ProfileController extends Controller
         $user = User::findOrFail($id);
 
         $posts = Post::join('favorites', 'posts.id', '=', 'favorites.post_id')
+            ->join('users', 'posts.user_id', '=', 'users.id')
             ->where('favorites.user_id', $user->id)
             ->where('posts.status', 'show')
+            ->where('users.status', 'show')
             ->orderBy('favorites.created_at', 'desc')
             ->select('posts.*')
             ->get();
@@ -221,7 +230,13 @@ class ProfileController extends Controller
     {
         $user = User::findOrFail($id);
         $comments = Comment::where('user_id', $user->id)
-            ->latest()->where('status','show')
+            ->where('status', 'show')
+            ->whereHas('post', function($q) {
+                $q->where('status', 'show')->whereHas('user', function($u) {
+                    $u->where('status', 'show');
+                });
+            })
+            ->latest()
             ->get();
         return view('profile.partials.comment-list', compact('comments'));
     }
@@ -229,8 +244,10 @@ class ProfileController extends Controller
     {
         $user = User::findOrFail($id);
         $posts = Post::join('like_posts', 'posts.id', '=', 'like_posts.post_id')
+            ->join('users', 'posts.user_id', '=', 'users.id')
             ->where('like_posts.user_id', $user->id)
             ->where('posts.status', 'show')
+            ->where('users.status', 'show')
             ->orderBy('like_posts.created_at', 'desc')
             ->select('posts.*')
             ->get();

@@ -18,6 +18,8 @@
             }).finally(() => {
                 finishLoading();
             });*/
+                                                /*<div class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" 
+                                         style="width: 12px; height: 12px;"></div>*/
     /* ===== RESET MAIN LAYOUT FOR MESSAGES PAGE ===== */
     .main-content > .container-fluid {
         padding: 0 !important;

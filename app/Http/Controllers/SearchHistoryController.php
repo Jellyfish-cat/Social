@@ -126,8 +126,8 @@ class SearchHistoryController extends Controller
             return view('admin.posts', compact('posts'));
         }
         else {
-            // 1. Tìm bài viết bằng Meilisearch
-            $posts = Post::search($keyword)->get();
+            // 1. Tìm bài viết bằng Meilisearch (Chỉ lấy bài đang hiển thị)
+            $posts = Post::search($keyword)->where('status', 'show')->get();
             $posts->load(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics']);
 
             // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
@@ -142,6 +142,7 @@ class SearchHistoryController extends Controller
                     
                     if (!empty($recommendedIds)) {
                         $aiPosts = Post::whereIn('id', $recommendedIds)
+                            ->where('status', 'show')
                             ->whereNotIn('id', $posts->pluck('id')->toArray())
                             ->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
                             ->limit(5)
@@ -163,8 +164,8 @@ class SearchHistoryController extends Controller
         $user = auth()->user();
 
         if ($type === 'post') { 
-            // 1. Tìm bài viết bằng Meilisearch
-            $posts = Post::search($keyword)->get();
+            // 1. Tìm bài viết bằng Meilisearch (Chỉ lấy bài đang hiển thị)
+            $posts = Post::search($keyword)->where('status', 'show')->get();
             $posts->load(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics']);
 
             // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
@@ -180,6 +181,7 @@ class SearchHistoryController extends Controller
                     if (!empty($recommendedIds)) {
                         // Lấy các bài AI gợi ý nhưng chưa có trong danh sách tìm kiếm
                         $aiPosts = Post::whereIn('id', $recommendedIds)
+                            ->where('status', 'show')
                             ->whereNotIn('id', $posts->pluck('id')->toArray())
                             ->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
                             ->limit(5) // Chỉ lấy thêm 5 bài gợi ý để tránh loãng kết quả tìm kiếm
@@ -220,8 +222,7 @@ class SearchHistoryController extends Controller
             return view('search.partials.people-list', compact('users'));
         }
         elseif ($type === 'topic') {
-            // Tìm kiếm chủ đề bằng Meilisearch
-            $topics = Topic::search($keyword)->get();
+            $topics = Topic::search($keyword)->get()->loadCount('posts');
             return view('search.partials.topic-list', compact('topics'));
         } 
     }
@@ -301,7 +302,7 @@ class SearchHistoryController extends Controller
 
 
             $topics = Topic::search($q)->take(5)->get(); 
-            $candUserIds = User::search($q)->where('role', 'user')->take(50)->keys()->toArray();
+            $candUserIds = User::search($q)->where('role', 'user')->where('status', 'show')->take(50)->keys()->toArray();
             $candPostIds = Post::search($q)->where('status', 'show')->take(50)->keys()->toArray();
             // 1. Mặc định: Lấy 5 kết quả đầu từ Meilisearch làm phương án dự phòng (Fallback)
             $users = User::whereIn('id', array_slice($candUserIds, 0, 5))->with('profile')->get();

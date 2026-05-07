@@ -337,10 +337,11 @@ setTimeout(() => {
 }, 3000);
 document.addEventListener('click', function (e) {
 
-    const btn = e.target.closest('.btn-delete-conversation');
+    const btn = e.target.closest('.btn-conversation');
     if (btn) {
         const postId = btn.dataset.id;
-        if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
+        const type = btn.dataset.type;
+        if (!confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN hội thoại này không? Toàn bộ tin nhắn và dữ liệu sẽ mất sạch.')) {
             return;
         }
         fetch(`/conversation/destroy/${postId}`, {
@@ -353,20 +354,14 @@ document.addEventListener('click', function (e) {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    const row = btn.closest(".conversation-item");
+                    const row = btn.closest('tr');
                     if (row) {
-                        // Hiệu ứng mượt
-                        row.style.transition = "all 0.3s ease";
-                        row.style.opacity = "0";
-                        setTimeout(() => {
-                            row.remove();
-                            document.querySelector(".count-conversation").innerText =
-                                `Tổng hộp thoại: ${data.count}`;
-                            updateSTT();
-                        }, 300);
+                        row.style.transition = 'all 0.4s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(30px)';
+                        setTimeout(() => row.remove(), 400);
                     }
-                    // Thông báo
-                    console.log(data.message || "Xóa thành công");
+                    alert(data.message);
                 }
             })
             .catch((err) => {
@@ -786,14 +781,26 @@ window.openInfoPanel = function () {
         const btnDissolveGroup = document.getElementById('btnDissolveGroup');
 
         if (isGroup) {
-            groupSection.classList.remove('d-none');
-            btnEditGroup.classList.remove('d-none');
-            btnLeaveGroup.classList.remove('d-none');
-            btnDissolveGroup.classList.add('d-none'); // Ẩn mặc định, sẽ hiện nếu là trưởng nhóm
-            btnBlockUser.classList.add('d-none');
-            btnInfoProfile.classList.add('d-none');
-            btnReportUser.classList.add('d-none');
-            infoStatus.textContent = 'Nhóm trò chuyện';
+            const creatorId = window.currentItem.dataset.creatorId;
+            const authUserId = document.querySelector('meta[name="auth-user-id"]')?.content;
+
+            if (groupSection) groupSection.classList.remove('d-none');
+
+            // Chỉ hiện nút Chỉnh sửa và Giải tán nếu là Trưởng nhóm (Creator)
+            if (btnEditGroup) {
+                if (authUserId == creatorId) btnEditGroup.classList.remove('d-none');
+                else btnEditGroup.classList.add('d-none');
+            }
+            if (btnDissolveGroup) {
+                if (authUserId == creatorId) btnDissolveGroup.classList.remove('d-none');
+                else btnDissolveGroup.classList.add('d-none');
+            }
+
+            if (btnLeaveGroup) btnLeaveGroup.classList.remove('d-none');
+            if (btnBlockUser) btnBlockUser.classList.add('d-none');
+            if (btnInfoProfile) btnInfoProfile.classList.add('d-none');
+            if (btnReportUser) btnReportUser.classList.add('d-none');
+            if (infoStatus) infoStatus.textContent = 'Nhóm trò chuyện';
             const conversationId = window.currentItem.dataset.convoId;
             const membersContainer = document.getElementById('infoGroupMembers');
 
@@ -838,14 +845,14 @@ window.openInfoPanel = function () {
                 btnEditGroup.href = `/conversation/edit/${conversationId}`;
             }
         } else {
-            groupSection.classList.add('d-none');
-            btnEditGroup.classList.add('d-none');
-            btnLeaveGroup.classList.add('d-none');
-            btnDissolveGroup.classList.add('d-none');
-            btnBlockUser.classList.remove('d-none');
-            btnInfoProfile.classList.remove('d-none');
-            btnReportUser.classList.remove('d-none');
-            infoStatus.textContent = 'Người dùng riêng tư';
+            if (groupSection) groupSection.classList.add('d-none');
+            if (btnEditGroup) btnEditGroup.classList.add('d-none');
+            if (btnLeaveGroup) btnLeaveGroup.classList.add('d-none');
+            if (btnDissolveGroup) btnDissolveGroup.classList.add('d-none');
+            if (btnBlockUser) btnBlockUser.classList.remove('d-none');
+            if (btnInfoProfile) btnInfoProfile.classList.remove('d-none');
+            if (btnReportUser) btnReportUser.classList.remove('d-none');
+            if (infoStatus) infoStatus.textContent = 'Người dùng riêng tư';
             const userId = window.currentItem.dataset.userId;
             if (userId && btnInfoProfile) {
                 btnInfoProfile.href = `/profile/detail/${userId}`;

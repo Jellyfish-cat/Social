@@ -21,7 +21,7 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::with(['user.profile', 'topics', 'media'])
-                    ->withCount(['comments', 'likes', 'favorites'])
+                    ->withCount(['comments', 'likes', 'favorites']) // Đảm bảo đã có
                     ->orderBy('created_at', 'desc')
                     ->paginate(10);
 
@@ -49,7 +49,8 @@ class PostController extends Controller
             if ($request->has('pinned')) {
                 Post::where('user_id', Auth::id())->update(['pinned' => 0]);
                 $post->pinned = 1;
-            $post->pinned = 0;
+            } else {
+                $post->pinned = 0;
             }
 
             // Kiểm duyệt nội dung
@@ -92,9 +93,16 @@ class PostController extends Controller
             $post->topics()->sync($topicIds);
 
             if ($request->hasFile('file')) {
+                // ✅ Validate extension + MIME type trước khi lưu
+                $request->validate([
+                    'file'   => 'array|max:10',
+                    'file.*' => 'file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,mov|max:51200',
+                ]);
+
                 foreach ($request->file('file') as $file) {
-                    $fileName = time() . '_' . $file->getClientOriginalName();
-                    $path = $file->storeAs('posts/media', $fileName, 'public');
+                    // ✅ Dùng hashName() – tên ngẫu nhiên, không giữ extension gốc từ client
+                    $safeName = $file->hashName();
+                    $path = $file->storeAs('posts/media', $safeName, 'public');
 
                     $media = new Media();
                     $media->post_id = $post->id;
@@ -122,10 +130,15 @@ class PostController extends Controller
     public function detail(request $request, $id)
     {
         $layout = $request->ajax() ? 'layouts.empty' : 'layouts.app';
-        $post = Post::with([
+        $post = Post::withCount('comments')->with([
             'user.profile', 'media', 'topics', 'likes', 'favorites',
             'comments' => function ($query) {
-                $query->whereNull('parent_comment_id')->with(['user.profile', 'replies.user.profile'])->latest();
+                $query->whereNull('parent_comment_id')
+                ->where('status', 'show')
+                ->whereHas('user', fn($q) => $q->where('status', 'show'))
+                ->with(['user.profile', 'replies' => function($r) {
+                    $r->where('status', 'show')->whereHas('user', fn($u) => $u->where('status', 'show'))->with('user.profile');
+                }])->latest();
             }
         ])->findOrFail($id);
 
@@ -218,13 +231,20 @@ class PostController extends Controller
         }
 
         if ($request->hasFile('file')) {
+            // ✅ Validate extension + MIME type trước khi lưu
+            $request->validate([
+                'file'   => 'array|max:10',
+                'file.*' => 'file|mimes:jpg,jpeg,png,gif,webp,mp4,webm,mov|max:51200',
+            ]);
+
             foreach ($request->file('file') as $file) {
-                $path = $file->store('posts', 'public');
+                // ✅ hashName() tạo tên ngẫu nhiên an toàn
+                $path = $file->storeAs('posts', $file->hashName(), 'public');
                 $type = str_contains($file->getMimeType(), 'video') ? 'video' : 'image';
                 Media::create([
-                    'post_id' => $post->id,
+                    'post_id'   => $post->id,
                     'file_path' => $path,
-                    'type' => $type
+                    'type'      => $type
                 ]);
             }
         }
@@ -237,7 +257,7 @@ class PostController extends Controller
                 'html' => view('posts.post_item', compact('post'))->render()
             ]);
         }
-        return redirect()->route('home')->with('success', 'Cập nhật thành công');
+        return redirect()->back()->with('success', 'Cập nhật thành công');
     }
 
     // 7. Xóa bài viết
@@ -275,6 +295,9 @@ class PostController extends Controller
         $posts = Post::whereHas('topics', function($q) use ($topicId) {
                         $q->where('topic_id', $topicId);
                     })
+                    ->whereHas('user', function($q) {
+                        $q->where('status', 'show');
+                    })
                     ->with(['user.profile', 'media'])
                     ->orderBy('created_at', 'desc')->where('status', 'show')
                     ->get();
@@ -286,8 +309,18 @@ class PostController extends Controller
 
     public function loadComments($id)
     {
-        $post = Post::with('comments.user')->where('status', 'show')->findOrFail($id);
-        return view('posts.comments', compact('post'));
+        $comments = Comment::where('post_id', $id)
+            ->whereNull('parent_comment_id')
+            ->where('status', 'show')
+            ->whereHas('user', function($q) {
+                $q->where('status', 'show');
+            })
+            ->with(['user.profile', 'replies' => function($q) {
+                $q->where('status', 'show')->whereHas('user', fn($u) => $u->where('status', 'show'))->with('user.profile');
+            }])
+            ->latest()
+            ->get();
+        return view('posts.comments', compact('comments'));
     }
 
     public function like_list(Request $request, $id)
@@ -296,7 +329,12 @@ class PostController extends Controller
             return redirect()->back();
         }
         $layout = 'layouts.empty';
-        $item = Post::with(['likedUsers.profile'])->findOrFail($id);
+        
+        // Lấy bài viết và chỉ lấy những người thích đang ở trạng thái 'show'
+        $item = Post::with(['likedUsers' => function($q) {
+            $q->where('status', 'show')->with('profile');
+        }])->findOrFail($id);
+        
         $values = $item->likedUsers; 
         return view('like.like-list', compact('values', 'item', 'layout'));
     } 

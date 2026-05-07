@@ -16,7 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ActivityLogBatch::class,
         ]);
         $middleware->alias([
-            'checkRole' => \App\Http\Middleware\CheckRole::class,
+            'checkRole'   => \App\Http\Middleware\CheckRole::class,
+            'checkStatus' => \App\Http\Middleware\CheckUserStatus::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

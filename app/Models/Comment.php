@@ -66,5 +66,10 @@ class Comment extends Model
     {
         return $this->belongsToMany(User::class, 'like_comments', 'comment_id', 'user_id');
     }
+
+    public function reports()
+    {
+        return $this->morphMany(Report::class, 'target');
+    }
 }
 

@@ -85,26 +85,32 @@
                         </td>
                         <td class="text-center">
                             @if($value->status === 'show')
-                                <span class="badge bg-success">Hoạt động</span>
+                                <span class="badge bg-success status-badge">Hoạt động</span>
                             @else
-                                <span class="badge bg-danger">Bị khóa</span>
+                                <span class="badge bg-danger status-badge">Bị khóa</span>
                             @endif
                         </td>
                         <td class="text-center">
-                            <a class="btn btn-info btn-sm" href="{{ route('profile.detail', $value->id ?? '') }}" title="Xem chi tiết">
+                            <a class="mt-1 btn btn-info btn-sm" href="{{ route('profile.detail', $value->id ?? '') }}" title="Xem chi tiết">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a class="btn btn-warning btn-sm" href="{{ route('profile.edit', $value->id ?? '') }}" title="Chỉnh sửa">
+                            <a class="mt-1 btn btn-warning btn-sm" href="{{ route('profile.edit', $value->id ?? '') }}" title="Chỉnh sửa">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a class="btn btn-danger btn-sm btn-delete-user" data-id="{{ $value->id }}" data-type="destroy" title="Xóa vĩnh viễn">
+                            <a class="mt-1 btn btn-danger btn-sm btn-delete-user" data-id="{{ $value->id }}" data-type="destroy" title="Xóa vĩnh viễn">
                                 <i class="bi bi-trash"></i>
                             </a>
-                            @if($value->status === 'show')
-                                <a class="btn btn-danger btn-sm btn-delete-user" data-id="{{ $value->id }}" data-type="hidden" title="Khóa tài khoản">
-                                    <i class="bi bi-eye-slash"></i>
-                                </a>
-                            @endif
+                            <span class="btn-hide-container">
+                                @if($value->status === 'show')
+                                    <a class="mt-1 btn btn-secondary btn-sm btn-hide-user" data-id="{{ $value->id }}" data-type="hide" title="Khóa tài khoản">
+                                        <i class="bi bi-eye-slash"></i>
+                                    </a>
+                                @else
+                                    <a class="mt-1 btn btn-success btn-sm btn-hide-user" data-id="{{ $value->id }}" data-type="show" title="Hiển thị tài khoản">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                @endif
+                            </span>
                         </td>
                     </tr>
                     @empty

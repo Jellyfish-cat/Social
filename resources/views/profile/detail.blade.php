@@ -26,8 +26,7 @@
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                             @if(!Auth::check() || $user->id !== Auth::id())
-                            <li><button class="dropdown-item small open-report require-login" data-type="user" data-id="{{ $user->id }}">Chặn</button></li>
-                            <li><hr class="dropdown-divider"></li>
+                           
                             <li><button class="dropdown-item small text-danger open-report require-login" data-type="user" data-id="{{ $user->id }}">Báo cáo</button></li>
                             @endif
                         </ul>

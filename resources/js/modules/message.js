@@ -1,5 +1,20 @@
 window.msgSelectedFiles = window.msgSelectedFiles || [];
 
+// Hàm đơn giản để chống XSS (mã độc)
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>"']/g, function (m) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[m];
+    });
+}
+
+
 // Xóa 1 ảnh theo index
 window.deleteMessageMedia = function (index) {
     window.msgSelectedFiles.splice(index, 1);
@@ -37,9 +52,20 @@ function renderAllPreviews() {
 // Chọn file → thêm vào mảng và preview
 window.previewMessageFiles = function (input) {
     const files = Array.from(input.files);
+    const MAX_FILES = 5;
+    const MAX_SIZE = 200 * 1024 * 1024; // 200MB
+
+    // Kiểm tra dung lượng từng file
+    for (let file of files) {
+        if (file.size > MAX_SIZE) {
+            alert(`File "${file.name}" quá lớn. Dung lượng tối đa cho phép là 200MB.`);
+            input.value = '';
+            return;
+        }
+    }
+
     if (!files.length) return;
 
-    const MAX_FILES = 5;
     if (!window.msgSelectedFiles) window.msgSelectedFiles = [];
     const remaining = MAX_FILES - window.msgSelectedFiles.length;
     if (remaining <= 0) {
@@ -59,7 +85,6 @@ window.previewMessageFiles = function (input) {
     input.value = '';
 };
 
-// ===== MESSAGE LOGIC (MOVED FROM CONVERTATION.JS) =====
 const msgPage = document.getElementById('msgPage');
 const msgInput = document.getElementById('msgInput');
 const chatBody = document.getElementById('msgChatBody');
@@ -67,7 +92,10 @@ const msgSendBtn = document.getElementById('msgSendBtn');
 
 if (msgPage) {
 
+    window.isSendingMsg = false;
     window.sendMessage = function () {
+        if (window.isSendingMsg) return; // Chặn Click + Enter cùng lúc
+
         const text = msgInput.value.trim();
         const files = window.msgSelectedFiles || [];
         if (!text && files.length === 0) return;
@@ -75,7 +103,10 @@ if (msgPage) {
         const userId = window.currentUserId;
         if (!userId) return;
 
-        // Thêm bubble ngay lập tức (optimistic)
+        window.isSendingMsg = true; // Bắt đầu trạng thái gửi
+        if (msgSendBtn) msgSendBtn.disabled = true;
+
+        // Thêm bubble ngay lập tức 
         const row = document.createElement('div');
         row.className = 'msg-bubble-row mine';
         const bubble = document.createElement('div');
@@ -93,7 +124,7 @@ if (msgPage) {
             });
             bubble.innerHTML = mediaHtml;
             if (text) {
-                bubble.innerHTML += `<div class="mt-1">${text}</div>`;
+                bubble.innerHTML += `<div class="mt-1">${escapeHtml(text)}</div>`;
             }
         } else {
             bubble.textContent = text;
@@ -135,10 +166,14 @@ if (msgPage) {
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const isGroup = window.currentItem ? window.currentItem.dataset.isGroup === 'true' : false;
-        const targetId = window.currentUserId;
+        const targetId = isGroup
+            ? window.currentItem?.dataset.convoId
+            : window.currentItem?.dataset.userId ?? window.currentUserId;
         const fetchUrl = isGroup ? `/message/group/send/${targetId}` : `/message/send/${targetId}`;
 
         if (typeof startLoading === 'function') startLoading();
+        if (msgSendBtn) msgSendBtn.disabled = true; // Vô hiệu hóa nút gửi
+
         fetch(fetchUrl, {
             method: 'POST',
             headers: {
@@ -160,17 +195,58 @@ if (msgPage) {
                     unsendBtn.onclick = function () { window.unsendMsg(this, data.message.id); };
                     row.prepend(unsendBtn);
 
+                    const convoList = document.getElementById('msgConvoList');
                     if (window.currentItem) {
                         const smalls = window.currentItem.querySelectorAll('small.text-muted');
                         if (smalls.length >= 2) smalls[1].textContent = 'Vừa xong';
-                        const convoList = document.getElementById('msgConvoList');
                         if (convoList) convoList.prepend(window.currentItem);
+                    } else if (convoList && data.user) {
+                        // Nhắn tin lần đầu: Tạo ô hội thoại mới
+                        const avatarUrl = data.user.avatar ? `/storage/${data.user.avatar}` : '/storage/default-avatar.png';
+                        const displayName = data.user.displayname || data.user.name;
+                        const previewText = 'Bạn: ' + (data.message.content || 'Đã gửi tệp đính kèm');
+
+                        const newConvoHtml = `
+                            <div class="d-flex align-items-center px-3 py-2 gap-2 convo-item active"
+                                 data-name="${displayName}"
+                                 data-status="Đang hoạt động"
+                                 data-convo-status="show"
+                                 data-is-group="false"
+                                 data-convo-id="${data.message.conversation_id}"
+                                 data-user-id="${data.user.id}">
+                                <div class="position-relative">
+                                    <img src="${avatarUrl}"
+                                         class="rounded-circle flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">
+
+                                </div>
+                                <div class="flex-grow-1 text-truncate">
+                                    <div class="fw-semibold">${displayName}</div>
+                                    <small class="text-muted">${previewText}</small>
+                                </div>
+                                <div class="d-flex flex-column align-items-end gap-1">
+                                    <small class="text-muted" style="font-size: 11px;">Vừa xong</small>
+                                </div>
+                            </div>
+                        `;
+                        convoList.insertAdjacentHTML('afterbegin', newConvoHtml);
+                        window.currentItem = convoList.querySelector(`[data-convo-id="${data.message.conversation_id}"]`);
                     }
+                } else {
+                    // Nếu server trả về lỗi (bị khóa account giữa chừng)
+                    row.remove();
+                    alert(data.error || 'Gửi tin nhắn thất bại.');
                 }
             })
-            .catch(error => console.error('Lỗi gửi tin nhắn:', error))
+            .catch(error => {
+                console.error('Lỗi gửi tin nhắn:', error);
+                //Xóa bubble giả nếu mạng lỗi/timeout
+                if (row) row.remove();
+                alert('Mạng yếu hoặc Server không phản hồi. Tin nhắn chưa được gửi.');
+            })
             .finally(() => {
                 if (typeof finishLoading === 'function') finishLoading();
+                if (msgSendBtn) msgSendBtn.disabled = false;
+                window.isSendingMsg = false; // Mở khóa gửi tin
             });
 
         window.msgSelectedFiles = [];
@@ -273,9 +349,11 @@ if (msgPage) {
                     let isMatch = false;
 
                     if (isGroupEvent) {
-                        isMatch = (currentType === 'true' && window.currentUserId == incomingMsg.conversation_id);
+                        const openConvoId = window.currentItem?.dataset.convoId;
+                        isMatch = (currentType === 'true' && openConvoId == incomingMsg.conversation_id);
                     } else {
-                        isMatch = (currentType === 'false' && window.currentUserId == incomingMsg.sender_id);
+                        const openUserId = window.currentItem?.dataset.userId ?? window.currentUserId;
+                        isMatch = (currentType === 'false' && openUserId == incomingMsg.sender_id);
                     }
 
                     if (isMatch && chatBody) {
@@ -336,7 +414,7 @@ if (msgPage) {
                                 <div class="msg-bubble theirs">
                                     ${nameHtml}
                                     ${mediaHtml}
-                                    ${incomingMsg.content ? `<div class="mt-1 messege-item">${incomingMsg.content}</div>` : ''}
+                                    ${incomingMsg.content ? `<div class="mt-1 messege-item">${escapeHtml(incomingMsg.content)}</div>` : ''}
                                 </div>
                             `;
                             chatBody.appendChild(row);
@@ -359,7 +437,7 @@ if (msgPage) {
                             let textPreview = senderPrefix + (incomingMsg.content || mediaText);
 
                             if (preview) {
-                                let shortText = textPreview.length > 30 ? textPreview.substring(0, 30) + '...' : textPreview;
+                                let shortText = escapeHtml(textPreview.length > 30 ? textPreview.substring(0, 30) + '...' : textPreview);
                                 preview.innerHTML = isMatch ? shortText : `<strong>${shortText}</strong>`;
                             }
 
@@ -403,7 +481,6 @@ if (msgPage) {
                             newConvo.className = 'd-flex align-items-center px-3 py-2 gap-2 convo-item unread';
                             newConvo.dataset.name = displayName;
                             newConvo.dataset.status = incomingMsg.content || '';
-                            newConvo.dataset.online = 'false';
                             newConvo.dataset.isGroup = isGroup ? 'true' : 'false';
                             newConvo.dataset.convoId = incomingMsg.conversation_id;
                             newConvo.dataset.userId = targetId;
@@ -431,6 +508,46 @@ if (msgPage) {
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.btn-delete-message');
     if (btn) {
+        e.preventDefault();
+        const msgId = btn.dataset.id;
+        const container = document.getElementById(`status-container-${msgId}`);
 
+        if (confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN tin nhắn này không? Hành động này không thể hoàn tác.')) {
+            if (typeof startLoading === 'function') startLoading();
+            btn.disabled = true;
+
+            fetch(`/admin/messages/destroy/${msgId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const row = btn.closest('tr');
+                        if (row) {
+                            row.style.transition = 'all 0.4s ease';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(20px)';
+                            setTimeout(() => row.remove(), 400);
+                        }
+                        alert(data.message);
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra');
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Lỗi kết nối server');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    if (typeof finishLoading === 'function') finishLoading();
+                });
+        }
     }
 });

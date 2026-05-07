@@ -79,9 +79,9 @@
                                     <i class="bi bi-lock"></i>
                                 </button>
                             @endif
-                            <a class="btn btn-danger btn-sm btn-delete-conversation" data-id="{{ $value->id }}" title="Xóa hội thoại">
+                            <button class="btn btn-danger btn-sm btn-conversation" data-id="{{ $value->id }}" title="Xóa vĩnh viễn">
                                 <i class="bi bi-trash"></i>
-                            </a>
+                            </button>
                         </td>
                     </tr>
                     @empty

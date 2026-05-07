@@ -127,50 +127,46 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/reports/destroy/{id}', [ReportController::class, 'destroy'])->name('reports.destroy');
     //USER
     Route::middleware(['checkRole:user'])->group(function () {
-      // --- Share Post logic ---
-    Route::get('/share/list/{id}', [ShareController::class, 'getShareList'])->name('share.list');
-    // --- Posts ---
-    Route::prefix('posts')->group(function () {
-        Route::get('/create', [PostController::class, 'create'])->name('posts.create');
-        Route::post('/store', [PostController::class, 'store'])->name('posts.store');
-        Route::post('/like/{id}', [LikePostController::class, 'store'])->name('posts.like');
-        Route::post('/favorite/{id}', [FavoriteController::class, 'store'])->name('posts.favorite');
 
-    });
-    Route::post('/ckeditor-upload', [PostController::class, 'uploadImage'])->name('ckeditor.upload');
-    // --- Topics ---
+        // ✅ Tất cả hành động tương tác đều yêu cầu tài khoản không bị khóa
+        Route::middleware(['checkStatus'])->group(function () {
 
-    // --- Comments ---
-    Route::prefix('comments')->group(function () {
-        Route::get('/latest/{id}', [CommentController::class, 'latest']);
-        Route::post('/create/{id}', [CommentController::class, 'store'])->name('comments.create');
-        Route::post('/like/{id}', [CommentController::class, 'like'])->name('comments.like');
-    });
-    Route::post('/comment/like/{id}', [LikeCommentController::class, 'store'])->name('comment.like');
+            // --- Share Post ---
+            Route::get('/share/list/{id}', [ShareController::class, 'getShareList'])->name('share.list');
+            Route::post('/share/to-users', [ShareController::class, 'shareToUsers'])->name('share.toUsers');
 
-    
-    
-    // --- Search ---
+            // --- Posts ---
+            Route::prefix('posts')->group(function () {
+                Route::get('/create', [PostController::class, 'create'])->name('posts.create');
+                Route::post('/store', [PostController::class, 'store'])->name('posts.store');
+                Route::post('/like/{id}', [LikePostController::class, 'store'])->name('posts.like');
+                Route::post('/favorite/{id}', [FavoriteController::class, 'store'])->name('posts.favorite');
+            });
 
-    // --- Follows ---
-    Route::prefix('follows')->group(function () {
-        Route::post('/store/{id}', [FollowController::class, 'store'])->name('follows.store');
-      
-    });
+            Route::post('/ckeditor-upload', [PostController::class, 'uploadImage'])->name('ckeditor.upload');
 
-    // --- Reports (User) ---
-    Route::prefix('reports')->group(function () {
-        Route::get('/create', [ReportController::class, 'create'])->name('reports.create');
-        Route::post('/store', [ReportController::class, 'store'])->name('reports.store');
-       
-    });
+            // --- Comments ---
+            Route::prefix('comments')->group(function () {
+                Route::get('/latest/{id}', [CommentController::class, 'latest']);
+                Route::post('/create/{id}', [CommentController::class, 'store'])->name('comments.create');
+            });
+            Route::post('/comment/like/{id}', [LikeCommentController::class, 'store'])->name('comment.like');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Staff Routes (Admin & Moderator)
-    |--------------------------------------------------------------------------
-    */
-});
+            // --- Follows ---
+            Route::prefix('follows')->group(function () {
+                Route::post('/store/{id}', [FollowController::class, 'store'])->name('follows.store');
+            });
+
+            // --- Reports (User) ---
+            Route::prefix('reports')->group(function () {
+                Route::get('/create', [ReportController::class, 'create'])->name('reports.create');
+                Route::post('/store', [ReportController::class, 'store'])->name('reports.store');
+            });
+
+        }); // end checkStatus
+
+    }); // end checkRole:user
+
     Route::middleware(['checkRole:admin,moderator'])->prefix('admin')->group(function () {
        
         // Reports Management
@@ -185,6 +181,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/searchs', [SearchHistoryController::class, 'index'])->name('admin.searchs');
         Route::get('/posts', [PostController::class, 'index'])->name('admin.posts');
         Route::get('/messages', [MessageController::class, 'index'])->name('admin.messages');
+        Route::delete('/messages/destroy/{id}', [MessageController::class, 'destroy'])->name('admin.messages.destroy');
         Route::get('/conversations', [ConversationController::class, 'adminIndex'])->name('admin.conversations');
         Route::get('/conversations/{id}', [ConversationController::class, 'show'])->name('admin.conversations.show');
     });

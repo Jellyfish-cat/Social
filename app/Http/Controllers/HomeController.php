@@ -123,6 +123,7 @@ class HomeController extends Controller
                 
                 if (!empty($recommendedUserIds)) {
                     $suggestedUsers = User::whereIn('id', $recommendedUserIds)
+                        ->where('status', 'show')
                         ->with('profile')
                         ->get()
                         ->sortBy(function($u) use ($recommendedUserIds) {
@@ -131,6 +132,7 @@ class HomeController extends Controller
                 } else {
                     $suggestedUsers = User::where('id', '!=', $user ? $user->id : 0)
                         ->where('role', 'user')
+                        ->where('status', 'show')
                         ->with('profile')
                         ->limit(8)->get();
                 }
@@ -140,6 +142,7 @@ class HomeController extends Controller
         } catch (\Exception $e) {
             $suggestedUsers = User::where('id', '!=', $user ? $user->id : 0)
                 ->where('role', 'user')
+                ->where('status', 'show')
                 ->with('profile')
                 ->limit(8)->get();
         }

@@ -46,62 +46,40 @@ class RankSearchResponse(BaseModel):
     user_ids: list[int]
     post_ids: list[int]
 
-# --- GLOBAL CACHE SYSTEM ---
-GLOBAL_CACHE = {
-    "df_posts": None,
-    "tfidf_matrix": None,
-    "tfidf_model": None,
-    "user_item_matrix": None,
-    "last_updated": 0
-}
-CACHE_TTL = 300
+def get_data():
+    try:
+        conn = get_db_connection()
+        query_posts = """
+            SELECT p.id, p.user_id, p.content, p.created_at, u.role as author_role,
+                   COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ' '), '') as topics,
+                   (SELECT COUNT(*) FROM like_posts WHERE post_id = p.id) as like_count,
+                   (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            LEFT JOIN post_topic pt ON p.id = pt.post_id
+            LEFT JOIN topics t ON pt.topic_id = t.id
+            WHERE p.status = 'show'
+            GROUP BY p.id
+        """
+        df_posts = pd.read_sql(query_posts, conn)
+        df_likes = pd.read_sql("SELECT user_id, post_id FROM like_posts", conn)
+        conn.close()
 
-def get_cached_data():
-    global GLOBAL_CACHE
-    now = time.time()
-    
-    if GLOBAL_CACHE["df_posts"] is None or (now - GLOBAL_CACHE["last_updated"]) > CACHE_TTL:
-        try:
-            conn = get_db_connection()
-            print(f"[AI CACHE] Reloading data from database...")
-            
-            query_posts = """
-                SELECT p.id, p.user_id, p.content, p.created_at, u.role as author_role,
-                       COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ' '), '') as topics,
-                       (SELECT COUNT(*) FROM like_posts WHERE post_id = p.id) as like_count,
-                       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count
-                FROM posts p
-                JOIN users u ON p.user_id = u.id
-                LEFT JOIN post_topic pt ON p.id = pt.post_id
-                LEFT JOIN topics t ON pt.topic_id = t.id
-                WHERE p.status = 'show'
-                GROUP BY p.id
-            """
-            df_posts = pd.read_sql(query_posts, conn)
-            
-            query_likes = "SELECT user_id, post_id FROM like_posts"
-            df_likes = pd.read_sql(query_likes, conn)
-            conn.close()
+        if df_posts.empty:
+            return None, None, None
 
-            if not df_posts.empty:
-                df_posts['text_features'] = (df_posts['content'].fillna('') + " " + df_posts['topics']).str.lower()
-                tfidf = TfidfVectorizer(ngram_range=(1, 2))
-                tfidf_matrix = tfidf.fit_transform(df_posts['text_features'])
-                
-                GLOBAL_CACHE["df_posts"] = df_posts
-                GLOBAL_CACHE["tfidf_matrix"] = tfidf_matrix
-                GLOBAL_CACHE["tfidf_model"] = tfidf
-                
-                if not df_likes.empty:
-                    user_item_matrix = df_likes.pivot_table(index='user_id', columns='post_id', aggfunc='size', fill_value=0)
-                    GLOBAL_CACHE["user_item_matrix"] = user_item_matrix
-                
-                GLOBAL_CACHE["last_updated"] = now
-                print(f"[AI CACHE] Success: Cached {len(df_posts)} posts.")
-        except Exception as e:
-            print(f"[AI CACHE ERROR] {str(e)}")
+        df_posts['text_features'] = (df_posts['content'].fillna('') + " " + df_posts['topics']).str.lower()
+        tfidf = TfidfVectorizer(ngram_range=(1, 2))
+        tfidf_matrix = tfidf.fit_transform(df_posts['text_features'])
+        
+        user_item_matrix = None
+        if not df_likes.empty:
+            user_item_matrix = df_likes.pivot_table(index='user_id', columns='post_id', aggfunc='size', fill_value=0)
             
-    return GLOBAL_CACHE["df_posts"], GLOBAL_CACHE["tfidf_matrix"], GLOBAL_CACHE["user_item_matrix"]
+        return df_posts, tfidf_matrix, user_item_matrix
+    except Exception as e:
+        print(f"[AI DATA ERROR] {str(e)}")
+        return None, None, None
 
 # --- MODULAR RECOMENDER FUNCTIONS ---
 
@@ -231,7 +209,7 @@ def diversify(df_sorted, limit=50):
 def get_recommendations(user_id: int):
     try:
         now = datetime.now()
-        df_posts, tfidf_matrix, user_item_matrix = get_cached_data()
+        df_posts, tfidf_matrix, user_item_matrix = get_data()
         if df_posts is None or df_posts.empty:
             return {"status": "success", "user_id": user_id, "recommended_post_ids": [], "algorithm": "none"}
 
@@ -331,7 +309,7 @@ def get_user_recommendations(user_id: int):
         conn = get_db_connection()
         followed = set(pd.read_sql("SELECT following_id FROM follows WHERE follower_id = %s", conn, params=(user_id,))['following_id'].tolist())
         exclude_ids = followed | {user_id}
-        df_users = pd.read_sql(f"SELECT id FROM users WHERE id NOT IN ({','.join(map(str, exclude_ids)) if exclude_ids else 0}) LIMIT 200", conn)
+        df_users = pd.read_sql(f"SELECT id FROM users WHERE id NOT IN ({','.join(map(str, exclude_ids)) if exclude_ids else 0}) AND status = 'show' LIMIT 200", conn)
         candidate_ids = df_users['id'].tolist()
         if not candidate_ids: return {"status": "success", "user_id": user_id, "recommended_user_ids": [], "algorithm": "none"}
         df_mutual = pd.read_sql("SELECT f2.following_id as id, COUNT(*) as cnt FROM follows f1 JOIN follows f2 ON f1.following_id = f2.follower_id WHERE f1.follower_id = %s GROUP BY f2.following_id", conn, params=(user_id,))

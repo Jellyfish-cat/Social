@@ -73,12 +73,7 @@ class ConversationController extends Controller
         $otherUser = User::with('profile')->findOrFail($id);
         return view('Message.empty_message', compact('otherUser'));
     }
-        Message::where('conversation_id', $conversation->id)
-        ->where('sender_id', $id)
-        ->whereNull('read_at')
-        ->update([
-            'read_at' => now()
-        ]);
+
 
 
     $userPivot = $conversation->users->firstWhere('id', $authId)?->pivot;
@@ -119,9 +114,11 @@ class ConversationController extends Controller
             });
 
         if ($role === 'user') {
+            // User thường chỉ nhắn được với user thường
             $query->where('users.role', 'user');
         } else {
-            $query->where('users.role', 'admin'); 
+            // Admin/Moderator có thể nhắn với tất cả staff (admin + moderator)
+            $query->whereIn('users.role', ['admin', 'moderator']);
         }
 
         return $query->with('profile')
@@ -134,7 +131,7 @@ class ConversationController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'user_ids' => 'required|array|min:2',
+            'user_ids' => 'required|array|min:2|max:98',
             'avatar' => 'nullable|image|max:2048',
             'dicebear_url' => 'nullable|string',
         ]);
@@ -143,6 +140,10 @@ class ConversationController extends Controller
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('group_avatars', 'public');
         } elseif ($request->dicebear_url) {
+            // Chống SSRF: Chỉ cho phép domain tin cậy
+            if (!str_contains($request->dicebear_url, 'api.dicebear.com')) {
+                return response()->json(['success' => false, 'error' => 'URL avatar không hợp lệ'], 422);
+            }
             try {
                 $response = Http::get($request->dicebear_url);
                 if ($response->successful()) {
@@ -160,7 +161,7 @@ class ConversationController extends Controller
             'name' => $request->name,
             'avatar' => $avatarPath,
             'status' => 'show',
-            'creator_id ' => auth()->id()
+            'creator_id' => auth()->id()
         ]);
 
         // Đảm bảo user tạo nhóm cũng nằm trong danh sách thành viên
@@ -174,7 +175,7 @@ class ConversationController extends Controller
             'type' => 'notification'
         ]);
 
-        // Broadcast notification to other members
+        // Broadcast thông báo đến các thành viên 
         foreach ($memberIds as $memberId) {
             if ($memberId !== auth()->id()) {
                 $chatData = [
@@ -211,19 +212,12 @@ class ConversationController extends Controller
             ->whereHas('users', fn($q) => $q->where('user_id', $authId))
             ->with(['users.profile'])
             ->findOrFail($id);
-
-        Message::where('conversation_id', $conversation->id)
-            ->where('sender_id', '!=', $authId)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-
         $userPivot = $conversation->users->firstWhere('id', $authId)?->pivot;
         $deletedAt = $userPivot ? $userPivot->deleted_at : null;
 
         $query = Message::where('conversation_id', $conversation->id)
             ->with(['sender.profile', 'media'])
             ->orderBy('created_at');
-
         if ($deletedAt) {
             $query->where('created_at', '>', $deletedAt);
         }
@@ -292,53 +286,35 @@ class ConversationController extends Controller
      */
     public function destroy($id)
     {
-        $conversation = Conversation::find($id);
+        $conversation = Conversation::findOrFail($id);
+
         if (auth()->user()->role !== 'admin' && !$conversation->users->contains('id', auth()->id())) {
             abort(403, 'Bạn không có quyền');
         }
-        if (!$conversation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy conversation'
-            ], 404);
-        }
 
-        // Tạo thông báo giải tán nhóm trước khi ẩn
-        if ($conversation->type === 'group') {
-            $notification = Message::create([
-                'conversation_id' => $conversation->id,
-                'sender_id' => null,
-                'content' => 'Trưởng nhóm đã giải tán nhóm trò chuyện này.',
-                'type' => 'notification'
-            ]);
-
-            // Broadcast tới các thành viên
-            foreach ($conversation->users as $member) {
-                if ($member->id !== auth()->id()) {
-                    $chatData = [
-                        'id'              => $notification->id,
-                        'content'         => $notification->content,
-                        'sender_id'       => null,
-                        'sender_name'     => 'Hệ thống',
-                        'is_group'        => true,
-                        'type'            => 'notification',
-                        'conversation_id' => $conversation->id,
-                        'group_name'      => $conversation->name,
-                        'group_avatar'    => $conversation->avatar,
-                        'receiver_id'     => $member->id,
-                        'created_at'      => $notification->created_at->format('H:i d/m'),
-                        'timestamp'       => $notification->created_at->timestamp,
-                        'media'           => [],
-                    ];
-                    broadcast(new \App\Events\MessageSent((object) $chatData))->toOthers();
+        // 1. Xóa toàn bộ file Media của các tin nhắn trong hội thoại
+        $messages = Message::where('conversation_id', $id)->with('media')->get();
+        foreach ($messages as $msg) {
+            foreach ($msg->media as $mm) {
+                if ($mm->file_path) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($mm->file_path);
                 }
             }
         }
-        $conversation->update(['status' => 'hidden']);
+
+        // 2. Ghi log hoạt động trước khi xóa
+        activity()
+            ->performedOn($conversation)
+            ->event('delete_conversation')
+            ->causedBy(auth()->user())
+            ->log("đã xóa vĩnh viễn hội thoại: " . ($conversation->name ?? "ID: $id"));
+
+        // 3. Xóa vĩnh viễn hội thoại
+        $conversation->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'Đã giải tán nhóm',
-            'data' => Conversation::latest()->get(),
+            'message' => 'Hội thoại đã được xóa vĩnh viễn',
             'count' => Conversation::count()
         ]);
     }
@@ -347,7 +323,7 @@ class ConversationController extends Controller
         $conversation = Conversation::whereHas('users', function ($q) {
             $q->where('user_id', auth()->id());
         })->with('users.profile')->findOrFail($id);
-        $creator=$conversation->creator_id ;
+        $creator=$conversation->creator_id;
         return response()->json([
             'success' => true,
             'creator' => $creator,
@@ -371,7 +347,7 @@ class ConversationController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'user_ids' => 'required|array|min:1',
+            'user_ids' => 'required|array|min:1|max:98',
             'avatar' => 'nullable|image|max:2048',
             'dicebear_url' => 'nullable|string',
         ]);
@@ -385,6 +361,10 @@ class ConversationController extends Controller
         if ($request->hasFile('avatar')) {
             $data['avatar'] = $request->file('avatar')->store('group_avatars', 'public');
         } elseif ($request->dicebear_url) {
+            // Chống SSRF: Chỉ cho phép domain tin cậy
+            if (!str_contains($request->dicebear_url, 'api.dicebear.com')) {
+                return response()->json(['success' => false, 'message' => 'URL avatar không hợp lệ'], 422);
+            }
             try {
                 $response = Http::get($request->dicebear_url);
                 if ($response->successful()) {
@@ -499,20 +479,20 @@ class ConversationController extends Controller
         ]);
 
         $newLeaderNoti = null;
-        if ($conversation->creator_id  == auth()->id()) {
+        if ($conversation->creator_id== auth()->id()) {
             $nextLeader = $conversation->users->where('id', '!=', auth()->id())->first();
             if ($nextLeader) {
-                $conversation->update(['creator_id ' => $nextLeader->id]);
+                $conversation->update(['creator_id' => $nextLeader->id]);
                 $newLeaderNoti = Message::create([
                     'conversation_id' => $conversation->id,
                     'sender_id' => null,
-                    'content' => ($nextLeader->profile->display_name ?? $nextLeader->name) . ' đã được chỉ định làm trưởng nhóm mới.',
+                    'content' => ($nextLeader?->profile?->display_name ?? $nextLeader?->name) . ' đã được chỉ định làm trưởng nhóm mới.',
                     'type' => 'notification'
                 ]);
             }
         }
 
-        // Broadcast to remaining members
+        $conversation->users()->detach(auth()->id());
         $allNotis = array_filter([$notification, $newLeaderNoti]);
         foreach ($allNotis as $noti) {
             foreach ($conversation->users as $member) {
@@ -537,7 +517,6 @@ class ConversationController extends Controller
             }
         }
 
-        $conversation->users()->detach(auth()->id());
 
         if ($conversation->users()->count() === 0) {
             $conversation->delete();

@@ -272,6 +272,12 @@ class ReportController extends Controller
         if ($target && $action !== 'dismiss') {
             $newStatus = ($action === 'hide') ? 'hidden' : 'show';
             $target->update(['status' => $newStatus]);
+
+            // Nếu đối tượng bị ẩn là NGƯỜI DÙNG, ẩn luôn toàn bộ bài viết và bình luận của họ
+            if ($action === 'hide' && $report->target_type === User::class) {
+                Post::where('user_id', $target->id)->update(['status' => 'hidden']);
+                Comment::where('user_id', $target->id)->update(['status' => 'hidden']);
+            }
         }
 
         // 2. Xác định chủ sở hữu

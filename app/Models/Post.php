@@ -96,5 +96,10 @@ class Post extends Model
             'created_at' => $this->created_at->timestamp,
         ];
     }
+
+    public function reports()
+    {
+        return $this->morphMany(Report::class, 'target');
+    }
 }
 

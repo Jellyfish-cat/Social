@@ -68,85 +68,110 @@ document.addEventListener("click", function (e) {
                 CommentCounts.forEach(el => {
                     el.innerText = data.comment_count + " Bình luận";
                 });
+
+                let button = '';
+                // data.role từ server báo biết user có quyền xóa (chủ comment hoặc admin)
+                if (data.role) {
+                    button = `
+                    <li>
+                        <a class="dropdown-item small btn-delete-comment"
+                        data-id="${data.comment_id}">
+                            Xóa
+                        </a>
+                    </li>
+                    `;
+                } else {
+                    button = `
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button class="dropdown-item small text-danger open-report require-login" data-type="comment" data-id="${data.comment_id}">Báo cáo</button></li>
+                    `;
+                }
+
                 let mediaHtml = "";
                 if (data.media_path) {
                     const url = `/storage/${data.media_path}`;
                     if (data.is_image) {
                         mediaHtml = `
-                                        <div class="mt-1 comment-media">
-                                            <a href="${url}" data-fancybox="gallery-${data.comment_id}">
-                                                <img src="${url}" width="100" class="rounded">
-                                            </a>
-                                        </div>
-                                    `;
+                        <div class="mt-1 comment-media">
+                            <a href="${url}" data-fancybox="gallery-${data.comment_id}">
+                                <img src="${url}" width="100" class="rounded">
+                            </a>
+                        </div>
+                        `;
                     }
                     else if (data.is_video) {
                         mediaHtml = `
-                                        <div class="mt-1 comment-media">
-                                            <a href="${url}" data-fancybox="gallery-${data.comment_id}" data-type="video">
-                                                <video width="260" controls class="rounded">
-                                                    <source src="${url}">
-                                                </video>
-                                            </a>
-                                        </div>
-                                    `;
-                    }
-                }
-                const commentHtml = `
-                        <div class="comment-item d-flex mt-2" data-comment-id="${data.comment_id}">
-                            <img src="${avatar}"
-                            class="rounded-circle me-2">
-                        <div class="w-100" style="min-width:0;">
-                        <div class="fw-bold small">
-                            ${data.user_name}
-                        </div>
-                        <div class="small ms-1 content">
-                            ${mentionify(data.content, data.user_is_owner)}
-                        </div>
-                        ${mediaHtml}
-                        <div class="d-flex align-items-center">
-                        <span class="text-muted me-3" style="font-size:13px;">
-                            ${data.created_at}
-                        </span>
-                        <button class="btn-reply-list me-3 like-comment-count" style="font-size:13px;"
-                            data-comment-id="${data.comment_id}"
-                            data-username="${data.user_name}"
-                            data-post-id="${postId}">
-                            ${data.like_count} lượt thích
-                        </button>
-                        <button class="btn-reply" style="font-size:13px;"
-                            data-comment-id="${data.comment_id}"
-                            data-username="${data.user_name}"
-                            data-post-id="${postId}">
-                            Trả lời
-                        </button>
-                        <div class="ms-auto d-flex" style="gap:2px;">
-                        <button type="button"
-                            class="btn-comment-like btn-sm p-0 text-muted small"
-                            data-comment-id="${data.comment_id}"
-                            data-username="${data.user_name}"
-                            data-post-id="${postId}">
-                            <i class="bi bi-heart action-icon fs-6 me-2"></i>
-                        </button>
-                        
-                            </div>
-                        </div>
-                        </div>
+                        <div class="mt-1 comment-media">
+                            <a href="${url}" data-fancybox="gallery-${data.comment_id}" data-type="video">
+                                <video width="260" controls class="rounded">
+                                    <source src="${url}">
+                                </video>
+                            </a>
                         </div>
                         `;
+                    }
+                }
+
+                const commentHtml = `
+                    <div class="comment-item d-flex mt-2" data-comment-id="${data.comment_id}">
+                        <img src="${avatar}" class="rounded-circle me-2">
+                        <div class="w-100" style="min-width:0;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold small">${data.user_name}</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-link btn-sm text-muted p-0 border-0 shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots cursor-pointer text-muted"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        ${button}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="small ms-1 content">
+                                ${mentionify(data.content, data.user_is_owner)}
+                            </div>
+                            ${mediaHtml}
+                            <div class="d-flex align-items-center">
+                                <span class="text-muted me-3" style="font-size:13px;">
+                                    ${data.created_at}
+                                </span>
+                                <button class="btn-reply-list me-3 like-comment-count" style="font-size:13px;"
+                                    data-comment-id="${data.comment_id}"
+                                    data-username="${data.user_name}"
+                                    data-post-id="${postId}">
+                                    ${data.like_count} lượt thích
+                                </button>
+                                <button class="btn-reply" style="font-size:13px;"
+                                    data-comment-id="${data.comment_id}"
+                                    data-username="${data.user_name}"
+                                    data-post-id="${postId}">
+                                    Trả lời
+                                </button>
+                                <div class="ms-auto d-flex" style="gap:2px;">
+                                    <button type="button"
+                                        class="btn-comment-like btn-sm p-0 text-muted small"
+                                        data-comment-id="${data.comment_id}"
+                                        data-username="${data.user_name}"
+                                        data-post-id="${postId}">
+                                        <i class="bi bi-heart action-icon fs-6 me-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
                 if (!parentId) {
-                    const commentBox = document.querySelector(
-                        `.comment-box[data-post-id="${postId}"]`
-                    );
-                    commentBox.insertAdjacentHTML("afterbegin", commentHtml);
+                    const commentBox = document.querySelector(`.comment-box[data-post-id="${postId}"]`);
+                    if (commentBox) {
+                        commentBox.insertAdjacentHTML("afterbegin", commentHtml);
+                    }
                 } else {
                     let replyList = document.querySelector(`#reply-${parentId}`);
                     if (replyList) {
                         replyList.classList.remove("d-none");
                     } else {
-                        const parentComment = document.querySelector(
-                            `.comment-item[data-comment-id="${parentId}"] .w-100`
-                        );
+                        const parentComment = document.querySelector(`.comment-item[data-comment-id="${parentId}"] .w-100`);
                         if (parentComment) {
                             parentComment.insertAdjacentHTML(
                                 "beforeend",
@@ -162,20 +187,21 @@ document.addEventListener("click", function (e) {
                         replyList.insertAdjacentHTML("afterbegin", commentHtml);
                     }
                     const replyBox = document.getElementById("reply-" + parentId);
-                    const btn = document.querySelector(`.view-replies`);
-                    btn.innerHTML = '&mdash;&ndash; Ẩn phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
-                    replyBox.appendChild(btn);
+                    const btn = document.querySelector(`.view-replies[data-comment-id="${parentId}"]`);
+                    if (btn && replyBox) {
+                        btn.innerHTML = '&mdash;&ndash; Ẩn phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
+                        replyBox.appendChild(btn);
+                    }
                 }
+
                 input.value = "";
                 input.style.height = "35px";
-                // reset preview đúng form
                 commentFile = null;
-                if (NoComent) {
+                if (typeof NoComent !== 'undefined' && NoComent) {
                     NoComent.classList.add('d-none');
                 }
-                // clear input file
-                fileInput.value = "";
-                // clear preview UI đúng form
+                const fileInput = form.querySelector('input[type="file"]');
+                if (fileInput) fileInput.value = "";
                 const previewContainer = form.querySelector('.preview-media');
                 if (previewContainer) {
                     previewContainer.innerHTML = '';
@@ -213,7 +239,6 @@ document.addEventListener("click", function (e) {
     if (!btn) return;
     const username = btn.dataset.username;
     const commentId = btn.dataset.commentId;
-    const parentId = btn.dataset.Parent_
     const postId = btn.dataset.postId;
     // Tìm container gần nhất: modal detail hoặc post card trên home
     const container = btn.closest('.post-modal, .card.post-card, #postDetailContent, #postDetailModal');
@@ -322,15 +347,15 @@ function renderCommentPreview() {
             mediaHtml = `<video src="${e.target.result}" width="80" controls></video>`;
         }
         previewContainer.innerHTML = `
-                <div class="position-relative">
-                    ${mediaHtml}
-                    <button type="button"
-                        onclick="deleteCommentMedia()"
-                        class="btn btn-sm btn-danger position-absolute top-0 end-0">
-                        <i class="bi bi-x"></i>
-                    </button>
+                    <div class="position-relative">
+                        ${mediaHtml}
+                <button type="button"
+                    onclick="deleteCommentMedia()"
+                    class="btn btn-sm btn-danger position-absolute top-0 end-0">
+                    <i class="bi bi-x"></i>
+                </button>
                 </div>
-            `;
+                    `;
     }
     reader.readAsDataURL(commentFile);
 }
@@ -345,18 +370,18 @@ window.previewCommentFiles = function (input) {
     reader.onload = function (e) {
         if (file.type.includes('image')) {
             previewContainer.innerHTML = `
-            <div class="position-relative">
-                <img src="${e.target.result}" width="150" class="rounded">
-                <button type="button"
-                    class="btn btn-sm position-absolute top-0 end-0 remove-single-media shadow remove-small"
-                    onclick="const form = this.closest('.comment-form'); if(form) form.querySelector('input[type=file]').value=''; this.parentElement.remove();">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-        `;
+                    <div class="position-relative">
+                        <img src="${e.target.result}" width="150" class="rounded">
+                            <button type="button"
+                                class="btn btn-sm position-absolute top-0 end-0 remove-single-media shadow remove-small"
+                                onclick="const form = this.closest('.comment-form'); if(form) form.querySelector('input[type=file]').value=''; this.parentElement.remove();">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                `;
         } else if (file.type.includes('video')) {
             previewContainer.innerHTML = `
-            <div class="position-relative">
+                    <div class="position-relative">
                 <video src="${e.target.result}" width="200" controls class="rounded"></video>
                <button type="button"
                     class="btn btn-sm position-absolute top-0 end-0 remove-single-media shadow remove-small"
@@ -364,7 +389,7 @@ window.previewCommentFiles = function (input) {
                     <i class="bi bi-x"></i>
                 </button>
             </div>
-        `;
+                    `;
         }
     }
     reader.readAsDataURL(file);
@@ -403,19 +428,25 @@ document.addEventListener("click", function (e) {
         .then((data) => {
             const row = btn.closest(".comment-item");
             if (row) {
-                // Hiệu ứng mượt
                 row.style.transition = "all 0.3s ease";
                 row.style.opacity = "0";
                 setTimeout(() => {
                     row.remove();
-                    document.querySelector(".comment-count").innerText =
-                        `Tổng bình luận: ${data.count}`;
-                    document.querySelector(".comment-post-count").innerText =
-                        `${data.count} bình luận`;
-                    updateSTT();
+
+                    // Cập nhật số lượng comment (Kiểm tra null an toàn)
+                    const totalCountLabel = document.querySelector(".comment-count-total");
+                    if (totalCountLabel) {
+                        totalCountLabel.innerText = `Tổng bình luận: ${data.count}`;
+                    }
+
+                    const postCountLabels = document.querySelectorAll(`.comment-post-count[data-post-id="${data.post_id || ''}"], .comment-count[data-post-id="${data.post_id || ''}"]`);
+                    postCountLabels.forEach(el => {
+                        el.innerText = `${data.count} bình luận`;
+                    });
+
+                    if (typeof updateSTT === "function") updateSTT();
                 }, 300);
             }
-            // Thông báo
             console.log(data.message || "Xóa thành công");
         })
         .catch((err) => {
@@ -446,8 +477,10 @@ document.addEventListener("click", function (e) {
     })
         .then(res => res.text())
         .then(html => {
-            document.getElementById("followDetailContent").innerHTML = html;
+            const contentEl = document.getElementById("followDetailContent");
+            if (contentEl) contentEl.innerHTML = html;
             const modalEl = document.getElementById("followDetailModal");
+            if (!modalEl) return;
             const modal = new bootstrap.Modal(modalEl);
             // 1. Lưu lại URL hiện tại (URL của profile) trước khi đổi
             const originalUrl = window.location.href;
@@ -464,4 +497,4 @@ document.addEventListener("click", function (e) {
         .finally(() => {
             finishLoading();
         });
-});;
+});

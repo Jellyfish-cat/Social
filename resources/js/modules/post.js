@@ -2,7 +2,7 @@ document.addEventListener("click", function (e) {
     if (window.Fancybox && Fancybox.getInstance()) return;
     const btn = e.target.closest(".open-post");
     if (!btn) return;
-    
+
     const postId = btn.dataset.id;
     // Mobile: Chuyển hướng trực tiếp thay vì mở Modal
     if (window.matchMedia("(max-width: 768px)").matches) {
@@ -114,32 +114,32 @@ document.addEventListener('click', function (e) {
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const row = btn.closest(".post-item");
-            if (row) {
-                // Hiệu ứng mượt
-                row.style.transition = "all 0.3s ease";
-                row.style.opacity = "0";
-                setTimeout(() => {
-                    row.remove();
-                    document.querySelector(".count-post").innerText = 
-                    `Tổng bài viết: ${data.count}`;
-                    updateSTT();
-                }, 300);
-            }
-            // Thông báo
-            console.log(data.message || "Xóa thành công");
-        }
-        })
-        .catch((err) => {
-            alert(err.message);
-        })
-        .finally(() => {
-            btn.disabled = false;
-            finishLoading(); 
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = btn.closest(".post-item");
+                    if (row) {
+                        // Hiệu ứng mượt
+                        row.style.transition = "all 0.3s ease";
+                        row.style.opacity = "0";
+                        setTimeout(() => {
+                            row.remove();
+                            document.querySelector(".count-post").innerText =
+                                `Tổng bài viết: ${data.count}`;
+                            updateSTT();
+                        }, 300);
+                    }
+                    // Thông báo
+                    console.log(data.message || "Xóa thành công");
+                }
+            })
+            .catch((err) => {
+                alert(err.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                finishLoading();
+            });
     }
 });
 

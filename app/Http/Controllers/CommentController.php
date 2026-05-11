@@ -62,32 +62,6 @@ class CommentController extends Controller
                         'status' => 'show'
                     ]);
 
-                    // Kiểm duyệt nội dung
-                    $moderation = $moderator->analyze($request->content);
-                    if ($moderation->is_toxic) {
-                        $comment->status = 'hidden';
-                        $comment->save();
-
-                        // Tạo báo cáo đã xử lý
-                        Report::create([
-                            'user_id' => Auth::id() ?? 1,
-                            'target_id' => $comment->id,
-                            'target_type' => Comment::class,
-                            'category' => 'Automated',
-                            'reason' => 'Hệ thống tự động ẩn: ' . $moderation->reason,
-                            'status' => 'resolved',
-                            'resolved_by' => Auth::id() ?? 1,
-                            'resolved_at' => now(),
-                        ]);
-                        
-                        // Nếu bị ẩn thì không gửi thông báo cho chủ bài viết
-                        DB::commit();
-                        return response()->json([
-                            'success' => true,
-                            'message' => 'Bình luận đã được gửi (đang chờ kiểm duyệt hoặc bị ẩn)',
-                            'status' => 'hidden'
-                        ]);
-                    }
 
                     $userId = auth()->id();
                     $userName = '<strong>' . ($user->profile->display_name ?? $user->name ?? 'Một người') . '</strong>';

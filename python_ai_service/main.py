@@ -131,15 +131,15 @@ def compute_content_score(df_posts, tfidf_matrix, df_interacted, now):
 def calculate_score(row, context):
     pid = int(row['id'])
     
-    # 1. LOGIC BÀI VIẾT CỦA CHÍNH MÌNH (Special Rule)
+    # 1. LOGIC BÀI VIẾT CỦA CHÍNH MÌNH 
     if row['user_id'] == context["user_id"]:
         # Tính thời gian từ lúc đăng (phút)
         age_min = (context["now"] - pd.to_datetime(row['created_at'])).total_seconds() / 60
-        if age_min < 5:
-            return 1000000 # Ưu tiên tuyệt đối bài vừa đăng trong 5 phút đầu
+        # Nếu chưa reload và bài mới đăng (< 10 phút) -> Hiện Top
+        if not context.get("is_reload", False) and age_min < 10:
+            return 10000000
         else:
-            return -999999 # Sau 5 phút ẩn hoàn toàn khỏi gợi ý AI
-
+            return -999999 
     # 2. LỌC BÀI ĐÃ TƯƠNG TÁC (Like, Comment, Favorite)
     if pid in context["interacted_ids"]:
         return -999999
@@ -148,8 +148,6 @@ def calculate_score(row, context):
     cold = 0
     if context["is_cold_start"]:
         cold += row['like_count'] * 10
-        if row['author_role'] in ['admin', 'moderator']:
-            cold += 2000
 
     # Collaborative Filtering score
     collab = context["cf_scores"].get(pid, 0)
@@ -206,7 +204,7 @@ def diversify(df_sorted, limit=50):
 # --- API ENDPOINTS ---
 
 @app.get("/api/recommendations", response_model=RecommendResponse)
-def get_recommendations(user_id: int):
+def get_recommendations(user_id: int, is_reload: bool = False):
     try:
         now = datetime.now()
         df_posts, tfidf_matrix, user_item_matrix = get_data()
@@ -247,7 +245,8 @@ def get_recommendations(user_id: int):
             "following": following_ids,
             "top_creators": top_creators,
             "reply_posts": reply_post_ids,
-            "now": now
+            "now": now,
+            "is_reload": is_reload
         }
 
         df_posts['score'] = df_posts.apply(lambda row: calculate_score(row, context), axis=1)
@@ -264,43 +263,95 @@ def get_recommendations(user_id: int):
         print(f"[AI ERROR] {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/rank_search_results", response_model=RankSearchResponse)
-def rank_search_results(req: RankSearchRequest):
+@app.post("/api/rank_search_suggestions", response_model=RankSearchResponse)
+def rank_search_suggestions(req: RankSearchRequest):
     try:
+        now = datetime.now()
         cand_user_ids = req.cand_user_ids
         cand_post_ids = req.cand_post_ids
         user_id = req.user_id
-        if user_id <= 0: return {"status": "success", "user_ids": cand_user_ids, "post_ids": cand_post_ids}
-        try:
-            conn = get_db_connection()
-            following = set(pd.read_sql("SELECT following_id FROM follows WHERE follower_id = %s", conn, params=(user_id,))['following_id'].astype(int).tolist())
-            interested_topics = set(pd.read_sql("SELECT pt.topic_id FROM like_posts lp JOIN post_topic pt ON lp.post_id = pt.post_id WHERE lp.user_id = %s", conn, params=(user_id,))['topic_id'].astype(int).tolist())
-            if cand_post_ids:
-                safe_pids = [int(p) for p in cand_post_ids]
-                query_posts = f"SELECT p.id, p.user_id, p.status, (SELECT GROUP_CONCAT(topic_id) FROM post_topic WHERE post_id = p.id) as topic_ids FROM posts p WHERE p.id IN ({','.join(map(str, safe_pids))}) AND p.status = 'show'"
-                posts_df = pd.read_sql(query_posts, conn)
-            else: posts_df = pd.DataFrame()
-            conn.close()
-        except Exception as e:
-            print(f"[DB ERROR in rank_search_results] {e}")
-            following, interested_topics, posts_df = set(), set(), pd.DataFrame()
-        ranked_users = sorted(cand_user_ids, key=lambda uid: uid in following, reverse=True)
-        ranked_posts = []
-        if not posts_df.empty:
-            post_info = posts_df.set_index('id').to_dict('index')
-            def score_post(pid):
-                if pid not in post_info: return -1
-                info = post_info[pid]
-                score = 0
-                if info['user_id'] in following: score += 100
-                post_tids = [int(t) for t in str(info['topic_ids']).split(',') if t and pd.notna(info['topic_ids'])]
-                if any(t in interested_topics for t in post_tids): score += 50
-                return score
-            valid_post_ids = [pid for pid in cand_post_ids if pid in post_info]
-            valid_post_ids.sort(key=score_post, reverse=True)
-            ranked_posts = valid_post_ids
+
+        if user_id <= 0:
+            return {"status": "success", "user_ids": cand_user_ids, "post_ids": cand_post_ids}
+
+        # --- 1. LẤY DỮ LIỆU NGỮ CẢNH (Y hệt Recommender) ---
+        conn = get_db_connection()
+        query_interacted = """
+            SELECT post_id, created_at FROM (
+                SELECT post_id, created_at FROM like_posts WHERE user_id = %s
+                UNION SELECT post_id, created_at FROM comments WHERE user_id = %s
+                UNION SELECT post_id, created_at FROM favorites WHERE user_id = %s
+            ) t ORDER BY created_at DESC
+        """
+        df_interacted = pd.read_sql(query_interacted, conn, params=(user_id, user_id, user_id))
+        interacted_ids = set(df_interacted['post_id'].astype(int).tolist())
+
+        all_topics = set(pd.read_sql("SELECT DISTINCT t.name FROM like_posts lp JOIN post_topic pt ON lp.post_id = pt.post_id JOIN topics t ON pt.topic_id = t.id WHERE lp.user_id = %s", conn, params=(user_id,))['name'].str.lower().tolist())
+        recent_topics = set(pd.read_sql("SELECT DISTINCT t.name FROM like_posts lp JOIN post_topic pt ON lp.post_id = pt.post_id JOIN topics t ON pt.topic_id = t.id WHERE lp.user_id = %s AND lp.created_at >= NOW() - INTERVAL 3 DAY", conn, params=(user_id,))['name'].str.lower().tolist())
+        following_ids = set(pd.read_sql("SELECT following_id FROM follows WHERE follower_id = %s", conn, params=(user_id,))['following_id'].astype(int).tolist())
+        top_creators = set(pd.read_sql("SELECT p.user_id FROM posts p JOIN like_posts lp ON p.id = lp.post_id GROUP BY p.user_id ORDER BY COUNT(*) DESC LIMIT 10", conn)['user_id'].astype(int).tolist())
+        reply_post_ids = set(pd.read_sql("SELECT DISTINCT c.post_id FROM comments c JOIN comments p ON c.parent_comment_id = p.id WHERE p.user_id = %s AND c.user_id != %s", conn, params=(user_id, user_id))['post_id'].astype(int).tolist())
+        
+        # Lấy thông tin Mutual Friends cho User Ranking
+        df_mutual = pd.read_sql("SELECT f2.following_id as id, COUNT(*) as cnt FROM follows f1 JOIN follows f2 ON f1.following_id = f2.follower_id WHERE f1.follower_id = %s GROUP BY f2.following_id", conn, params=(user_id,))
+        mutual_map = dict(zip(df_mutual['id'], df_mutual['cnt']))
+
+        # --- 2. LẤY DỮ LIỆU CHI TIẾT ỨNG VIÊN (Candidates) ---
+        df_posts, tfidf_matrix, user_item_matrix = get_data()
+        conn.close()
+
+        # --- 3. TÍNH TOÁN ĐIỂM SỐ (Scoring) ---
+        # A. Ranking Users
+        def score_user(uid):
+            score = 0
+            if uid in following_ids: score += 2000
+            score += mutual_map.get(uid, 0) * 150
+            return score + random.uniform(0, 20)
+        
+        ranked_users = sorted(cand_user_ids, key=score_user, reverse=True)
+
+        # B. Ranking Posts (Sử dụng calculate_score dùng chung)
+        if not cand_post_ids or df_posts is None:
+            return {"status": "success", "user_ids": ranked_users, "post_ids": cand_post_ids}
+
+        # Tính Content Score dựa trên TF-IDF cho các ứng viên tìm kiếm
+        cf_scores = compute_cf_scores(user_id, user_item_matrix, interacted_ids)
+        content_scores = compute_content_score(df_posts, tfidf_matrix, df_interacted, now)
+        df_posts['content_score'] = content_scores
+
+        context = {
+            "user_id": user_id,
+            "interacted_ids": interacted_ids,
+            "is_cold_start": not interacted_ids,
+            "cf_scores": cf_scores,
+            "recent_topics": recent_topics,
+            "all_topics": all_topics,
+            "following": following_ids,
+            "top_creators": top_creators,
+            "reply_posts": reply_post_ids,
+            "now": now,
+            "is_search_ranking": True # Flag để nhận biết đang rank search
+        }
+
+        # Chỉ lọc những bài nằm trong danh sách ứng viên từ Search
+        cand_set = set(map(int, cand_post_ids))
+        df_candidates = df_posts[df_posts['id'].isin(cand_set)].copy()
+        
+        if df_candidates.empty:
+            return {"status": "success", "user_ids": ranked_users, "post_ids": []}
+
+        df_candidates['score'] = df_candidates.apply(lambda row: calculate_score(row, context), axis=1)
+        ranked_posts = df_candidates.sort_values(by='score', ascending=False)['id'].tolist()
+
         return {"status": "success", "user_ids": ranked_users, "post_ids": ranked_posts}
-    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        print(f"[AI RANK SEARCH ERROR] {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/rank_search_results", response_model=RankSearchResponse)
+def rank_search_results(req: RankSearchRequest):
+    # Sử dụng chung logic cao cấp
+    return rank_search_suggestions(req)
 
 @app.get("/api/user_recommendations", response_model=UserRecommendResponse)
 def get_user_recommendations(user_id: int):
@@ -309,7 +360,7 @@ def get_user_recommendations(user_id: int):
         conn = get_db_connection()
         followed = set(pd.read_sql("SELECT following_id FROM follows WHERE follower_id = %s", conn, params=(user_id,))['following_id'].tolist())
         exclude_ids = followed | {user_id}
-        df_users = pd.read_sql(f"SELECT id FROM users WHERE id NOT IN ({','.join(map(str, exclude_ids)) if exclude_ids else 0}) AND status = 'show' LIMIT 200", conn)
+        df_users = pd.read_sql(f"SELECT id FROM users WHERE id NOT IN ({','.join(map(str, exclude_ids)) if exclude_ids else 0}) AND status = 'show' AND role = 'user' LIMIT 200", conn)
         candidate_ids = df_users['id'].tolist()
         if not candidate_ids: return {"status": "success", "user_id": user_id, "recommended_user_ids": [], "algorithm": "none"}
         df_mutual = pd.read_sql("SELECT f2.following_id as id, COUNT(*) as cnt FROM follows f1 JOIN follows f2 ON f1.following_id = f2.follower_id WHERE f1.follower_id = %s GROUP BY f2.following_id", conn, params=(user_id,))

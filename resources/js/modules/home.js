@@ -63,6 +63,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (window.Fancybox) {
         Fancybox.bind("[data-fancybox^='gallery-']", {
+            Hash: false,
+            autoFocus: false,
             Compact: false,
             Animated: true,
             Thumbs: { autoStart: true },

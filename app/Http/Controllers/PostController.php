@@ -53,27 +53,9 @@ class PostController extends Controller
                 $post->pinned = 0;
             }
 
-            // Kiểm duyệt nội dung
-            $moderation = $moderator->analyze($request->content);
-            if ($moderation->is_toxic) {
-                $post->status = 'hidden';
-            }
 
             $post->save();
 
-            // Nếu bị ẩn, tạo báo cáo đã xử lý
-            if ($moderation->is_toxic) {
-                Report::create([
-                    'user_id' => Auth::id() ?? 1,
-                    'target_id' => $post->id,
-                    'target_type' => Post::class,
-                    'category' => 'Automated',
-                    'reason' => 'Hệ thống tự động ẩn: ' . $moderation->reason,
-                    'status' => 'resolved',
-                    'resolved_by' => Auth::id() ?? 1,
-                    'resolved_at' => now(),
-                ]);
-            }
 
             $topicIds = $request->topic_ids ? explode(',', $request->topic_ids) : [];
             $newTopics = $request->new_topics ? explode(',', $request->new_topics) : [];
@@ -114,11 +96,7 @@ class PostController extends Controller
 
             DB::commit();
 
-            if (Auth::user()->role == 'admin') {
-                return redirect()->route('home')->with('success', 'Đăng bài thành công!');
-            }
-
-            return view('2_back');
+            return redirect()->route('home')->with('success', 'Đăng bài thành công!')->with('just_posted', true);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -186,30 +164,6 @@ class PostController extends Controller
         $post->content = $request->content;
         $post->is_comment_enabled = $request->has('is_comment_enabled');
 
-        // Kiểm duyệt nội dung khi cập nhật
-        $moderation = $moderator->analyze($request->content);
-        if ($moderation->is_toxic) {
-            $post->status = 'hidden';
-            
-            // Tạo báo cáo nếu chưa có báo cáo tự động cho bài này hoặc cập nhật lý do
-            Report::updateOrCreate(
-                [
-                    'target_id' => $post->id,
-                    'target_type' => Post::class,
-                    'category' => 'Automated'
-                ],
-                [
-                    'user_id' => Auth::id() ?? 1,
-                    'reason' => 'Hệ thống tự động ẩn (Cập nhật): ' . $moderation->reason,
-                    'status' => 'resolved',
-                    'resolved_by' => Auth::id() ?? 1,
-                    'resolved_at' => now(),
-                ]
-            );
-        } else {
-            // Nếu nội dung đã sạch, có thể khôi phục về show (tùy chọn)
-            $post->status = 'show';
-        }
 
         $topicIds = array_filter(explode(',', $request->topic_ids ?? ''));
         foreach (array_filter(explode(',', $request->new_topics ?? '')) as $name) {

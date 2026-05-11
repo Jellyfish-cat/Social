@@ -217,7 +217,7 @@ document.addEventListener('submit', function (e) {
                 const oldPost = document.querySelector(`.post-item[data-id="${postId}"]`);
                 if (oldPost) {
                     oldPost.outerHTML = data.html;
-                    
+
                     // 2. Sau khi thay thế HTML, lấy lại element mới để re-init các tính năng
                     const newPost = document.querySelector(`.post-item[data-id="${postId}"]`);
                     if (newPost) {
@@ -288,6 +288,8 @@ function reinitPostFeatures(postEl) {
     // 3. Re-bind Fancybox (Fancybox sẽ tự động nhận diện selector nên chỉ cần gọi bind lại nếu cần)
     if (window.Fancybox) {
         Fancybox.bind("[data-fancybox^='gallery-']", {
+            Hash: false,
+            autoFocus: false,
             Compact: false,
             Animated: true,
             Thumbs: { autoStart: true },

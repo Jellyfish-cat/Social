@@ -10,6 +10,7 @@ use App\Models\Comment;
 use App\Models\Message;
 use App\Models\Conversation;
 use App\Models\Report;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 
 class SearchHistoryController extends Controller
@@ -94,20 +95,35 @@ class SearchHistoryController extends Controller
                 return view('admin.searchs', compact('searchHistorys'));
             }
             if (str_contains($referer, '/admin/reports')) {
-                $tab = str_contains($referer, 'resolved') ? 'resolved' : 'pending';
-                $status = ($tab === 'resolved') ? Report::STATUS_RESOLVED : Report::STATUS_PENDING;
-                
-                $values = Report::where('status', $status)
-                    ->where(fn($sub) => $sub->where('reason', 'LIKE', "%$keyword%")->orWhere('category', 'LIKE', "%$keyword%"))
+                $values = Report::where(function($q) use ($keyword) {
+                        $q->where('reason', 'LIKE', "%$keyword%")
+                          ->orWhere('category', 'LIKE', "%$keyword%")
+                          ->orWhereHasMorph('target', [\App\Models\Post::class, \App\Models\Comment::class, \App\Models\Message::class], function($m) use ($keyword) {
+                              $m->where('content', 'LIKE', "%$keyword%");
+                          })
+                          ->orWhereHasMorph('target', [\App\Models\User::class], function($m) use ($keyword) {
+                              $m->where('name', 'LIKE', "%$keyword%");
+                          });
+                    })
                     ->with(['user.profile', 'target'])
                     ->orderBy('created_at', 'desc')
                     ->paginate(10);
                 
-                $type = 'post'; // Mặc định context search là post hoặc có thể detect thêm
+                $tab = 'pending'; 
+                $type = 'post';    
                 $item = 'report-item';
                 $delete = 'btn-delete-report';
 
                 return view('admin.report', compact('values', 'tab', 'type', 'item', 'delete'));
+            }
+            if (str_contains($referer, '/admin/logs')) {
+                $logs = ActivityLog::where('event', 'LIKE', "%$keyword%")
+                    ->orWhere('subject_type', 'LIKE', "%$keyword%")
+                    ->orWhere('properties', 'LIKE', "%$keyword%")
+                    ->with('user.profile')
+                    ->latest()
+                    ->paginate(20);
+                return view('admin.logs', compact('logs'));
             }
 
             // Ghi log hoạt động tìm kiếm của Admin/Moderator
@@ -130,28 +146,27 @@ class SearchHistoryController extends Controller
             $posts = Post::search($keyword)->where('status', 'show')->get();
             $posts->load(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics']);
 
-            // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
-            try {
-                $aiResponse = \Illuminate\Support\Facades\Http::timeout(2)->get('http://127.0.0.1:8001/api/recommendations', [
-                    'user_id' => $user ? $user->id : 0
-                ]);
+            // 2. TÍCH HỢP AI RANKING (Sắp xếp lại kết quả tìm được)
+            if ($user && $posts->isNotEmpty()) {
+                try {
+                    $candPostIds = $posts->pluck('id')->toArray();
+                    $aiResponse = \Illuminate\Support\Facades\Http::timeout(3)->post('http://127.0.0.1:8001/api/rank_search_results', [
+                        'user_id' => $user->id,
+                        'cand_user_ids' => [],
+                        'cand_post_ids' => $candPostIds
+                    ]);
 
-                if ($aiResponse->successful()) {
-                    $aiData = $aiResponse->json();
-                    $recommendedIds = $aiData['recommended_post_ids'] ?? [];
-                    
-                    if (!empty($recommendedIds)) {
-                        $aiPosts = Post::whereIn('id', $recommendedIds)
-                            ->where('status', 'show')
-                            ->whereNotIn('id', $posts->pluck('id')->toArray())
-                            ->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
-                            ->limit(5)
-                            ->get();
-                        $posts = $posts->concat($aiPosts);
+                    if ($aiResponse->successful()) {
+                        $aiData = $aiResponse->json();
+                        $rankedIds = $aiData['post_ids'] ?? [];
+                        if (!empty($rankedIds)) {
+                            // Sắp xếp lại Collection $posts theo thứ tự IDs mà AI trả về
+                            $posts = $posts->sortBy(fn($post) => array_search($post->id, $rankedIds))->values();
+                        }
                     }
+                } catch (\Exception $e) {
+                    // Nếu AI lỗi, giữ nguyên thứ tự mặc định của Meilisearch
                 }
-            } catch (\Exception $e) {
-
             }
       
         $checktopic = false;
@@ -168,31 +183,24 @@ class SearchHistoryController extends Controller
             $posts = Post::search($keyword)->where('status', 'show')->get();
             $posts->load(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics']);
 
-            // 2. TÍCH HỢP PYTHON AI RECOMMENDER (Trộn thêm bài liên quan)
-            try {
-                $aiResponse = \Illuminate\Support\Facades\Http::timeout(2)->get('http://127.0.0.1:8001/api/recommendations', [
-                    'user_id' => $user ? $user->id : 0
-                ]);
+            // 2. TÍCH HỢP AI RANKING CHO TAB POST
+            if ($user && $posts->isNotEmpty()) {
+                try {
+                    $candPostIds = $posts->pluck('id')->toArray();
+                    $aiResponse = \Illuminate\Support\Facades\Http::timeout(3)->post('http://127.0.0.1:8001/api/rank_search_results', [
+                        'user_id' => $user->id,
+                        'cand_user_ids' => [],
+                        'cand_post_ids' => $candPostIds
+                    ]);
 
-                if ($aiResponse->successful()) {
-                    $aiData = $aiResponse->json();
-                    $recommendedIds = $aiData['recommended_post_ids'] ?? [];
-                    
-                    if (!empty($recommendedIds)) {
-                        // Lấy các bài AI gợi ý nhưng chưa có trong danh sách tìm kiếm
-                        $aiPosts = Post::whereIn('id', $recommendedIds)
-                            ->where('status', 'show')
-                            ->whereNotIn('id', $posts->pluck('id')->toArray())
-                            ->with(['user.profile', 'media', 'likes', 'comments', 'favorites', 'topics'])
-                            ->limit(5) // Chỉ lấy thêm 5 bài gợi ý để tránh loãng kết quả tìm kiếm
-                            ->get();
-                        
-                        // Trộn thêm vào cuối danh sách bài viết
-                        $posts = $posts->concat($aiPosts);
+                    if ($aiResponse->successful()) {
+                        $aiData = $aiResponse->json();
+                        $rankedIds = $aiData['post_ids'] ?? [];
+                        if (!empty($rankedIds)) {
+                            $posts = $posts->sortBy(fn($post) => array_search($post->id, $rankedIds))->values();
+                        }
                     }
-                }
-            } catch (\Exception $e) {
-                // Nếu AI lỗi, giữ nguyên kết quả tìm kiếm SQL
+                } catch (\Exception $e) { }
             }
 
             $checktopic = false;
@@ -207,17 +215,25 @@ class SearchHistoryController extends Controller
             $users = $users->filter(fn($u) => $u->role === 'user' && $u->status === 'show');
             $users->load(['profile', 'followers']);
 
-            // 3. RANKING: Xếp hạng các kết quả tìm được
-            $users = $users->sort(function($a, $b) use ($followingIds) {
-                // Ưu tiên 1: Người đang follow
-                $aFollowed = in_array($a->id, $followingIds);
-                $bFollowed = in_array($b->id, $followingIds);
-                if ($aFollowed && !$bFollowed) return -1;
-                if (!$aFollowed && $bFollowed) return 1;
+            // 3. TÍCH HỢP AI RANKING CHO TAB PEOPLE
+            if ($user && $users->isNotEmpty()) {
+                try {
+                    $candUserIds = $users->pluck('id')->toArray();
+                    $aiResponse = \Illuminate\Support\Facades\Http::timeout(3)->post('http://127.0.0.1:8001/api/rank_search_results', [
+                        'user_id' => $user->id,
+                        'cand_user_ids' => $candUserIds,
+                        'cand_post_ids' => []
+                    ]);
 
-                // Ưu tiên 2: Người có nhiều follower hơn
-                return $b->followers->count() <=> $a->followers->count();
-            })->values();
+                    if ($aiResponse->successful()) {
+                        $aiData = $aiResponse->json();
+                        $rankedIds = $aiData['user_ids'] ?? [];
+                        if (!empty($rankedIds)) {
+                            $users = $users->sortBy(fn($u) => array_search($u->id, $rankedIds))->values();
+                        }
+                    }
+                } catch (\Exception $e) { }
+            }
 
             return view('search.partials.people-list', compact('users'));
         }
@@ -230,7 +246,7 @@ class SearchHistoryController extends Controller
     {
         $q = trim($request->q);
         $user = auth()->user();
-        $referer = $request->headers->get('referer');
+        $referer = $request->headers->get('referer') ?? '';
 
         // === XỬ LÝ GỢI Ý CHO ADMIN THEO NGỮ CẢNH TRANG QUẢN LÝ ===
         if ($user && ($user->role === 'admin' || $user->role === 'moderator') && $q) {
@@ -272,11 +288,28 @@ class SearchHistoryController extends Controller
                 return response()->json(['admin_history' => SearchHistory::where('keyword', 'LIKE', "%$q%")->with('user.profile')->limit(10)->get()]);
             }
             elseif (str_contains($referer, '/admin/reports')) {
-                $status = str_contains($referer, 'resolved') ? Report::STATUS_RESOLVED : Report::STATUS_PENDING;
-                return response()->json(['reports' => Report::where('status', $status)
-                    ->where(fn($sub) => $sub->where('reason', 'LIKE', "%$q%")->orWhere('category', 'LIKE', "%$q%"))
+                return response()->json(['reports' => Report::where(function($query) use ($q) {
+                        $query->where('reason', 'LIKE', "%$q%")
+                          ->orWhere('category', 'LIKE', "%$q%")
+                          ->orWhereHas('user', fn($u) => $u->where('name', 'LIKE', "%$q%"))
+                          ->orWhereHas('user.profile', fn($u) => $u->where('display_name', 'LIKE', "%$q%"));
+                    })
+                    ->with(['user.profile', 'target'])
                     ->limit(10)->get()]);
             }
+            elseif (str_contains($referer, '/admin/logs')) {
+                return response()->json(['logs' => ActivityLog::where('event', 'LIKE', "%$q%")
+                    ->orWhere('subject_type', 'LIKE', "%$q%")
+                    ->orWhere('properties', 'LIKE', "%$q%")
+                    ->with('user.profile')
+                    ->limit(10)->get()]);
+            }
+
+            // Fallback cho admin nếu không khớp referer nào
+            return response()->json([
+                'topics' => Topic::where('name', 'LIKE', "%$q%")->limit(5)->get(),
+                'users' => User::where('name', 'LIKE', "%$q%")->limit(5)->get()
+            ]);
         }
         else {
             $topics = collect();
@@ -314,7 +347,7 @@ class SearchHistoryController extends Controller
             // 2. Nếu là User thường -> Thử gọi AI để sắp xếp (Ranking) lại kết quả
             if ($user && $user->role === 'user') {
                 try {
-                    $response = \Illuminate\Support\Facades\Http::timeout(3)->post('http://127.0.0.1:8001/api/rank_search_results', [
+                    $response = \Illuminate\Support\Facades\Http::timeout(3)->post('http://127.0.0.1:8001/api/rank_search_suggestions', [
                         'user_id' => $user->id,
                         'cand_user_ids' => $candUserIds,
                         'cand_post_ids' => $candPostIds

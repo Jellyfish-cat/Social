@@ -8,9 +8,15 @@ use App\Models\User;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
+        // Logic ẩn bài sau 1 lần xem: 
+     
+        $isReload = true;
+        if (session('just_posted')) {
+            $isReload = false;
+        }
         
         // 1. Khai báo mặc định cho Guest
         $followingIds = [];
@@ -20,8 +26,10 @@ class HomeController extends Controller
             // 2. Lấy danh sách ID người đang theo dõi
             $followingIds = $user->following()->pluck('users.id')->toArray();
 
-            // 3. Lấy danh sách ID các topic mà user đã quan tâm (Like)
+            // 3. Lấy danh sách ID các topic mà user đã quan tâm (Like) - Giới hạn 50 tương tác gần nhất để bảo vệ hiệu năng
             $interestedTopicIds = \App\Models\LikePost::where('user_id', $user->id)
+                ->latest()
+                ->take(50)
                 ->with(['post.topics'])
                 ->get()
                 ->flatMap(function ($like) {
@@ -39,7 +47,8 @@ class HomeController extends Controller
             // 1. TÍCH HỢP PYTHON AI RECOMMENDER SERVICE
             try {
                 $aiResponse = \Illuminate\Support\Facades\Http::timeout(2)->get('http://127.0.0.1:8001/api/recommendations', [
-                    'user_id' => $user ? $user->id : 0
+                    'user_id' => $user ? $user->id : 0,
+                    'is_reload' => $isReload
                 ]);
 
                 if ($aiResponse->successful() && isset($aiResponse->json()['recommended_post_ids'])) {
@@ -70,8 +79,14 @@ class HomeController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->limit(200) // Lấy pool 200 bài viết mới nhất để xếp hạng
                     ->get()
-                    ->map(function ($post) use ($followingIds, $interestedTopicIds) {
+                    ->map(function ($post) use ($followingIds, $interestedTopicIds, $user, $isReload) {
                         $score = 0;
+
+                        // Logic bài viết của chính mình (Fallback)
+                        if ($user && $post->user_id == $user->id) {
+                            if (!$isReload) return 10000000;
+                            return -999999;
+                        }
 
                         if (in_array($post->user_id, $followingIds)) {
                             $score += 100;

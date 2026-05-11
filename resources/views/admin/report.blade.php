@@ -24,9 +24,7 @@
                 </ul>
             </div>
             <div class="card shadow-sm" id="report-results-container" data-tab={{$tab}}>
-            <!-- Tab Bài Viết (POSTS) -->
                 @include('admin.partials.report-list')
-                <!-- Tab Mọi Người (PEOPLE) (Preview Skeleton) -->
                 </div>
 </div>
 <style>

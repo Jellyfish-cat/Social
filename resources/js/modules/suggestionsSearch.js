@@ -110,8 +110,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const hasConversations = data.conversations && data.conversations.length > 0;
         const hasReports = data.reports && data.reports.length > 0;
         const hasAdminHistory = data.admin_history && data.admin_history.length > 0;
+        const hasLogs = data.logs && data.logs.length > 0;
 
-        if (!hasHistory && !hasTopics && !hasUsers && !hasPosts && !hasComments && !hasMessages && !hasConversations && !hasReports && !hasAdminHistory) {
+        if (!hasHistory && !hasTopics && !hasUsers && !hasPosts && !hasComments && !hasMessages && !hasConversations && !hasReports && !hasAdminHistory && !hasLogs) {
             suggestionsContainer.innerHTML = `
                 <div class="list-group-item text-center text-muted border-0">
                     Không có gợi ý nào.
@@ -192,10 +193,24 @@ document.addEventListener("DOMContentLoaded", function () {
         // thêm reports
         if (hasReports) {
             data.reports.forEach(r => {
+                const uName = r.user?.profile?.display_name || r.user?.name || "Ẩn danh";
+                const reasonSnippet = r.reason ? r.reason.substring(0, 30) + "..." : "";
                 suggestions.push({
                     type: 'report',
-                    text: `Báo cáo [${r.category}]: ${r.reason.substring(0, 30)}...`,
-                    action: `selectSearchItem(null, '${r.reason.replace(/'/g, "\\'")}')`
+                    text: `Báo cáo bởi [${uName}]: ${reasonSnippet}`,
+                    action: `selectSearchItem(null, '${(r.reason || r.category).replace(/'/g, "\\'")}')`
+                });
+            });
+        }
+
+        // thêm logs
+        if (data.logs && data.logs.length > 0) {
+            data.logs.forEach(l => {
+                const uName = l.user?.profile?.display_name || l.user?.name || "Hệ thống";
+                suggestions.push({
+                    type: 'history',
+                    text: `Nhật ký [${l.event}]: bởi ${uName}`,
+                    action: `selectSearchItem(null, '${l.event.replace(/'/g, "\\'")}')`
                 });
             });
         }

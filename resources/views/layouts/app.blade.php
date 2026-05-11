@@ -18,7 +18,7 @@
         #loginModal {
             z-index: 1075 !important;
         }
-        #followDetailModal, #reportModal, #sharePostModal {
+        #followDetailModal, #reportModal, #sharePostModal, .fancybox__container {
             z-index: 1065 !important;
         }
 

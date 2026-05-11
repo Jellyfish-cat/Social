@@ -29,7 +29,7 @@ document.addEventListener("click", function (e) {
             });
             const followingcount = document.querySelectorAll(`.following-count[data-authid="${authid}"]`);
             followingcount.forEach(el => {
-                el.innerText = data.follower_count +  " người theo dõi";
+                el.innerText = data.follower_count + " người theo dõi";
             });
             if (btn.classList.contains("btn-primary")) {
                 btn.classList.replace("btn-primary", "btn-light");

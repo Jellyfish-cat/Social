@@ -80,7 +80,7 @@ function loadReportTab(type) {
     `;
 
     if (typeof startLoading === 'function') startLoading();
-    
+
     // Luôn ưu tiên lấy status từ dropdown nếu có
     const statusFilter = document.getElementById("filter-status");
     if (statusFilter) tab = statusFilter.value;
@@ -163,6 +163,8 @@ function loadReportPage(type, page) {
             if (typeof finishLoading === 'function') finishLoading();
         });
 }
+
+
 
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.btn-delete-report');

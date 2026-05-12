@@ -134,7 +134,7 @@ class PostController extends Controller
         $post = Post::with('media', 'topics')->findOrFail($id);
 
         // Check quyền sở hữu hoặc Staff
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
+        if (!in_array(auth()->user()->role, ['admin', 'moderator']) && auth()->id() !== $post->user_id) {
             abort(403, 'Bạn không có quyền');
         }
         if (request()->ajax()) {
@@ -149,7 +149,7 @@ class PostController extends Controller
         $post = Post::findOrFail($id);
 
         // Check quyền sở hữu hoặc Staff
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $post->user_id) {
+        if (!in_array(auth()->user()->role, ['admin', 'moderator']) && auth()->id() !== $post->user_id) {
             abort(403, 'Bạn không có quyền');
         }
 

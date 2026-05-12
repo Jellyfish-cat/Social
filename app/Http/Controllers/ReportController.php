@@ -289,7 +289,9 @@ class ReportController extends Controller
                 'resolved_by' => auth()->id(),
                 'resolved_at' => now(),
             ]);
-
+                if ( $report->target_type === Post::class) {
+                Comment::where('user_id', $target->id)->update(['status' => 'hidden']);
+            }
             if ($owner) {
                 $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
                 $typeLabel = 'nội dung';
@@ -319,6 +321,12 @@ class ReportController extends Controller
                     } catch (\Exception $e) {
                         \Log::error("Lỗi gửi mail khóa tài khoản: " . $e->getMessage());
                     }
+                    $notif = \App\Models\Notification::create([
+                        'user_id' => $owner->id,
+                        'content' => "Chào <strong>{$displayName}</strong>, tài khoản của bạn đã bị khóa. {$email}",
+                        'type' => 'account_locked'
+                    ]);
+                    broadcast(new \App\Events\NotificationSent($notif));
                 }
 
 
@@ -338,7 +346,13 @@ class ReportController extends Controller
                 'resolved_by' => auth()->id(),
                 'resolved_at' => now(),
             ]);
-
+             if ($report->target_type === User::class) {
+                Post::where('user_id', $target->id)->update(['status' => 'show']);
+                Comment::where('user_id', $target->id)->update(['status' => 'show']);
+            }
+             if ( $report->target_type === Post::class) {
+                Comment::where('user_id', $target->id)->update(['status' => 'show']);
+            }
             if ($owner) {
                 $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
                 $typeLabelMap = [

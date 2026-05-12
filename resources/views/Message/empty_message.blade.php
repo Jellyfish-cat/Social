@@ -15,10 +15,12 @@
         </div>
 
         {{-- Button --}}
+        @if(isset($otherUser) && !in_array($otherUser->role, ['admin', 'moderator']))
         <a href="{{ route('profile.detail', $otherUser->id ?? '') }}" 
         class="btn btn-light rounded-pill px-3">
             Xem trang cá nhân
         </a>
+        @endif
     <div class="text-muted mt-4">
         Hãy bắt đầu cuộc trò chuyện 👋
     </div>

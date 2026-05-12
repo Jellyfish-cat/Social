@@ -14,10 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\ActivityLogBatch::class,
+            \App\Http\Middleware\CheckProfileSetup::class,
         ]);
+
         $middleware->alias([
             'checkRole'   => \App\Http\Middleware\CheckRole::class,
             'checkStatus' => \App\Http\Middleware\CheckUserStatus::class,
+            'CheckProfileSetup' => \App\Http\Middleware\CheckProfileSetup::class,
+        ]);
+        $middleware->validateCsrfTokens(except: [
+            'logout',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

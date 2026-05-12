@@ -29,14 +29,12 @@ class GoogleController extends Controller
                 $user = User::where('email', $googleUser->getEmail())->first();
 
                 if ($user) {
-                    // Nếu mail đã tồn tại, cập nhật google_id và xác minh email luôn
                     $user->update([
                         'google_id' => $googleUser->getId(),
                         'email_verified_at' => $user->email_verified_at ?? now(),
                     ]);
                 } else {
-                    // 3. Nếu mail cũng chưa có, tạo User mới và mặc định đã xác minh
-                    // Chuyển tên Google thành username không dấu cách
+                    // 3. Tạo User mới
                     $username = Str::slug($googleUser->getName(), '_');
                     if (User::where('name', $username)->exists()) {
                         $username = $username . '_' . Str::random(4);
@@ -51,13 +49,11 @@ class GoogleController extends Controller
                         'email_verified_at' => now(),
                     ]);
 
-                    // Tạo Profile mới
+                    // QUAN TRỌNG: Để trống display_name để Middleware có thể chặn lại
                     $user->profile()->create([
-                        'display_name' => $googleUser->getName() ?? $username,
+                        'display_name' => '', 
                     ]);
                 }
-            } elseif ($user->email_verified_at == null) {
-                $user->update(['email_verified_at' => now()]);
             }
 
             Auth::login($user);
@@ -66,8 +62,7 @@ class GoogleController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Google Login Error: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
-            return redirect()->route('login')->withErrors(['email' => 'Có lỗi xảy ra: ' . $e->getMessage()]);
+            return redirect()->route('login')->withErrors(['email' => 'Có lỗi xảy ra']);
         }
     }
 }

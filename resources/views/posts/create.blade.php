@@ -34,8 +34,8 @@
                 </div>
                 <div class="info-column">
                     <div class="user-header d-flex align-items-center">
-                        <img src="{{ Auth::user()->profile->avatar ? asset('storage/'.Auth::user()->profile->avatar) : 'https://i.pravatar.cc/150' }}" class="user-avatar border me-3">
-                        <span class="fw-bold text-dark small">{{ Auth::user()->profile->display_name ?? Auth::user()->email }}</span>
+                        <img src="{{ asset('storage/' . (Auth::user()->profile?->avatar ?? 'default-avatar.png')) }}" class="user-avatar border me-3">
+                        <span class="fw-bold text-dark small">{{ Auth::user()->profile?->display_name ?? Auth::user()->email }}</span>
                     </div>
                     <div class="content-area-wrapper">
                         <textarea name="content" placeholder="Bạn đang nghĩ gì..." required>{{ old('content') }}</textarea>

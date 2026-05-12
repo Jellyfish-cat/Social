@@ -20,11 +20,12 @@
         </div>
 
         {{-- Button --}}
+        @if(isset($otherUser) && !in_array($otherUser->role, ['admin', 'moderator']))
         <a href="{{ route('profile.detail', $otherUser->id) }}" 
         class="btn btn-light rounded-pill px-3">
             Xem trang cá nhân
         </a>
-
+        @endif
     </div>
     @else
      <div class="msg-header d-flex flex-column align-items-center  py-4 border-bottom">

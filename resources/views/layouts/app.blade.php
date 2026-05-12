@@ -271,7 +271,7 @@
                 <li>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button class="dropdown-item text-danger">Đăng xuất</button>
+                        <button type="submit" class="dropdown-item text-danger">Đăng xuất</button>
                     </form>
                 </li>
             </ul>

@@ -36,7 +36,7 @@ Route::get('/lang/{locale}', function ($locale) {
     Session::put('locale', $locale);
     return redirect()->back();
 })->name('lang.switch');
-
+Route::middleware(['CheckProfileSetup'])->group(function () {
 /*
 |--------------------------------------------------------------------------
 | Public/Guest & Auth Routes (View only)
@@ -202,3 +202,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+});

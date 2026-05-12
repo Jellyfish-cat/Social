@@ -93,7 +93,7 @@ class TopicController extends Controller
     public function destroy(Request $request, $id)
     {
         $topic = Topic::find($id);
-        if (auth()->user()->role !== 'admin' ){
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Bạn không có quyền');
         }
         if (!$topic) {

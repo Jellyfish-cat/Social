@@ -424,7 +424,7 @@ class SearchHistoryController extends Controller
     public function destroy($id)
     {
         $searchHistory = SearchHistory::find($id);
-        if (auth()->user()->role !== 'admin' && auth()->id() !== $searchHistory->user_id) {
+        if (!in_array(auth()->user()->role, ['admin', 'moderator']) && auth()->id() !== $searchHistory->user_id) {
             abort(403, 'Bạn không có quyền');
         }
         if (!$searchHistory) {

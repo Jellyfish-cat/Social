@@ -1,6 +1,6 @@
 let selectedFiles = [];
 //xóa media trong create
-window.deleteCreateMedia = function(index) {
+window.deleteCreateMedia = function (index) {
     if (!confirm('Bạn có chắc muốn xóa tệp này?')) return;
     //xóa khỏi danh sách file
     selectedFiles.splice(index, 1);
@@ -8,13 +8,13 @@ window.deleteCreateMedia = function(index) {
     renderCreatePreview();
 }
 //render preview (tách riêng để tái sử dụng)
-function renderCreatePreview(){
+function renderCreatePreview() {
     const previewContainer = document.getElementById('preview-container');
     const indicatorsContainer = document.getElementById('carousel-indicators');
     const prevBtn = document.querySelector('.carousel-control-prev');
     const nextBtn = document.querySelector('.carousel-control-next');
-    previewContainer.innerHTML='';
-    indicatorsContainer.innerHTML='';
+    previewContainer.innerHTML = '';
+    indicatorsContainer.innerHTML = '';
     if (selectedFiles.length === 0) {
         previewContainer.innerHTML = `
         <div class="carousel-item active">
@@ -27,40 +27,40 @@ function renderCreatePreview(){
         nextBtn.classList.add('d-none');
         return;
     }
-    selectedFiles.forEach((file,index)=>{
+    selectedFiles.forEach((file, index) => {
         const reader = new FileReader();
-        reader.onload=function(e){
+        reader.onload = function (e) {
             const div = document.createElement('div');
-            div.className=`carousel-item ${index===0?'active':''}`;
-            div.id=`media-item-${index}`;
-            let mediaHtml='';
-            if(file.type.includes('image')){
-                mediaHtml=`<img src="${e.target.result}" class="d-block w-100">`;
+            div.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+            div.id = `media-item-${index}`;
+            let mediaHtml = '';
+            if (file.type.includes('image')) {
+                mediaHtml = `<img src="${e.target.result}" class="d-block w-100">`;
             }
-            else if(file.type.includes('video')){
-                mediaHtml=`<video src="${e.target.result}" controls class="d-block w-100"></video>`;
+            else if (file.type.includes('video')) {
+                mediaHtml = `<video src="${e.target.result}" controls class="d-block w-100"></video>`;
             }
-            div.innerHTML=`
+            div.innerHTML = `
             ${mediaHtml}
             <button 
                 type="button"
                 onclick="deleteCreateMedia(${index})"
                 class="remove-single-media shadow">
-                <i class="bi bi-trash3-fill"></i>
+                <i class="bi bi-trash-fill"></i>
             </button>
             `;
             previewContainer.appendChild(div);
-            const indicator=document.createElement('button');
-            indicator.type='button';
-            indicator.dataset.bsTarget='#instaCarousel';
-            indicator.dataset.bsSlideTo=index;
-            indicator.style.cssText="width:6px;height:6px;border-radius:50%;";
-            if(index===0) indicator.className='active';
+            const indicator = document.createElement('button');
+            indicator.type = 'button';
+            indicator.dataset.bsTarget = '#instaCarousel';
+            indicator.dataset.bsSlideTo = index;
+            indicator.style.cssText = "width:6px;height:6px;border-radius:50%;";
+            if (index === 0) indicator.className = 'active';
             indicatorsContainer.appendChild(indicator);
-            if(selectedFiles.length>1){
+            if (selectedFiles.length > 1) {
                 prevBtn.classList.remove('d-none');
                 nextBtn.classList.remove('d-none');
-            }else{
+            } else {
                 prevBtn.classList.add('d-none');
                 nextBtn.classList.add('d-none');
             }
@@ -69,11 +69,11 @@ function renderCreatePreview(){
     })
 }
 //xem trước ảnh create
-window.previewCreateFiles = function() {
+window.previewCreateFiles = function () {
     const fileInput = document.getElementById('file');
     const files = fileInput.files;
     //thêm ảnh mới vào danh sách
-    Array.from(files).forEach(file=>{
+    Array.from(files).forEach(file => {
         selectedFiles.push(file);
     });
     renderCreatePreview();
@@ -82,22 +82,16 @@ window.previewCreateFiles = function() {
 //đưa lại file vào input trước khi submit form
 
 const form = document.getElementById("postForm");
-if (form) { // <--- Thêm dòng check này
-    form.addEventListener("submit", function(e){
-
+if (form) {
+    form.addEventListener("submit", function (e) {
         const fileInput = document.getElementById("file");
-
-        if(selectedFiles.length === 0){
+        if (selectedFiles.length === 0) {
             return;
         }
-
         const dt = new DataTransfer();
-
-        selectedFiles.forEach(file=>{
+        selectedFiles.forEach(file => {
             dt.items.add(file);
         });
-
         fileInput.files = dt.files;
-
     });
 }

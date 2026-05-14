@@ -20,10 +20,8 @@ class GoogleController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
-            
             // 1. Tìm user theo google_id
             $user = User::where('google_id', $googleUser->getId())->first();
-
             if (!$user) {
                 // 2. Nếu chưa có google_id, tìm theo Email
                 $user = User::where('email', $googleUser->getEmail())->first();

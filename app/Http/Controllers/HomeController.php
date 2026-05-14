@@ -127,34 +127,36 @@ class HomeController extends Controller
         }
 
         // 3. Gợi ý người dùng (Sử dụng Python AI Recommender)
+        $suggestedUsers = collect();
+        $aiUserSuccess = false;
+
         try {
             $aiResponse = \Illuminate\Support\Facades\Http::timeout(3)->get('http://127.0.0.1:8001/api/user_recommendations', [
                 'user_id' => $user ? $user->id : 0
             ]);
 
-            if ($aiResponse->successful()) {
-                $aiData = $aiResponse->json();
-                $recommendedUserIds = $aiData['recommended_user_ids'] ?? [];
+            if ($aiResponse->successful() && isset($aiResponse->json()['recommended_user_ids'])) {
+                $recommendedUserIds = $aiResponse->json()['recommended_user_ids'];
                 
                 if (!empty($recommendedUserIds)) {
+                    $idStr = implode(',', $recommendedUserIds);
                     $suggestedUsers = User::whereIn('id', $recommendedUserIds)
                         ->where('status', 'show')
                         ->with('profile')
-                        ->get()
-                        ->sortBy(function($u) use ($recommendedUserIds) {
-                            return array_search($u->id, $recommendedUserIds);
-                        })->values();
-                } else {
-                    $suggestedUsers = User::where('id', '!=', $user ? $user->id : 0)
-                        ->where('role', 'user')
-                        ->where('status', 'show')
-                        ->with('profile')
-                        ->limit(8)->get();
+                        ->orderByRaw("FIELD(id, {$idStr})")
+                        ->get();
+                    
+                    if ($suggestedUsers->isNotEmpty()) {
+                        $aiUserSuccess = true;
+                    }
                 }
-            } else {
-                throw new \Exception("AI Service Error");
             }
         } catch (\Exception $e) {
+            // Ignore lỗi kết nối AI để chạy fallback bên dưới
+        }
+
+        // FALLBACK: NẾU AI SERVER CHẾT HOẶC KHÔNG CÓ KẾT QUẢ -> CHẠY THỦ CÔNG
+        if (!$aiUserSuccess) {
             $suggestedUsers = User::where('id', '!=', $user ? $user->id : 0)
                 ->where('role', 'user')
                 ->where('status', 'show')

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
 use App\Events\NotificationSent;
 use Illuminate\Support\Facades\Mail;
+use App\Jobs\ProcessReportAction;
 
 class ReportController extends Controller
 {
@@ -266,112 +267,28 @@ class ReportController extends Controller
 
         $relatedReports = Report::where('target_id', $report->target_id)
             ->where('target_type', $report->target_type);
-        $target = $report->target;
 
-        // 1. Cập nhật trạng thái của đối tượng bị báo cáo (Nếu không phải là bỏ qua)
+        // 1. Cập nhật trạng thái báo cáo và đối tượng chính NGAY LẬP TỨC
+        $statusMap = [
+            'hide' => 'resolved',
+            'restore' => 'dismissed',
+            'dismiss' => 'dismissed'
+        ];
+
+        $relatedReports->update([
+            'status' => $statusMap[$action],
+            'resolved_by' => auth()->id(),
+            'resolved_at' => now(),
+        ]);
+
+        $target = $report->target;
         if ($target && $action !== 'dismiss') {
             $newStatus = ($action === 'hide') ? 'hidden' : 'show';
             $target->update(['status' => $newStatus]);
-
-            // Nếu đối tượng bị ẩn là NGƯỜI DÙNG, ẩn luôn toàn bộ bài viết và bình luận của họ
-            if ($action === 'hide' && $report->target_type === User::class) {
-                Post::where('user_id', $target->id)->update(['status' => 'hidden']);
-                Comment::where('user_id', $target->id)->update(['status' => 'hidden']);
-            }
         }
 
-        // 2. Xác định chủ sở hữu
-        $owner = ($report->target_type === User::class) ? $target : ($target->user ?? null);
-
-        if ($action === 'hide') {
-            $relatedReports->update([
-                'status' => 'resolved',
-                'resolved_by' => auth()->id(),
-                'resolved_at' => now(),
-            ]);
-                if ( $report->target_type === Post::class) {
-                Comment::where('user_id', $target->id)->update(['status' => 'hidden']);
-            }
-            if ($owner) {
-                $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
-                $typeLabel = 'nội dung';
-                $preview = '';
-                $email = '';
-                
-                if ($report->target_type === Post::class) {
-                    $typeLabel = 'bài viết';
-                    $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
-                } elseif ($report->target_type === Comment::class) {
-                    $typeLabel = 'bình luận';
-                    $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
-                } elseif ($report->target_type === Message::class) {
-                    $typeLabel = 'tin nhắn';
-                    $preview = ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"';
-                } elseif ($report->target_type === User::class) {
-                    $typeLabel = 'tài khoản';
-                    $email = 'chúng tôi đã gửi mail cho bạn, hãy kiểm tra email để biết thêm chi tiết';
-
-                    // Gửi mail nếu là tài khoản bị khóa
-                    try {
-                        Mail::raw("Chào {$displayName},\n\nTài khoản của bạn đã bị khóa do vi phạm các tiêu chuẩn cộng đồng của chúng tôi.\n\nNếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng phản hồi lại email này để được hỗ trợ giải quyết.\n\nTrân trọng,\nĐội ngũ Admin.", function ($message) use ($owner) {
-                            $message->to($owner->email)
-                                    ->subject('Thông báo khóa tài khoản')
-                                    ->replyTo(config('mail.from.address'), config('app.name'));
-                        });
-                    } catch (\Exception $e) {
-                        \Log::error("Lỗi gửi mail khóa tài khoản: " . $e->getMessage());
-                    }
-                    $notif = \App\Models\Notification::create([
-                        'user_id' => $owner->id,
-                        'content' => "Chào <strong>{$displayName}</strong>, tài khoản của bạn đã bị khóa. {$email}",
-                        'type' => 'account_locked'
-                    ]);
-                    broadcast(new \App\Events\NotificationSent($notif));
-                }
-
-
-            }
-        } elseif ($action === 'dismiss') {
-            $relatedReports->update([
-                'status' => 'dismissed',
-                'resolved_by' => auth()->id(),
-                'resolved_at' => now(),
-            ]);
-        } elseif ($action === 'restore') {
-            if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
-                abort(403, 'Bạn không có quyền');
-            }
-            $relatedReports->update([
-                'status' => 'dismissed',
-                'resolved_by' => auth()->id(),
-                'resolved_at' => now(),
-            ]);
-             if ($report->target_type === User::class) {
-                Post::where('user_id', $target->id)->update(['status' => 'show']);
-                Comment::where('user_id', $target->id)->update(['status' => 'show']);
-            }
-             if ( $report->target_type === Post::class) {
-                Comment::where('user_id', $target->id)->update(['status' => 'show']);
-            }
-            if ($owner) {
-                $displayName = $owner->profile->display_name ?? $owner->name ?? 'Bạn';
-                $typeLabelMap = [
-                    User::class => 'tài khoản',
-                    Post::class => 'bài viết',
-                    Comment::class => 'bình luận',
-                    Message::class => 'tin nhắn'
-                ];
-                $typeLabel = $typeLabelMap[$report->target_type] ?? 'nội dung';
-                $preview = ($report->target_type !== User::class) ? ' có nội dung: "' . \Illuminate\Support\Str::limit($target->content, 40) . '"' : '';
-
-                $notif = Notification::create([
-                    'user_id' => $owner->id,
-                    'content' => "Chào <strong>{$displayName}</strong>, {$typeLabel} của bạn{$preview} đã được khôi phục.",
-                    'type' => 'system'
-                ]);
-                broadcast(new NotificationSent($notif))->toOthers();
-            }
-        }
+        // 2. Đẩy các xử lý nặng (ẩn hàng loạt bài viết con, gửi mail, thông báo) vào Queue
+        ProcessReportAction::dispatch($action, $report->target_type, $report->target_id, $report->id, auth()->id());
 
         $reportlist = Report::selectRaw('
                 target_type, 

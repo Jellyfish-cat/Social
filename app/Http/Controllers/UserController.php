@@ -11,6 +11,7 @@ use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use App\Jobs\ProcessReportAction;
 
 class UserController extends Controller
 {
@@ -141,45 +142,9 @@ class UserController extends Controller
         $user->status = $newStatus;
         $user->save();
 
-        if ($newStatus === 'hidden') {
-            Post::where('user_id', $user->id)->update(['status' => 'hidden']);
-            Comment::where('user_id', $user->id)->update(['status' => 'hidden']);
-            
-            Report::create([
-                'user_id' => auth()->id(),
-                'target_id' => $user->id,
-                'target_type' => User::class,
-                'category' => 'admin',
-                'reason' => 'Admin khóa tài khoản người dùng',
-                'status' => 'resolved',
-                'resolved_by' => auth()->id(),
-                'resolved_at' => now(),
-            ]);
-
-            // Gửi mail thông báo
-            try {
-                $displayName = $user->profile->display_name ?? $user->name;
-                Mail::raw("Chào {$displayName},\n\nTài khoản của bạn đã bị khóa do vi phạm các tiêu chuẩn cộng đồng của chúng tôi.\n\nNếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng phản hồi lại email này để được hỗ trợ giải quyết.\n\nTrân trọng,\nĐội ngũ Admin.", function ($message) use ($user) {
-                    $message->to($user->email)
-                            ->subject('Thông báo khóa tài khoản')
-                            ->replyTo(config('mail.from.address'), config('app.name'));
-                });
-            } catch (\Exception $e) {
-                \Log::error("Lỗi gửi mail khóa tài khoản: " . $e->getMessage());
-            }
-        } else {
-            Post::where('user_id', $user->id)
-                ->whereDoesntHave('reports', function($q) {
-                    $q->where('status', 'resolved');
-                })
-                ->update(['status' => 'show']);
-
-            Comment::where('user_id', $user->id)
-                ->whereDoesntHave('reports', function($q) {
-                    $q->where('status', 'resolved');
-                })
-                ->update(['status' => 'show']);
-        }
+        // Đẩy toàn bộ xử lý nặng (ẩn bài viết, bình luận, gửi mail, log báo cáo) vào Queue
+        $action = ($type === 'hide') ? 'hide' : 'restore';
+        ProcessReportAction::dispatch($action, User::class, $user->id, null, auth()->id());
 
         return response()->json([
             'success' => true,

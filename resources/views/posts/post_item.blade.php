@@ -1,4 +1,4 @@
-<div class="card post-card shadow-none post-item" data-id="{{ $post->id }}">
+<div class="card post-card shadow-none posts-item" data-id="{{ $post->id }}">
     <div class="p-3 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-2">
             <a href="{{ $post->user ? route('profile.detail', $post->user->id) : '#' }}" >
@@ -36,7 +36,7 @@
                     @if(Auth::check() && (($post->user?->id) === Auth::id() || auth()->user()->role === 'admin'))
                     <li><a class="dropdown-item small btn-edit-post" href="javascript:void(0)" data-id="{{ $post->id }}">Chỉnh sửa</a></li>
                     <li>
-                        <a class="dropdown-item small btn-delete" data-id="{{ $post->id }}">
+                        <a class="dropdown-item small btn-delete" data-target="posts" data-id="{{ $post->id }}">
                             Xóa
                     </a>
                     </li>
@@ -121,7 +121,7 @@
                     data-post-id="{{ $post->id }}">
                 {{ number_format($post->likes?->count() ?? 0) }} lượt thích
         </button>
-            <div class="fw-bold small comment-count" data-post-id="{{ $post->id }}">
+            <div class="fw-bold small count-comments" data-post-id="{{ $post->id }}">
                 {{ number_format($post->comments->count() ?? 0) }} bình luận
             </div>
         </div>

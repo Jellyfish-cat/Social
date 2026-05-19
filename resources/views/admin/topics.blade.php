@@ -16,7 +16,7 @@
         <!-- Card header -->
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Quản lý chủ đề</h5>
-             <span class="badge bg-white text-primary count-topic">Tổng: {{ $topics->total() }}</span>
+             <span class="badge bg-white text-primary count-topics">Tổng: {{ $topics->total() }}</span>
 
         </div>
         <!-- Card body -->
@@ -43,7 +43,7 @@
                     </td>
                 </tr>
             @forelse($topics as $topic)
-                <tr>
+            <tr class="topics-item">
                     <td class="text-center stt">
                         {{ $loop->iteration }}
                     </td>
@@ -57,7 +57,8 @@
                            <i class="bi bi-pencil"></i>
                         </a>
                         <form class="d-inline">
-                            <button class="btn btn-danger btn-sm btn-delete-topic" data-id={{$topic->id}}>
+                            <button class="btn btn-danger btn-sm btn-delete" 
+                            data-target='topics' data-id={{$topic->id}}>
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>

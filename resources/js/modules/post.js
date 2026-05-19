@@ -42,7 +42,7 @@ document.addEventListener("click", function (e) {
             }, { once: true });
             modalEl.addEventListener('shown.bs.modal', function () {
                 if (scrollCommentId) {
-                    const commentEl = document.querySelector(`.comment-item[data-comment-id="${scrollCommentId}"]`);
+                    const commentEl = document.querySelector(`.comments-item[data-comment-id="${scrollCommentId}"]`);
                     if (commentEl) {
                         const parentReplyList = commentEl.closest('.reply-list');
                         if (parentReplyList && parentReplyList.classList.contains('d-none')) {
@@ -95,51 +95,6 @@ window.addEventListener('popstate', function (event) {
         if (modal && modalEl.classList.contains('show')) {
             modal.hide();
         }
-    }
-});
-document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.btn-delete');
-    if (btn) {
-        e.preventDefault();
-        e.stopPropagation();
-        const postId = btn.dataset.id;
-        if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
-            return;
-        }
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(`/posts/destroy/${postId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const row = btn.closest(".post-item");
-                    if (row) {
-                        // Hiệu ứng mượt
-                        row.style.transition = "all 0.3s ease";
-                        row.style.opacity = "0";
-                        setTimeout(() => {
-                            row.remove();
-                            document.querySelector(".count-post").innerText =
-                                `Tổng bài viết: ${data.count}`;
-                            updateSTT();
-                        }, 300);
-                    }
-                    // Thông báo
-                    console.log(data.message || "Xóa thành công");
-                }
-            })
-            .catch((err) => {
-                alert(err.message);
-            })
-            .finally(() => {
-                btn.disabled = false;
-                finishLoading();
-            });
     }
 });
 

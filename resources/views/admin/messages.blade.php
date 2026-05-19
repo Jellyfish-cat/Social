@@ -9,7 +9,7 @@
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             Danh sách tin nhắn
-             <span class="badge bg-white text-primary count-message">Tổng: {{ $messages->total() }}</span>
+             <span class="badge bg-white text-primary count-messages">Tổng: {{ $messages->total() }}</span>
 
         </div>
         <div class="card-body p-0">
@@ -29,7 +29,7 @@
                     </thead>
                     <tbody>
                     @forelse($messages as $value)
-                    <tr class="message-item">
+                    <tr class="messages-item">
                         <td class="text-center">
                             {{ $loop->iteration }}
                         </td>
@@ -103,7 +103,8 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-danger btn-sm btn-delete-message" data-id="{{ $value->id }}" title="Xóa vĩnh viễn">
+                            <button class="btn btn-danger btn-sm btn-delete" 
+                            data-target='messages' data-id="{{ $value->id }}" title="Xóa vĩnh viễn">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>

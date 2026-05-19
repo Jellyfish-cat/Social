@@ -26,8 +26,8 @@ class ReportController extends Controller
         }
         $targetType = 'App\Models\Post';
         $type = 'post';
-        $item = 'report-item';
-        $delete = 'btn-delete-report';
+        $item = 'reports-item';
+        $delete = 'btn-delete';
 
         // Default to post reports for the initial page load
         if ($tab === 'pending') {
@@ -60,20 +60,15 @@ class ReportController extends Controller
                 ->paginate(10);
 
             $itemMap = [
-                'post' => 'post-item report-item',
-                'people' => 'user-item report-item',
-                'comment' => 'comment-item report-item',
-                'message' => 'message-item report-item'
-            ];
-            $deleteMap = [
-                'post' => 'btn-delete',
-                'people' => 'btn-delete-user',
-                'comment' => 'btn-delete-comment',
-                'message' => 'btn-delete-message'
+                'post' => 'posts-item reports-item',
+                'people' => 'user-item reports-item',
+                'comment' => 'comments-item reports-item',
+                'message' => 'message-item reports-item'
             ];
 
-            $item = $itemMap[$type] ?? 'post-item';
-            $delete = $deleteMap[$type] ?? 'btn-delete';
+
+            $item = $itemMap[$type] ?? 'posts-item';
+            $delete ='btn-delete';
         }
         
         $type = 'post';
@@ -98,8 +93,8 @@ class ReportController extends Controller
             'message' => 'App\Models\Message',
         ];
         $targetType = $targetTypeMap[$type] ?? 'App\Models\Post';
-        $item='report-item';
-        $delete='btn-delete-report';
+        $item='reports-item';
+        $delete='btn-delete';
         if ($tab === 'pending') {
             $values = Report::selectRaw('target_type, target_id, count(id) as total_reports, max(created_at) as last_reported_at, max(category) as category, max(reason) as reason, max(id) as id, max(status) as status')
                 ->where('target_type', $targetType)
@@ -129,21 +124,15 @@ class ReportController extends Controller
                 ->paginate(10);
                 
             $itemMap = [
-                'post' => 'post-item report-item',
-                'people' => 'user-item report-item',
-                'comment' => 'comment-item report-item',
-                'message' => 'message-item report-item'
+                'post' => 'posts-item reports-item',
+                'people' => 'user-item reports-item',
+                'comment' => 'comments-item reports-item',
+                'message' => 'message-item reports-item'
             ];
-            $deleteMap = [
-                'post' => 'btn-delete',
-                'people' => 'btn-delete-user',
-                'comment' => 'btn-delete-comment',
-                'message' => 'btn-delete-message'
-            ];
-            $item = $itemMap[$type] ?? 'post-item';
-            $delete = $deleteMap[$type] ?? 'btn-delete';
-        }
 
+            $item = $itemMap[$type] ?? 'posts-item';
+        }
+        $delete = 'btn-delete';
         return view('admin.partials.report-list', compact('values', 'type','tab','item','delete'));
     }
 
@@ -237,7 +226,6 @@ class ReportController extends Controller
         if (auth()->user()->role !== 'admin' && auth()->id() !== $report->user_id) {
             abort(403, 'Bạn không có quyền');
         }   
-
         $report->delete();
         $reportlist = Report::where('status','pending')->latest()->get();
         return response()->json([

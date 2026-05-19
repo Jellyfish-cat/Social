@@ -74,7 +74,7 @@ document.addEventListener("click", function (e) {
                 if (data.role) {
                     button = `
                     <li>
-                        <a class="dropdown-item small btn-delete-comment"
+                        <a class="dropdown-item small btn-delete" data-target="comments"
                         data-id="${data.comment_id}">
                             Xóa
                         </a>
@@ -113,7 +113,7 @@ document.addEventListener("click", function (e) {
                 }
 
                 const commentHtml = `
-                    <div class="comment-item d-flex mt-2" data-comment-id="${data.comment_id}">
+                    <div class="comments-item d-flex mt-2" data-comment-id="${data.comment_id}">
                         <img src="${avatar}" class="rounded-circle me-2">
                         <div class="w-100" style="min-width:0;">
                             <div class="d-flex justify-content-between align-items-center">
@@ -171,7 +171,7 @@ document.addEventListener("click", function (e) {
                     if (replyList) {
                         replyList.classList.remove("d-none");
                     } else {
-                        const parentComment = document.querySelector(`.comment-item[data-comment-id="${parentId}"] .w-100`);
+                        const parentComment = document.querySelector(`.comments-item[data-comment-id="${parentId}"] .w-100`);
                         if (parentComment) {
                             parentComment.insertAdjacentHTML(
                                 "beforeend",
@@ -267,10 +267,10 @@ document.addEventListener("click", function (e) {
     const replyBox = document.getElementById("reply-" + id);
     replyBox.classList.toggle("d-none");
     if (replyBox.classList.contains("d-none")) {
-        const count = replyBox.querySelectorAll(".comment-item").length;
+        const count = replyBox.querySelectorAll(".comments-item").length;
         btn.innerHTML = '&mdash;&ndash; Xem ' + count + ' phản hồi <i class="bi bi-caret-down-fill ms-1"></i>';
         replyBox.before(btn);
-        btn.closest(".comment-item").scrollIntoView({
+        btn.closest(".comments-item").scrollIntoView({
             behavior: "smooth",
             block: "start"
         });
@@ -394,71 +394,6 @@ window.previewCommentFiles = function (input) {
     }
     reader.readAsDataURL(file);
 }
-document.addEventListener("click", function (e) {
-    const btn = e.target.closest(".btn-delete-comment");
-    if (!btn) return;
-    const id = btn.dataset.id;
-    if (!id) {
-        console.error("Không có ID để xóa");
-        return;
-    }
-    if (!confirm("Bạn có chắc muốn xóa không?")) return;
-    // Disable nút để tránh spam click
-    btn.disabled = true;
-    startLoading();
-    fetch(`/comments/destroy/${id}`, {
-        method: "DELETE",
-        headers: {
-            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-            "Accept": "application/json"
-        }
-    })
-        .then(async (res) => {
-            let data = {};
-            try {
-                data = await res.json();
-            } catch (e) {
-                console.warn("Response không phải JSON");
-            }
-            if (!res.ok || !data.success) {
-                throw new Error(data.message || "Xóa thất bại");
-            }
-            return data;
-        })
-        .then((data) => {
-            const row = btn.closest(".comment-item");
-            if (row) {
-                row.style.transition = "all 0.3s ease";
-                row.style.opacity = "0";
-                setTimeout(() => {
-                    row.remove();
-
-                    // Cập nhật số lượng comment (Kiểm tra null an toàn)
-                    const totalCountLabel = document.querySelector(".comment-count-total");
-                    if (totalCountLabel) {
-                        totalCountLabel.innerText = `Tổng bình luận: ${data.count}`;
-                    }
-
-                    const postCountLabels = document.querySelectorAll(`.comment-post-count[data-post-id="${data.post_id || ''}"], .comment-count[data-post-id="${data.post_id || ''}"]`);
-                    postCountLabels.forEach(el => {
-                        el.innerText = `${data.count} bình luận`;
-                    });
-
-                    if (typeof updateSTT === "function") updateSTT();
-                }, 300);
-            }
-            console.log(data.message || "Xóa thành công");
-        })
-        .catch((err) => {
-            alert(err.message);
-        })
-        .finally(() => {
-            btn.disabled = false;
-            finishLoading();
-        });
-});
-
-
 document.addEventListener("click", function (e) {
     if (window.Fancybox && Fancybox.getInstance()) return;
     const btn = e.target.closest(".open-like-comment");

@@ -13,7 +13,7 @@
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             Danh sách người dùng
-            <span class="badge bg-white text-primary count-user">Tổng: {{ $users->total() }}</span>
+            <span class="badge bg-white text-primary count-users">Tổng: {{ $users->total() }}</span>
 
         </div>
         <div class="card-body p-0">
@@ -35,7 +35,7 @@
                     </thead>
                     <tbody id="user-body">
                     @forelse($users as $value)
-                    <tr class="user-item">
+                    <tr class="users-item">
                         <td class="text-center">
                             {{ $loop->iteration }}
                         </td>
@@ -97,16 +97,19 @@
                             <a class="mt-1 btn btn-warning btn-sm" href="{{ route('profile.edit', $value->id ?? '') }}" title="Chỉnh sửa">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a class="mt-1 btn btn-danger btn-sm btn-delete-user" data-id="{{ $value->id }}" data-type="destroy" title="Xóa vĩnh viễn">
+                            <a class="mt-1 btn btn-danger btn-sm btn-delete" data-target="users"
+                             data-id="{{ $value->id }}" title="Xóa vĩnh viễn">
                                 <i class="bi bi-trash"></i>
                             </a>
                             <span class="btn-hide-container">
                                 @if($value->status === 'show')
-                                    <a class="mt-1 btn btn-secondary btn-sm btn-hide-user" data-id="{{ $value->id }}" data-type="hide" title="Khóa tài khoản">
+                                    <a class="mt-1 btn btn-secondary btn-sm btn-hide-user" 
+                                    data-id="{{ $value->id }}" data-type="hide" title="Khóa tài khoản">
                                         <i class="bi bi-eye-slash"></i>
                                     </a>
                                 @else
-                                    <a class="mt-1 btn btn-success btn-sm btn-hide-user" data-id="{{ $value->id }}" data-type="show" title="Hiển thị tài khoản">
+                                    <a class="mt-1 btn btn-success btn-sm btn-hide-user" 
+                                    data-id="{{ $value->id }}" data-type="show" title="Hiển thị tài khoản">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 @endif

@@ -165,54 +165,6 @@ function loadReportPage(type, page) {
 }
 
 
-
-document.addEventListener('click', function (e) {
-    const btn = e.target.closest('.btn-delete-report');
-    if (btn) {
-        e.stopPropagation();
-        e.preventDefault();
-        const postId = btn.dataset.id;
-        if (!confirm('Xóa bài viết này sẽ xóa toàn bộ ảnh/video liên quan. Bạn chắc chứ?')) {
-            return;
-        }
-
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(`/reports/destroy/${postId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const row = btn.closest(".report-item");
-                    if (row) {
-                        // Hiệu ứng mượt
-                        row.style.transition = "all 0.3s ease";
-                        row.style.opacity = "0";
-                        setTimeout(() => {
-                            row.remove();
-                            document.querySelector(".count-report").innerText =
-                                `Tổng: ${data.count}`;
-                            updateSTT();
-                        }, 300);
-                    }
-                    // Thông báo
-                    console.log(data.message || "Xóa thành công");
-                }
-            })
-            .catch((err) => {
-                alert(err.message);
-            })
-            .finally(() => {
-                btn.disabled = false;
-                finishLoading();
-            });
-    }
-});
-
 document.addEventListener('click', function (e) {
     const btn = e.target.closest('.btn-check-report');
     if (btn) {

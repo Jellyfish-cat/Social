@@ -41,8 +41,8 @@
                                class="btn btn-info btn-sm" href = "/search?q={{$value->keyword}}">
                                 <i class="bi bi-eye"></i>
                             </a>
-                                  <a  class="btn btn-danger btn-sm btn-delete-search"
-                                data-id="{{ $value->id }}">
+                                  <a  class="btn btn-danger btn-sm btn-delete"
+                                data-target="search" data-id="{{ $value->id }}">
                                     <i class="bi bi-trash"></i></a>
                         </td>
                     </tr>

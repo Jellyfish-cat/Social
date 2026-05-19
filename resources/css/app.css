@@ -497,11 +497,11 @@ body {
     overflow-y: auto;
 }
 
-.comment-item {
+.comments-item {
     margin-bottom: 14px;
 }
 
-.comment-item img {
+.comments-item img {
     width: 32px;
     height: 32px;
     object-fit: cover;

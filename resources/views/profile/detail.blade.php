@@ -3,7 +3,7 @@
 
 <div class="container mt-3">
     {{-- HEADER PROFILE --}}
-    <div class="card post-card shadow-none post-item p-5 mb-3">
+    <div class="card post-card shadow-none posts-item p-5 mb-3">
     <div class="row align-items-center">
         {{-- Avatar --}}
         <div class="col-md-3 text-center">
@@ -71,7 +71,7 @@
             {{-- MENU --}}
     <div class="row g-3">
         <div class="col-lg-8">
-             <div class="card post-card shadow-none post-item p-3 mb-3">
+             <div class="card post-card shadow-none posts-item p-3 mb-3">
             <div class="text-center">
         <button class="me-4 fw-semibold post-profile active-tab"><i class="bi bi-grid-3x3"></i> Bài viết</button>
         <button class="text-muted me-4 comment-profile"><i class="bi bi-chat"></i> Bình Luận</button>
@@ -95,7 +95,7 @@
         </div>
         <div class="col-lg-4 d-none d-lg-block">
             <div class="sidebar-sticky ps-2">
-                <div class="card post-card shadow-none post-item p-3 mb-4">
+                <div class="card post-card shadow-none posts-item p-3 mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
                 </div>

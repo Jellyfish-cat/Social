@@ -3,7 +3,7 @@
 @endphp
 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
     <span>{{ $title }}</span>
-    <span class="badge bg-white text-primary count-report">Tổng: {{ $values->total() }}</span>
+    <span class="badge bg-white text-primary count-reports">Tổng: {{ $values->total() }}</span>
 </div>
 <div class="card-body p-0">
     <div class="table-responsive">
@@ -139,7 +139,9 @@
                                     <a class="btn btn-success btn-sm btn-check-report cursor-pointer text-white" data-id="{{ $value->id }}" data-action="dismiss" title="Bỏ qua (Không VP)"><i class="bi bi-check-circle me-2"></i></a>
                                 </div>
                             @else
-                             <button class="btn btn-danger btn-sm {{$delete}}" data-id="{{ $tab === 'pending' ? $value->id : $value->target_id }}" title="Xóa {{ $tab === 'pending' ? 'báo cáo' : 'nội dung' }}">
+                                
+                             <button class="btn btn-danger btn-sm {{$delete}}"
+                             data-target="reports" data-id="{{ $value->id }}" title="Xóa báo cáo">
                             <i class="bi bi-trash"></i>
                         </button>
                         @if ($tab === 'resolved')

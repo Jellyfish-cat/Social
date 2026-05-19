@@ -94,7 +94,7 @@
                     @endif
                         {{-- Comments --}}
                 @foreach($post->comments->where('parent_comment_id', null) as $comment)
-                <div class="comment-item position-relative d-flex" data-comment-id="{{ $comment->id }}">
+                <div class="comments-item position-relative d-flex" data-comment-id="{{ $comment->id }}">
                      <a href="{{ $comment->user ? route('profile.detail', $comment->user->id) : '#' }}" >
                     <img src="{{ $comment->user?->profile?->avatar 
                     ? asset('storage/'.$comment->user->profile->avatar) 
@@ -113,7 +113,7 @@
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                             @if(Auth::check() && (($comment->user?->id) === Auth::id() || auth()->user()->role === 'admin'))
                             <li>
-                                <a class="dropdown-item small btn-delete-comment"
+                                <a class="dropdown-item small btn-delete" data-target="comments"
                                 data-id="{{ $comment->id }}">
                                     Xóa
                                 </a>
@@ -199,7 +199,7 @@
     </div>
     <div class="reply-list d-none" id="reply-{{ $comment->id }}">
         @foreach($replies as $reply)
-            <div class="comment-item position-relative d-flex mt-3 ms-1" data-comment-id="{{ $reply->id }}">
+            <div class="comments-item position-relative d-flex mt-3 ms-1" data-comment-id="{{ $reply->id }}">
                  <a href="{{ $reply->user ? route('profile.detail', $reply->user->id) : '#' }}" >
                 <img src="{{ $reply->user?->profile?->avatar 
                             ? asset('storage/'.$reply->user->profile->avatar) 
@@ -218,7 +218,7 @@
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                             @if(Auth::check() && (($reply->user?->id) === Auth::id() || auth()->user()->role === 'admin'))
                             <li>
-                                <a class="dropdown-item small btn-delete-comment"
+                                <a class="dropdown-item small btn-delete" data-target="comments" 
                                 data-id="{{ $reply->id }}">
                                     Xóa
                                 </a>

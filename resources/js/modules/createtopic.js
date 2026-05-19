@@ -33,7 +33,7 @@ document.addEventListener("submit", function (e) {
                        ${data.data.name}
                        </td>
                        <td class="text-center">
-                        <a href="/admin/topics/edit/${data.data.id}"
+                        <a href="/topics/edit/${data.data.id}"
                            class="btn btn-warning btn-sm">
                            <i class="bi bi-pencil"></i>
                         </a>

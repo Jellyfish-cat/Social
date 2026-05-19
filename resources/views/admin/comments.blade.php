@@ -9,7 +9,7 @@
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             Danh sách bình luận
-         <span class="badge bg-white text-primary comment-count">Tổng: {{ $comments->total() }}</span>
+         <span class="badge bg-white text-primary count-comments">Tổng: {{ $comments->total() }}</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -28,7 +28,7 @@
                     </thead>
                     <tbody>
                     @forelse($comments as $value)
-                    <tr class="comment-item">
+                    <tr class="comments-item">
                         <td class="text-center">
                             {{ $loop->iteration }}
                         </td>
@@ -70,7 +70,7 @@
                             <a class="btn btn-info btn-sm open-post" data-id="{{$value->post->id}}" data-scroll-comment-id="{{$value->id}}" data-action="reply" title="Xem chi tiết">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a class="btn btn-danger btn-sm btn-delete-comment" data-id="{{ $value->id }}" title="Xóa bình luận">
+                            <a class="btn btn-danger btn-sm btn-delete" data-target="comments" data-id="{{ $value->id }}" title="Xóa bình luận">
                                 <i class="bi bi-trash"></i>
                             </a>
                         </td>

@@ -59,7 +59,7 @@
     }, {
         threshold: 0.8
     });
-    document.querySelectorAll(".post-item").forEach(post => {
+    document.querySelectorAll(".posts-item").forEach(post => {
         observer.observe(post);
     });
 

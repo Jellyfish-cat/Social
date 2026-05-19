@@ -168,25 +168,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     }); // end checkRole:user
 
     Route::middleware(['checkRole:admin,moderator'])->prefix('admin')->group(function () {
-       
         // Reports Management
         Route::get('/reports/{tab?}', [ReportController::class, 'index'])->name('admin.reports');
         Route::get('/reports/tab/{type}/{tab}', [ReportController::class, 'reportTab']);
         Route::get('/topics', [TopicController::class, 'index'])->name('admin.topics');
-        Route::get('/topics/edit/{id}', [TopicController::class, 'edit'])->name('topics.edit');
-        Route::post('/topics/update/{id}', [TopicController::class, 'update'])->name('topics.update');
-        Route::post('/topics/destroy/{id}', [TopicController::class, 'destroy'])->name('topics.destroy');
+        
         Route::get('/users', [UserController::class, 'index'])->name('admin.users');
         Route::get('/comments', [CommentController::class, 'index'])->name('admin.comments');
         Route::get('/searchs', [SearchHistoryController::class, 'index'])->name('admin.searchs');
         Route::get('/posts', [PostController::class, 'index'])->name('admin.posts');
         Route::get('/messages', [MessageController::class, 'index'])->name('admin.messages');
-        Route::delete('/messages/destroy/{id}', [MessageController::class, 'destroy'])->name('admin.messages.destroy');
         Route::get('/conversations', [ConversationController::class, 'adminIndex'])->name('admin.conversations');
         Route::get('/conversations/{id}', [ConversationController::class, 'show'])->name('admin.conversations.show');
     });
     Route::middleware(['checkRole:moderator,admin'])->group(function () {
         Route::post('/reports/check/{id}', [ReportController::class, 'check'])->name('reports.check');
+        Route::get('/topics/edit/{id}', [TopicController::class, 'edit'])->name('topics.edit');
+        Route::post('/topics/update/{id}', [TopicController::class, 'update'])->name('topics.update');
+        Route::delete('/messages/destroy/{id}', [MessageController::class, 'destroy'])->name('messages.destroy');
+        Route::delete('/topics/destroy/{id}', [TopicController::class, 'destroy'])->name('topics.destroy');
+    });
+    Route::middleware(['checkRole:admin'])->group(function () {
+     Route::delete('users/destroy/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     });
      Route::middleware(['checkRole:admin'])->prefix('admin')->group(function () {
          Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
@@ -196,7 +199,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/users/create', [UserController::class, 'create'])->name('admin.users.create');
     Route::post('/users/store', [UserController::class, 'store'])->name('admin.users.store');
     Route::put('/users/hide/{id}', [UserController::class, 'hide'])->name('users.hide');
-    Route::delete('users/destroy/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+   
     });
 
 });

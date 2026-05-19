@@ -12,7 +12,7 @@
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             Danh sách bài viết
-             <span class="badge bg-white text-primary count-post">Tổng: {{ $posts->total() }}</span>
+             <span class="badge bg-white text-primary count-posts">Tổng: {{ $posts->total() }}</span>
 
         </div>
         <div class="card-body p-0">
@@ -33,7 +33,7 @@
                     </thead>
                     <tbody>
                         @forelse($posts as $value)
-                    <tr class="post-item">
+                    <tr class="posts-item">
                         <td class="text-center">
                             {{ $loop->iteration }}
                         </td>
@@ -99,7 +99,8 @@
                                class="btn btn-warning btn-sm">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                                  <a  class="btn btn-danger btn-sm btn-delete" data-id="{{ $value->id }}">
+                                  <a  class="btn btn-danger btn-sm btn-delete"
+                                   data-target="posts" data-id="{{ $value->id }}">
                                     <i class="bi bi-trash"></i></a>
                         </td>
                     </tr>

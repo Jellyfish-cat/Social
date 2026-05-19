@@ -27,7 +27,7 @@
                 <!-- <div class="col-lg-4 d-none d-lg-block" id="comment-panel">
                 <div class="sidebar-sticky ps-2"> -->
                 @if(Auth::check())
-                    <div class="card post-card shadow-none post-item p-3 mb-4">
+                    <div class="card post-card shadow-none posts-item p-3 mb-4">
                 <div class="d-flex align-items-center">
                     <img src="{{ asset('storage/' . (auth()->user()->profile->avatar ?? 'default.jpg')) }}" class="rounded-circle" style="width: 56px; height: 56px; object-fit: cover;">
                     <div class="ms-3">
@@ -37,7 +37,7 @@
                 </div>
                 </div>
                 @endif
-                <div class="card post-card shadow-none post-item p-3">
+                <div class="card post-card shadow-none posts-item p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted fw-bold small">Gợi ý cho bạn</span>
                 </div>

@@ -335,44 +335,7 @@ setTimeout(() => {
             });
     }
 }, 3000);
-document.addEventListener('click', function (e) {
 
-    const btn = e.target.closest('.btn-conversation');
-    if (btn) {
-        const postId = btn.dataset.id;
-        const type = btn.dataset.type;
-        if (!confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN hội thoại này không? Toàn bộ tin nhắn và dữ liệu sẽ mất sạch.')) {
-            return;
-        }
-        fetch(`/conversation/destroy/${postId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const row = btn.closest('tr');
-                    if (row) {
-                        row.style.transition = 'all 0.4s ease';
-                        row.style.opacity = '0';
-                        row.style.transform = 'translateX(30px)';
-                        setTimeout(() => row.remove(), 400);
-                    }
-                    alert(data.message);
-                }
-            })
-            .catch((err) => {
-                alert(err.message);
-            })
-            .finally(() => {
-                btn.disabled = false;
-                finishLoading();
-            });
-    }
-});
 
 // ===== GROUP CHAT UI LOGIC =====
 let selectedGroupUsers = [];

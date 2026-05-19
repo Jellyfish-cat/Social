@@ -213,13 +213,13 @@ document.addEventListener('submit', function (e) {
         .then(res => res.json())
         .then(data => {
             if (data.success && data.html) {
-                // 1. Tìm post-item cũ và thay thế bằng HTML mới từ server
-                const oldPost = document.querySelector(`.post-item[data-id="${postId}"]`);
+                // 1. Tìm posts-item cũ và thay thế bằng HTML mới từ server
+                const oldPost = document.querySelector(`.posts-item[data-id="${postId}"]`);
                 if (oldPost) {
                     oldPost.outerHTML = data.html;
 
                     // 2. Sau khi thay thế HTML, lấy lại element mới để re-init các tính năng
-                    const newPost = document.querySelector(`.post-item[data-id="${postId}"]`);
+                    const newPost = document.querySelector(`.posts-item[data-id="${postId}"]`);
                     if (newPost) {
                         reinitPostFeatures(newPost);
                     }

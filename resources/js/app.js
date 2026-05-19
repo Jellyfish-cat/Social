@@ -13,7 +13,6 @@ import './modules/comment';
 import './modules/createpost';
 import './modules/editpost';
 import './modules/createtopic';
-import './modules/deleteTopic';
 import './modules/indextopic';
 import './modules/favorites';
 import './modules/detailprofile';
@@ -28,5 +27,5 @@ import './modules/report';
 import './modules/actionReport';
 import './modules/share';
 import './modules/createuser';
-
+import './modules/deleteSystem';
 

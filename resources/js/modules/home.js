@@ -38,12 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
             link.setAttribute('data-thumb', base64Image);
         });
     });
-
     const videoOptions = {
         root: null,
         threshold: 0.6
     };
-
     const videoObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const video = entry.target;
@@ -56,11 +54,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }, videoOptions);
-
     document.querySelectorAll('.feed-video').forEach(v => {
         videoObserver.observe(v);
     });
-
     if (window.Fancybox) {
         Fancybox.bind("[data-fancybox^='gallery-']", {
             Hash: false,

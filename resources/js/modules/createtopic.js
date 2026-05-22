@@ -1,12 +1,4 @@
-window.updateSTT = function () {
-    const rows = document.querySelectorAll("#topic-body tr:not(#create-row)");
-    rows.forEach((tr, index) => {
-        const sttCell = tr.querySelector(".stt");
-        if (sttCell) {
-            sttCell.innerText = index + 1;
-        }
-    });
-};
+
 document.addEventListener("submit", function (e) {
     if (e.target && e.target.id === "topicForm") {
         e.preventDefault();
@@ -25,7 +17,7 @@ document.addEventListener("submit", function (e) {
             .then(data => {
                 if (data.success) {
                     const newRow = `
-                    <tr>
+                    <tr class="topics-item">
                        <td class="text-center stt">
 
                     </td>
@@ -38,7 +30,7 @@ document.addEventListener("submit", function (e) {
                            <i class="bi bi-pencil"></i>
                         </a>
                         <form class="d-inline">
-                            <button class="btn btn-danger btn-sm btn-delete-topic" data-id=${data.data.id}>
+                            <button class="btn btn-danger btn-sm btn-delete" data-target='topics' data-id=${data.data.id}>
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
@@ -47,9 +39,11 @@ document.addEventListener("submit", function (e) {
                 `;
                     document.getElementById("topic-body")
                         .insertAdjacentHTML("beforeend", newRow);
-                    document.querySelector(".count-topic").innerText =
-                        `Tổng chủ đề: ${data.count}`;
-                    updateSTT()
+                    const countEl = document.querySelector(".count-topics");
+                    if (countEl) {
+                        countEl.innerText = `Tổng: ${data.count}`;
+                    }
+                    updateSTT('topic');
 
                     form.reset();
                 }

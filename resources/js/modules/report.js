@@ -1,30 +1,6 @@
 let currentReportTab = "post";
 let tab = null;
-window.addEventListener("DOMContentLoaded", () => {
-    const resultsContainer = document.getElementById("report-results-container");
-    if (!resultsContainer) return;
-    tab = resultsContainer.dataset.tab;
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentType = urlParams.get('tab') || sessionStorage.getItem("currentReportTab") || "post";
 
-    let btnId = currentType === "people" ? "people-tab" :
-        currentType === "comment" ? "comment-tab" :
-            currentType === "message" ? "message-tab" :
-                "post-tab";
-
-    currentReportTab = currentType;
-    const tabBtn = document.getElementById(btnId);
-
-    if (tabBtn) {
-        setActiveReportTab(tabBtn);
-        loadReportTab(currentType);
-    }
-
-    // Sync state with history
-    const url = new URL(window.location);
-    url.searchParams.set('tab', currentType);
-    window.history.replaceState({ tab: currentType }, '', url);
-});
 
 document.addEventListener("change", function (e) {
     const statusFilter = e.target.closest("#filter-status");
@@ -219,4 +195,23 @@ document.addEventListener('click', function (e) {
                 finishLoading();
             });
     }
+});
+window.initCurrentTab({
+    containerSelector: "#report-results-container",
+    storageKey: "currentReportTab",
+    defaultTab: "post",
+    tabSelectors: {
+        post: "#post-tab",
+        people: "#people-tab",
+        comment: "#comment-tab",
+        message: "#message-tab",
+    },
+    beforeInit: (container) => {
+        tab = container.dataset.tab;
+    },
+    setCurrentTab: (type) => {
+        currentReportTab = type;
+    },
+    setActiveTab: setActiveReportTab,
+    loadTab: loadReportTab,
 });

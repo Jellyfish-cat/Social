@@ -11,7 +11,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const tabBtn = document.querySelector(`.${btnClass}`);
         if (tabBtn) setActiveTab(tabBtn);
         loadProfilePosts(savedTab); // load nội dung tab lưu trước
-    }
+    } 
 });
 document.addEventListener("click", function (e) {
     const postTab = e.target.closest(".post-profile");
@@ -102,22 +102,20 @@ window.addEventListener("popstate", function (e) {
     }
     else { }
 });
-window.addEventListener("DOMContentLoaded", () => {
-    if (!document.getElementById("post-list")) return;
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentType = urlParams.get('tab') || sessionStorage.getItem("currentProfileTab") || "posts";
-
-    let btnClass =
-        currentType === "comments" ? "comment-profile" :
-            currentType === "favorites" ? "fav-profile" :
-                currentType === "likes" ? "like-profile" :
-                    "post-profile";
-    currentTab = currentType;
-    const tabBtn = document.querySelector(`.${btnClass}`);
-    if (tabBtn) setActiveTab(tabBtn);
-    loadProfilePosts(currentType);
-    const url = new URL(window.location);
-    url.searchParams.set('tab', currentType);
-    window.history.replaceState({ tab: currentType }, '', url);
+window.initCurrentTab({
+    containerSelector: "#post-list",
+    storageKey: "currentProfileTab",
+    defaultTab: "posts",
+    tabSelectors: {
+        posts: ".post-profile",
+        favorites: ".fav-profile",
+        likes: ".like-profile",
+        comments: ".comment-profile",
+    },
+    setCurrentTab: (type) => {
+        currentTab = type;
+    },
+    setActiveTab,
+    loadTab: loadProfilePosts,
 });
-
+ 

@@ -107,7 +107,7 @@ document.addEventListener("click", function (e) {
     fetch(`/topics/show/${topicId}`)
         .then(res => res.text())
         .then(html => {
-            container.innerHTML = html;
+            container.innerHTML = html; 
         })
         .finally(() => {
             finishLoading();
@@ -137,20 +137,18 @@ window.addEventListener("popstate", function (e) {
     }
     else { }
 });
-window.addEventListener("DOMContentLoaded", () => {
-    if (!document.getElementById("search-results-container")) return;
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentType = urlParams.get('tab') || sessionStorage.getItem("currentSearchTab") || "post";
-
-    let btnClass =
-        currentType === "topic" ? "topic-tab" :
-            currentType === "people" ? "people-tab" :
-                "post-tab";
-    currentTabsearch = currentType;
-    const tabBtn = document.querySelector(`#${btnClass}`);
-    if (tabBtn) setActiveSearchTab(tabBtn);
-    loadSearchPosts(currentType);
-    const url = new URL(window.location);
-    url.searchParams.set('tab', currentType);
-    window.history.replaceState({ tab: currentType }, '', url);
+window.initCurrentTab({
+    containerSelector: "#search-results-container",
+    storageKey: "currentSearchTab",
+    defaultTab: "post",
+    tabSelectors: {
+        post: "#post-tab",
+        people: "#people-tab",
+        topic: "#topic-tab",
+    },
+    setCurrentTab: (type) => {
+        currentTabsearch = type;
+    },
+    setActiveTab: setActiveSearchTab,
+    loadTab: loadSearchPosts,
 });

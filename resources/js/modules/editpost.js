@@ -250,7 +250,7 @@ document.addEventListener('submit', function (e) {
  * Hàm khởi tạo lại các tính năng cho một bài viết đơn lẻ (Video observer, Fancybox)
  * Giống văn phong trong home.js
  */
-function reinitPostFeatures(postEl) {
+function reinitPostFeatures(postEl) { 
     // 1. Khởi tạo Thumbnail videos mới (nếu có)
     postEl.querySelectorAll('.video-link').forEach(link => {
         const video = document.createElement('video');

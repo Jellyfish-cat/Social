@@ -18,7 +18,7 @@
         #loginModal {
             z-index: 1075 !important;
         }
-        #followDetailModal, #reportModal, #sharePostModal, .fancybox__container {
+        #InteractionListModal, #reportModal, #sharePostModal, .fancybox__container {
             z-index: 1065 !important;
         }
 
@@ -405,10 +405,10 @@
     </div>
 </div> 
 <!-- Modal xem chi tiết người theo dõi -->
-<div class="modal fade back-to-follow" id="followDetailModal" tabindex="-1">
+<div class="modal fade back-to-follow" id="InteractionListModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 800px;">
         <div class="modal-content">
-            <div class="modal-body p-0 border rounded" id="followDetailContent">
+            <div class="modal-body p-0 border rounded" id="InteractionListContent">
                 <!-- Nội dung chi tiết follow sẽ load vào đây -->
             </div>
         </div>

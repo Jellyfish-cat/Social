@@ -156,9 +156,9 @@
                     {{ $comment->created_at?->diffForHumans() }}
                 </span>
                 {{-- Like comment list --}}
-                 <button class="open-like-comment small like-count like-comment-count me-3" style="font-size:13px;"
+                 <button class="open-list-interaction small like-count like-comment-count me-3" style="font-size:13px;"
                                 data-authid="{{$comment->user?->id}}"
-                                data-comment-id="{{ $comment->id }}">
+                                data-type="comment" data-id="{{ $comment->id }}">
                             {{ number_format($comment->likes?->count() ?? 0) }} lượt thích
                 </button>
                 {{-- Reply button --}}
@@ -249,8 +249,8 @@
                     {{ $reply->created_at?->diffForHumans() }}
                 </span>
                 {{-- Like comment list --}}
-                <button class="open-like-comment btn-reply-list me-3 like-comment-count" style="font-size:13px;"
-                    data-comment-id="{{ $reply->id }}"
+                <button class="open-list-interaction btn-reply-list me-3 like-comment-count" style="font-size:13px;"
+                    data-type="comment" data-id="{{ $reply->id }}"
                     data-username="{{ $reply->user?->profile?->display_name ?? 'Người dùng' }}"
                     data-post-id="{{ $post->id }}">
                     {{ $reply->likes?->count() ?? 0 }} lượt thích
@@ -317,9 +317,9 @@
                         </button>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
-                        <button class="open-like fw-bold small like-count"
-                                data-authid="{{$post->user?->id}}"
-                                data-post-id="{{ $post->id }}">
+                        <button class="open-list-interaction fw-bold small like-count"
+                                data-type="post"
+                                data-id="{{ $post->id }}">
                             {{ number_format($post->likes?->count() ?? 0) }} lượt thích
                     </button>
                         <div class="fw-bold small comment-post-count" data-post-id="{{ $post->id }}">

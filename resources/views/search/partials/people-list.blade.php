@@ -10,7 +10,7 @@
                                     <div>
                                         <a href="{{ route('profile.detail', $user->id) }}" class="fw-bold text-dark text-decoration-none d-block fs-6">{{ $user->profile->display_name ?? $user->name }}</a>
                                         <span class="text-muted small">@ {{ $user->name }}</span> • 
-                                         <button class="open-follow follow-count" data-type="follower" data-id="{{$user->id}}">
+                                         <button class="open-list-interaction follow-count" data-type="follower" data-id="{{$user->id}}">
                                           {{ $user->followers->count() ?? 0 }} người theo dõi</button>
                                     </div>
                                 </div>

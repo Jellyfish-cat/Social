@@ -80,8 +80,7 @@
                             @endif
                         </td>
                   
-                         <td class="text-center open-like" data-authid="{{$value->user->id}}"
-                    data-post-id="{{ $value->id }}">
+                         <td class="text-center open-list-interaction" data-type="post" data-id="{{ $value->id }}">
                             {{ $value->likes_count   ?? 0 }}
                         </td>
                          <td class="text-center">

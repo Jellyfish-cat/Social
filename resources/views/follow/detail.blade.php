@@ -3,10 +3,10 @@
     @section('content')
 <style>
     /* Ghi đè CSS cho modal chỉ áp dụng khi load list này */
-    #followDetailModal .modal-dialog {
+    #InteractionListModal .modal-dialog {
         border-radius: 12px;
     }
-    #followDetailModal .modal-content {
+    #InteractionListModal .modal-content {
         border-radius: 12px;
         border: none;
     }

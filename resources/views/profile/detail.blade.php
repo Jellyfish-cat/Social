@@ -35,9 +35,9 @@
             {{-- Stats --}}
             <div class="d-flex gap-4 mb-3 align-items-center">
                 <div><span>{{ $user->posts->count() }}</span> bài viết</div>
-                <button class="open-follow follow-count bg-transparent border-0 p-0" data-type="follower" data-id="{{$user->id}}">
+                <button class="open-list-interaction follow-count bg-transparent border-0 p-0" data-type="follower" data-id="{{$user->id}}">
                    <span>{{ $user->followers->count() ?? 0 }}</span> người theo dõi</button>
-                <button class="open-follow following-count bg-transparent border-0 p-0" data-authid="{{$user->id}}"  data-type="following" data-id="{{$user->id}}">
+                <button class="open-list-interaction following-count bg-transparent border-0 p-0" data-authid="{{$user->id}}"  data-type="following" data-id="{{$user->id}}">
                    <span>{{ $user->following->count() ?? 0 }}</span> đang theo dõi</button>
             </div>
             {{-- Bio --}}
@@ -118,16 +118,6 @@
             </div>
         </div>
       
-<!-- Modal xem chi tiết người theo dõi -->
-<div class="modal fade back-to-follow" id="followDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 800px;">
-        <div class="modal-content">
-            <div class="modal-body p-0" id="followDetailContent">
-                <!-- Nội dung chi tiết post sẽ load vào đây -->
-            </div>
-        </div>
-    </div>
-</div> 
 <style>
 /* Avatar */
 .avatar-wrapper {

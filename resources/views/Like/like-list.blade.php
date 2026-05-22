@@ -7,8 +7,8 @@
 @endphp
 
 <style>
-#followDetailModal .modal-dialog { border-radius: 12px; }
-#followDetailModal .modal-content { border-radius: 12px; border: none; }
+#InteractionListModal .modal-dialog { border-radius: 12px; }
+#InteractionListModal .modal-content { border-radius: 12px; border: none; }
 .follower-list::-webkit-scrollbar { width: 6px; }
 .follower-list::-webkit-scrollbar-thumb { background: #dbdbdb; border-radius: 6px; }
 .follower-list::-webkit-scrollbar-thumb:hover { background: #c7c7c7; }

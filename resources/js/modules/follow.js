@@ -46,33 +46,3 @@ document.addEventListener("click", function (e) {
             finishLoading();
         });
 });
-
-document.addEventListener("click", function (e) {
-    if (window.Fancybox && Fancybox.getInstance()) return;
-    const btn = e.target.closest(".open-follow");
-    if (!btn) return;
-    const userId = btn.dataset.id;
-    const type = btn.dataset.type;
-    if (window.matchMedia("(max-width: 992px)").matches) {
-        window.location.href = `/follows/detail/${userId}`;
-        return;
-    }
-    const action = btn.dataset.action;
-    startLoading();
-    fetch(`/follows/detail/${userId}`, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-type': type,
-        }
-    })
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById("followDetailContent").innerHTML = html;
-            const modalEl = document.getElementById("followDetailModal");
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-        })
-        .finally(() => {
-            finishLoading();
-        });
-});

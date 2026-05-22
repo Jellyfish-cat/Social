@@ -1,76 +1,39 @@
-document.addEventListener("click", function(e){
+document.addEventListener("click", function (e) {
     const btn = e.target.closest(".btn-like");
-    if(!btn) return;
+    if (!btn) return;
     const postId = btn.dataset.id;
     const likeIcons = document.querySelectorAll(`.btn-like[data-id="${postId}"] i`);
     startLoading();
-    fetch(`/posts/like/${postId}`,{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json",
-            "X-CSRF-TOKEN":document.querySelector('meta[name="csrf-token"]').content
+    fetch(`/posts/like/${postId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
         }
     })
-    .then(res=>res.json())
-    .then(data=>{
-        if(!data.success) return;
-        const likeCounts = document.querySelectorAll(`.like-count[data-post-id="${postId}"]`);
-        likeCounts.forEach(el=>{
-            el.innerText = data.likePost_count + " lượt thích";
-        });
-        likeIcons.forEach(icon=>{
-            icon.classList.toggle("text-danger");
-            if(icon.classList.contains("text-danger")){
-                icon.classList.replace("bi-heart","bi-heart-fill");
-            }else{
-                icon.classList.replace("bi-heart-fill","bi-heart");
-            }
-            icon.classList.remove("any-pop"); 
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+            const likeCounts = document.querySelectorAll(`.like-count[data-post-id="${postId}"]`);
+            likeCounts.forEach(el => {
+                el.innerText = data.likePost_count + " lượt thích";
+            });
+            likeIcons.forEach(icon => {
+                icon.classList.toggle("text-danger");
+                if (icon.classList.contains("text-danger")) {
+                    icon.classList.replace("bi-heart", "bi-heart-fill");
+                } else {
+                    icon.classList.replace("bi-heart-fill", "bi-heart");
+                }
+                icon.classList.remove("any-pop");
                 void icon.offsetWidth; // reset animation
                 icon.classList.add("any-pop");
-        });
-    })
-    .finally(() => {
-            finishLoading();
-        });
-
-});
-
-document.addEventListener("click", function (e) {
-    if (window.Fancybox && Fancybox.getInstance()) return;
-    const btn = e.target.closest(".open-like");
-    if (!btn) return;
-    const postID = btn.dataset.postId;
-    if (window.matchMedia("(max-width: 992px)").matches) {
-        window.location.href = `/posts/like_list/${postID}`;
-        return;
-    }
-    const action = btn.dataset.action;
-    startLoading();
-    fetch(`/posts/like_list/${postID}`, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-    })
-        .then(res => res.text())
-        .then(html => {
-            document.getElementById("followDetailContent").innerHTML = html;
-            const modalEl = document.getElementById("followDetailModal");
-            const modal = new bootstrap.Modal(modalEl);
-            // modal.show(); (đã gọi bên dưới)
-            modal.show();
+            });
         })
         .finally(() => {
             finishLoading();
         });
+
 });
 
-window.closeLikeModal = function() {
-    const modalEl = document.getElementById("followDetailModal");
-    if (modalEl) {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) {
-            modal.hide();
-        }
-    }
-};
+

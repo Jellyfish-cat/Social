@@ -116,9 +116,9 @@
             </button>
         </div>
         <div class="d-flex justify-content-between mb-2">
-            <button class="open-like fw-bold small like-count"
-                    data-authid="{{$post->user?->id}}"
-                    data-post-id="{{ $post->id }}">
+            <button class="open-list-interaction fw-bold small like-count"
+                    data-type="post"
+                    data-id="{{ $post->id }}">
                 {{ number_format($post->likes?->count() ?? 0) }} lượt thích
         </button>
             <div class="fw-bold small count-comments" data-post-id="{{ $post->id }}">

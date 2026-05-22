@@ -1,13 +1,3 @@
-// Function to update order numbers (STT)
-window.updateSTT = function () {
-    const rows = document.querySelectorAll("#user-body tr.user-item");
-    rows.forEach((tr, index) => {
-        const sttCell = tr.querySelector(".text-center:first-child");
-        if (sttCell) {
-            sttCell.innerText = index + 1;
-        }
-    });
-};
 // Handle "Thêm mới" button click for Users
 const btnShowcreator_id = document.getElementById("btn-show-create-user");
 if (btnShowcreator_id) {
@@ -94,20 +84,20 @@ document.addEventListener("submit", function (e) {
                     const bio = bioText.length > 20 ? bioText.substring(0, 20) + "..." : bioText;
 
                     const newRow = `
-                    <tr class="user-item">
-                        <td class="text-center"></td>
+                    <tr class="users-item">
+                        <td class="text-center stt"></td>
                         <td class="text-start">${user.name}</td>
                         <td class="text-start">${user.email}</td>
                         <td class="text-start">${profile.display_name || 'Không có'}</td>
                         <td class="text-center">${avatarHtml}</td>
                         <td class="text-start">${bio}</td>
                         <td class="text-center">
-                            <button class="open-follow" data-type="follower" data-id="${user.id}">
+                            <button class="open-list-interaction" data-type="follower" data-id="${user.id}">
                                 <a class="follow-count" data-authid="${user.id}">0</a>
                             </button>
                         </td>
                         <td class="text-center">
-                            <button class="open-follow" data-type="following" data-id="${user.id}">
+                            <button class="open-list-interaction" data-type="following" data-id="${user.id}">
                                 <a class="following-count" data-authid="${user.id}">0</a>
                             </button>
                         </td>
@@ -119,10 +109,10 @@ document.addEventListener("submit", function (e) {
                             <a class="btn btn-warning btn-sm" href="/profile/edit/${user.id}">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a class="btn btn-danger btn-sm btn-delete-user" data-id="${user.id}" data-type="destroy">
+                            <a class="btn btn-danger btn-sm btn-delete" data-target='users' data-id="${user.id}" >
                                 <i class="bi bi-trash"></i>
                             </a>
-                            <a class="btn btn-danger btn-sm btn-delete-user" data-id="${user.id}" data-type="hide">
+                            <a class="btn btn-danger btn-sm btn-hide-user" data-id="${user.id}" data-type="hide">
                                 <i class="bi bi-eye-slash"></i>
                             </a>
                         </td>
@@ -130,8 +120,11 @@ document.addEventListener("submit", function (e) {
                     `;
 
                     document.getElementById("user-body").insertAdjacentHTML("afterbegin", newRow);
-                    document.querySelector(".count-user").innerText = `Tổng: ${data.count}`;
-                    updateSTT();
+                    const countEl = document.querySelector(".count-users");
+                    if (countEl) {
+                        countEl.innerText = `Tổng: ${data.count}`;
+                    }
+                    updateSTT('user');
 
                     // Clear and hide form
                     document.getElementById("create-container").innerHTML = "";

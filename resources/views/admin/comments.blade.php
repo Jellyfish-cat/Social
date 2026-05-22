@@ -63,7 +63,7 @@
                         <td class="text-start"> 
                             {{ Str::limit($value->parent->content ?? "không có" , 20) }}
                         </td>
-                        <td class="text-center open-like-comment" data-comment-id="{{ $value->id }}" data-post-id="{{ $value->post->id }}">
+                        <td class="text-center open-list-interaction" data-type="comment" data-id="{{ $value->id }}" data-post-id="{{ $value->post->id }}">
                             {{ $value->likes_count ?? 0 }}
                         </td>
                         <td class="text-center">

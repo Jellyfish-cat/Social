@@ -64,7 +64,7 @@ def get_data():
 
         if df_posts.empty:
             return None, None, None
-        #tính tf-idf vector 
+
         df_posts['text_features'] = (df_posts['content'].fillna('') + " " + df_posts['topics']).str.lower()
         tfidf = TfidfVectorizer(ngram_range=(1, 2))
         tfidf_matrix = tfidf.fit_transform(df_posts['text_features'])
@@ -84,6 +84,7 @@ def compute_cf_scores(user_id, user_item_matrix, interacted_set):
     scores = {}
     if user_item_matrix is None or user_id not in user_item_matrix.index:
         return scores
+
     try:
         user_vector = user_item_matrix.loc[[user_id]]
         similarities = cosine_similarity(user_vector, user_item_matrix).flatten()
@@ -93,10 +94,9 @@ def compute_cf_scores(user_id, user_item_matrix, interacted_set):
         for uid in similar_user_ids:
             weight = similarities[user_item_matrix.index.get_loc(uid)]
             if weight <= 0: continue
-            # Lấy các bài viết mà người giống đã like
             liked_posts = user_item_matrix.columns[user_item_matrix.loc[uid] > 0]
             for pid in liked_posts:
-                if pid not in interacted_set: # Bỏ qua những bài đã tương tác rồi
+                if pid not in interacted_set:
                     scores[pid] = scores.get(pid, 0) + (weight * 500)
     except Exception as e:
         print(f"[CF ERROR] {str(e)}")
@@ -161,6 +161,11 @@ def calculate_score(row, context):
     social = 0
     if row['user_id'] in context["following"]:
         social += 50
+    if row['user_id'] in context["top_creators"]:
+        social += 100
+    if pid in context["reply_posts"]:
+        social += 30
+
     # Engagement logic
     engagement = row['like_count'] * 2 + row['comment_count'] * 5
 
@@ -184,7 +189,7 @@ def diversify(df_sorted, limit=50):
     result, topic_count = [], {}
     for _, row in df_sorted.iterrows():
         topics = row['topics'].lower().split()
-        if any(topic_count.get(t, 0) >= 5 for t in topics):
+        if any(topic_count.get(t, 0) >= 3 for t in topics):
             continue
         result.append(int(row['id']))
         for t in topics:
@@ -196,7 +201,7 @@ def diversify(df_sorted, limit=50):
 # --- API ENDPOINTS ---
 
 @app.get("/api/recommendations", response_model=RecommendResponse)
-def get_recommendations(user_id: int, is_reload: bool = False, offset: int = 0, limit: int = 50):
+def get_recommendations(user_id: int, is_reload: bool = False):
     try:
         now = datetime.now()
         df_posts, tfidf_matrix, user_item_matrix = get_data()
@@ -243,11 +248,7 @@ def get_recommendations(user_id: int, is_reload: bool = False, offset: int = 0, 
 
         df_posts['score'] = df_posts.apply(lambda row: calculate_score(row, context), axis=1)
         df_sorted = df_posts[df_posts['score'] > -1000].sort_values(by='score', ascending=False)
-        
-        # Yêu cầu hàm lấy thừa ra một chút để phục vụ phân trang
-        full_result = diversify(df_sorted, limit=offset + limit)
-        # Cắt đúng đoạn theo yêu cầu của Frontend (Infinite Scroll)
-        result = full_result[offset : offset + limit]
+        result = diversify(df_sorted)
 
         return {
             "status": "success",

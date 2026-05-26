@@ -3,32 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Topic;
-use App\Models\post;
 use Illuminate\Http\Request;
+use App\Services\TopicService;
 
 class TopicController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    protected $topicService;
+
+    public function __construct(TopicService $topicService)
     {
-        $topics = Topic::paginate(10)->withQueryString();
-        
-    return view('admin.topics', compact('topics'));
+        $this->topicService = $topicService;
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    public function index()
+    {
+        $topics = $this->topicService->getPaginatedTopics(10);
+        return view('admin.topics', compact('topics'));
+    }
+
     public function create()
     {
         return view('topics.create');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
 
     public function store(Request $request)
     {
@@ -36,9 +32,7 @@ class TopicController extends Controller
             'name' => 'required|string|max:50'
         ]);
 
-        $topic = Topic::firstOrCreate([
-            'name' => strtolower(trim($request->name)),
-        ]);
+        $topic = $this->topicService->createTopic($request->all());
 
         return response()->json([
             'success' => true,
@@ -46,27 +40,17 @@ class TopicController extends Controller
         ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
-        $topic = Topic::findOrFail($id);
-        $posts = $topic->posts()
-            ->where('status', 'show')
-            ->whereHas('user', function($q) {
-                $q->where('status', 'show');
-            })
-            ->latest()
-            ->get();
+        $result = $this->topicService->getTopicWithPosts($id);
+        $topic = $result['topic'];
+        $posts = $result['posts'];
+        
         $checktopic= true;
         $display_name = $topic->name;
         return view('search.partials.post-list', compact('posts','checktopic','display_name'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Request $request, $id)
     {
         $topic = Topic::findOrFail($id);
@@ -74,49 +58,35 @@ class TopicController extends Controller
         return view('topics.edit', compact('topic','page'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
-        $topic = Topic::findOrFail($id);
-        $topic->update([
-            'name' => $request->name
-        ]);
+        $this->topicService->updateTopic($id, $request->all());
         return redirect()->route('admin.topics')
                         ->with('success', 'Cập nhật thành công!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Request $request, $id)
     {
-        $topic = Topic::find($id);
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
-            abort(403, 'Bạn không có quyền');
-        }
-        if (!$topic) {
+        try {
+            $topiclist = $this->topicService->deleteTopic($id, auth()->user());
+            
+            return response()->json([
+                'success' => true,
+                'data' => $topiclist,
+                'count' => Topic::count(),
+                'message' => 'Xóa thành công'
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy topic'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $e->getCode() ?: 403);
         }
-
-        $topic->delete();
-        $topiclist = topic::latest()->get();
-        return response()->json([
-            'success' => true,
-            'data' => $topiclist,
-            'count' => topic::count(),
-            'message' => 'Xóa thành công'
-        ]);
     }
+
     public function search(Request $request)
     {
         $q = $request->q;
-        return Topic::search($q)
-            ->take(5)
-            ->get();
+        return $this->topicService->searchTopics($q);
     }
 }

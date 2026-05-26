@@ -16,6 +16,16 @@ class PostService
         //
     }
 
+    public function getPostCount()
+    {
+        return Post::count();
+    }
+
+    public function getAllPosts()
+    {
+        return Post::all();
+    }
+
     public function getAdminPosts($perPage = 10)
     {
         return Post::with(['user.profile', 'topics', 'media'])

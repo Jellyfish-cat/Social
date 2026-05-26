@@ -7,125 +7,60 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Http;
+use App\Services\ConversationService;
+use App\Services\MessageService;
 
 class ConversationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected $conversationService;
+    protected $messageService;
+
+    public function __construct(ConversationService $conversationService, MessageService $messageService)
+    {
+        $this->conversationService = $conversationService;
+        $this->messageService = $messageService;
+    }
+
     public function index()
     {
         $userId = Auth::id();
-        $conversations = Conversation::whereHas('users', function ($q) use ($userId) {
-                $q->where('user_id', $userId);
-            })
-            ->with([
-                'users.profile',
-                'latestMessage.sender.profile'
-            ])
-            ->withCount([
-                'messages as unread_count' => function ($q) use ($userId) {
-                    $q->where('sender_id', '!=', $userId)
-                      ->whereNull('read_at');
-                }
-            ])
-            ->get()
-            ->filter(function($convo) use ($userId) {
-                $userPivot = $convo->users->firstWhere('id', $userId)?->pivot;
-                $deletedAt = $userPivot ? $userPivot->deleted_at : null;
-                if (!$deletedAt) return true;
-                return $convo->latestMessage && $convo->latestMessage->created_at > $deletedAt;
-            })
-            ->sortByDesc(fn($conversation) => optional($conversation->latestMessage)->created_at)
-            ->values();
-
+        $conversations = $this->conversationService->getUserConversations($userId);
+        
         $messages = collect();
         if ($conversations->isNotEmpty()) {
             $first = $conversations->first();
-            $userPivot = $first->users->firstWhere('id', $userId)?->pivot;
-            $deletedAt = $userPivot ? $userPivot->deleted_at : null;
-
-            $query = Message::where('conversation_id', $first->id)
-                ->with(['sender.profile', 'media'])
-                ->orderBy('created_at');
-            
-            if ($deletedAt) {
-                $query->where('created_at', '>', $deletedAt);
-            }
-            $messages = $query->get();
+            $messages = $this->messageService->getConversationMessages($first, $userId);
         }
-    return view('Message.conversations', compact('conversations', 'messages'));
+        return view('Message.conversations', compact('conversations', 'messages'));
     }
-   public function messageTab($id)
+
+    public function messageTab($id)
     {
-    $authId = auth()->id();
-    $conversation = Conversation::whereHas('users', function ($q) use ($authId) {
-            $q->where('user_id', $authId);
-        })
-        ->whereHas('users', function ($q) use ($id) {
-            $q->where('user_id', $id);
-        })
-        ->with(['users.profile'])
-        ->first();
-            if (!$conversation) {
-        $otherUser = User::with('profile')->findOrFail($id);
-        return view('Message.empty_message', compact('otherUser'));
-    }
+        $authId = auth()->id();
+        $conversation = $this->conversationService->getPrivateConversation($authId, $id);
+        
+        if (!$conversation) {
+            $otherUser = User::with('profile')->findOrFail($id);
+            return view('Message.empty_message', compact('otherUser'));
+        }
 
-
-
-    $userPivot = $conversation->users->firstWhere('id', $authId)?->pivot;
-    $deletedAt = $userPivot ? $userPivot->deleted_at : null;
-
-    $query = Message::where('conversation_id', $conversation->id)
-        ->with(['sender.profile', 'media'])
-        ->orderBy('created_at');
-
-    if ($deletedAt) {
-        $query->where('created_at', '>', $deletedAt);
-    }
-    $messages = $query->get();
-    // Trả về partial view (chỉ HTML tin nhắn) cho fetch JS
-    return view('Message.message', compact('messages','conversation'));
+        $messages = $this->messageService->getConversationMessages($conversation, $authId);
+        return view('Message.message', compact('messages','conversation'));
     } 
+
     public function search_user(Request $request)
     {
         $keyword = $request->q;
         if (!$keyword) return [];
         
-        // Ghi log hoạt động tìm kiếm người dùng để nhắn tin
         activity()
             ->event('search_user_convo')
             ->causedBy(auth()->user())
             ->withProperties(['keyword' => $keyword])
             ->log("riêng tư");
 
-        $role = auth()->user()->role;
-
-        $query = User::query()
-            ->join('profiles', 'users.id', '=', 'profiles.user_id')
-            ->select('users.*', 'profiles.display_name as p_display_name')
-            ->where('users.id', '!=', auth()->id())
-            ->where(function($q) use ($keyword) {
-                $q->where('users.name', 'like', "%$keyword%")
-                  ->orWhere('profiles.display_name', 'like', "%$keyword%");
-            });
-
-        if ($role === 'user') {
-            // User thường chỉ nhắn được với user thường
-            $query->where('users.role', 'user');
-        } else {
-            // Admin/Moderator có thể nhắn với tất cả staff (admin + moderator)
-            $query->whereIn('users.role', ['admin', 'moderator']);
-        }
-
-        return $query->with('profile')
-            ->take(5)
-            ->get();
+        return $this->conversationService->searchUsers($keyword, auth()->user()->role, auth()->id());
     }
-
 
     public function storeGroup(Request $request)
     {
@@ -136,123 +71,38 @@ class ConversationController extends Controller
             'dicebear_url' => 'nullable|string',
         ]);
 
-        $avatarPath = null;
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('group_avatars', 'public');
-        } elseif ($request->dicebear_url) {
-            // Chống SSRF: Chỉ cho phép domain tin cậy
-            if (!str_contains($request->dicebear_url, 'api.dicebear.com')) {
-                return response()->json(['success' => false, 'error' => 'URL avatar không hợp lệ'], 422);
-            }
-            try {
-                $response = Http::get($request->dicebear_url);
-                if ($response->successful()) {
-                    $name = 'group_' . uniqid() . '.svg';
-                    Storage::disk('public')->put('group_avatars/' . $name, $response->body());
-                    $avatarPath = 'group_avatars/' . $name;
-                }
-            } catch (\Exception $e) {
-                // Fallback
-            }
-        }
-
-        $conversation = Conversation::create([
-            'type' => 'group',
-            'name' => $request->name,
-            'avatar' => $avatarPath,
-            'status' => 'show',
-            'creator_id' => auth()->id()
-        ]);
-
-        // Đảm bảo user tạo nhóm cũng nằm trong danh sách thành viên
-        $memberIds = array_unique(array_merge($request->user_ids, [auth()->id()]));
-        $conversation->users()->attach($memberIds);
-
-        $notification = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => null,
-            'content' => (auth()->user()->profile->display_name ?? auth()->user()->name) . ' đã tạo nhóm.',
-            'type' => 'notification'
-        ]);
-
-        // Broadcast thông báo đến các thành viên 
-        foreach ($memberIds as $memberId) {
-            if ($memberId !== auth()->id()) {
-                $chatData = [
-                    'id'              => $notification->id,
-                    'content'         => $notification->content,
-                    'sender_id'       => null,
-                    'sender_name'     => 'Hệ thống',
-                    'sender_avatar'   => null,
-                    'is_group'        => true,
-                    'type'            => $notification->type,
-                    'conversation_id' => $conversation->id,
-                    'group_name'      => $conversation->name,
-                    'group_avatar'    => $conversation->avatar,
-                    'receiver_id'     => $memberId,
-                    'created_at'      => $notification->created_at->format('H:i d/m'),
-                    'timestamp'       => $notification->created_at->timestamp,
-                    'media'           => [],
-                ];
-                broadcast(new \App\Events\MessageSent((object) $chatData))->toOthers();
-            }
-        }
+        $conversation = $this->conversationService->createGroup($request->all(), auth()->user(), $request->file('avatar'));
 
         return response()->json([
             'success' => true,
-            'conversation' => $conversation->load('latestMessage')
+            'conversation' => $conversation
         ]);
     }
 
     public function groupTab($id)
     {
         $authId = auth()->id();
-        
-        $conversation = Conversation::where('type', 'group')
-            ->whereHas('users', fn($q) => $q->where('user_id', $authId))
-            ->with(['users.profile'])
-            ->findOrFail($id);
-        $userPivot = $conversation->users->firstWhere('id', $authId)?->pivot;
-        $deletedAt = $userPivot ? $userPivot->deleted_at : null;
-
-        $query = Message::where('conversation_id', $conversation->id)
-            ->with(['sender.profile', 'media'])
-            ->orderBy('created_at');
-        if ($deletedAt) {
-            $query->where('created_at', '>', $deletedAt);
-        }
-        $messages = $query->get();
+        $conversation = $this->conversationService->getGroupConversation($id, $authId);
+        $messages = $this->messageService->getConversationMessages($conversation, $authId);
 
         return view('Message.message', compact('messages', 'conversation'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         //
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function adminIndex()
     {
-        $conversations = Conversation::with(['users.profile','messages'])
-        ->withCount('messages')
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
+        $conversations = $this->conversationService->getAdminConversations(10);
         return view('admin.conversations', compact('conversations'));
     }
 
     public function show($id)
     {
-        $conversation = Conversation::findOrFail($id);
-        
-        $messages = Message::where('conversation_id', $id)->with(['media','sender']) 
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
+        $conversation = $this->conversationService->getConversationById($id);
+        $messages = $this->messageService->getAdminMessages($id, 10);
         return view('admin.messages', compact('messages', 'conversation'));
     }
 
@@ -261,69 +111,41 @@ class ConversationController extends Controller
         return view('Message.partials.createGroup_modal');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
-        $conversation = Conversation::where('type', 'group')
-            ->whereHas('users', fn($q) => $q->where('user_id', auth()->id()))
-            ->with('users.profile')
-            ->findOrFail($id);
+        $conversation = $this->conversationService->getGroupConversation($id, auth()->id());
         return view('Message.partials.editGroup_modal', compact('conversation'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Conversation $conversation)
     {
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        $conversation = Conversation::findOrFail($id);
+        $conversation = $this->conversationService->getConversationById($id);
 
-        if (auth()->user()->role !== 'admin' && !$conversation->users->contains('id', auth()->id())) {
-            abort(403, 'Bạn không có quyền');
-        }
-
-        // 1. Xóa toàn bộ file Media của các tin nhắn trong hội thoại
-        $messages = Message::where('conversation_id', $id)->with('media')->get();
-        foreach ($messages as $msg) {
-            foreach ($msg->media as $mm) {
-                if ($mm->file_path) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($mm->file_path);
-                }
-            }
-        }
-
-        // 2. Ghi log hoạt động trước khi xóa
         activity()
             ->performedOn($conversation)
             ->event('delete_conversation')
             ->causedBy(auth()->user())
             ->log("đã xóa vĩnh viễn hội thoại: " . ($conversation->name ?? "ID: $id"));
 
-        // 3. Xóa vĩnh viễn hội thoại
-        $conversation->delete();
+        $count = $this->conversationService->deleteConversationPermanently($id, auth()->user());
 
         return response()->json([
             'success' => true,
             'message' => 'Hội thoại đã được xóa vĩnh viễn',
-            'count' => Conversation::count()
+            'count' => $count
         ]);
     }
+
     public function getMembers($id)
     {
-        $conversation = Conversation::whereHas('users', function ($q) {
-            $q->where('user_id', auth()->id());
-        })->with('users.profile')->findOrFail($id);
-        $creator=$conversation->creator_id;
+        $conversation = $this->conversationService->getConversationWithMembers($id, auth()->id());
+        $creator = $conversation->creator_id;
+        
         return response()->json([
             'success' => true,
             'creator' => $creator,
@@ -341,10 +163,6 @@ class ConversationController extends Controller
 
     public function updateGroup(Request $request, $id)
     {
-        $conversation = Conversation::where('type', 'group')
-            ->whereHas('users', fn($q) => $q->where('user_id', auth()->id()))
-            ->findOrFail($id);
-
         $request->validate([
             'name' => 'required|string|max:255',
             'user_ids' => 'required|array|min:1|max:98',
@@ -352,113 +170,13 @@ class ConversationController extends Controller
             'dicebear_url' => 'nullable|string',
         ]);
 
-        $oldName = $conversation->name;
-        $oldAvatar = $conversation->avatar;
-        $oldMemberIds = $conversation->users->pluck('id')->toArray();
-
-        $data = ['name' => $request->name];
-
-        if ($request->hasFile('avatar')) {
-            $data['avatar'] = $request->file('avatar')->store('group_avatars', 'public');
-        } elseif ($request->dicebear_url) {
-            // Chống SSRF: Chỉ cho phép domain tin cậy
-            if (!str_contains($request->dicebear_url, 'api.dicebear.com')) {
-                return response()->json(['success' => false, 'message' => 'URL avatar không hợp lệ'], 422);
-            }
-            try {
-                $response = Http::get($request->dicebear_url);
-                if ($response->successful()) {
-                    $name = 'group_' . uniqid() . '.svg';
-                    Storage::disk('public')->put('group_avatars/' . $name, $response->body());
-                    $data['avatar'] = 'group_avatars/' . $name;
-                }
-            } catch (\Exception $e) {}
-        }
-
-        $conversation->update($data);
-
-        $memberIds = array_unique(array_merge($request->user_ids, [auth()->id()]));
-        $conversation->users()->sync($memberIds);
-
-        // --- TẠO CÁC THÔNG BÁO HỆ THỐNG ---
-        $notifications = [];
-        $authName = auth()->user()->profile->display_name ?? auth()->user()->name;
-
-        // 1. Thông báo đổi tên
-        if ($oldName !== $conversation->name) {
-            $notifications[] = Message::create([
-                'conversation_id' => $conversation->id,
-                'sender_id' => null,
-                'content' => $authName . ' đã đổi tên nhóm thành "' . $conversation->name . '"',
-                'type' => 'notification'
-            ]);
-        }
-
-        // 2. Thông báo đổi avatar
-        if ($oldAvatar !== $conversation->avatar) {
-            $notifications[] = Message::create([
-                'conversation_id' => $conversation->id,
-                'sender_id' => null,
-                'content' => $authName . ' đã thay đổi ảnh đại diện nhóm.',
-                'type' => 'notification'
-            ]);
-        }
-
-        // 3. Thông báo thêm thành viên mới
-        $newMemberIds = array_diff($memberIds, $oldMemberIds);
-        foreach ($newMemberIds as $newId) {
-            $user = User::find($newId);
-            $notifications[] = Message::create([
-                'conversation_id' => $conversation->id,
-                'sender_id' => null,
-                'content' => ($user->profile->display_name ?? $user->name) . ' đã được thêm vào nhóm.',
-                'type' => 'notification'
-            ]);
-        }
-
-        // 4. Thông báo xóa thành viên
-        $removedMemberIds = array_diff($oldMemberIds, $memberIds);
-        foreach ($removedMemberIds as $remId) {
-            $user = User::find($remId);
-            if ($user) {
-                $notifications[] = Message::create([
-                    'conversation_id' => $conversation->id,
-                    'sender_id' => null,
-                    'content' => ($user->profile->display_name ?? $user->name) . ' đã bị xóa khỏi nhóm.',
-                    'type' => 'notification'
-                ]);
-            }
-        }
-
-        // --- BROADCAST TOÀN BỘ THÔNG BÁO ---
-        foreach ($notifications as $noti) {
-            foreach ($memberIds as $mId) {
-                if ($mId !== auth()->id()) {
-                    $chatData = [
-                        'id'              => $noti->id,
-                        'content'         => $noti->content,
-                        'sender_id'       => null,
-                        'sender_name'     => 'Hệ thống',
-                        'is_group'        => true,
-                        'type'            => 'notification',
-                        'conversation_id' => $conversation->id,
-                        'group_name'      => $conversation->name,
-                        'group_avatar'    => $conversation->avatar,
-                        'receiver_id'     => $mId,
-                        'created_at'      => $noti->created_at->format('H:i d/m'),
-                        'timestamp'       => $noti->created_at->timestamp,
-                        'media'           => [],
-                    ];
-                    broadcast(new \App\Events\MessageSent((object) $chatData))->toOthers();
-                }
-            }
-        }
+        $conversation = $this->conversationService->updateGroup($id, $request->all(), auth()->user(), $request->file('avatar'));
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Cập nhật thành công',
-                'conversation' => $conversation->fresh()
+                'conversation' => $conversation
             ]);
         }
 
@@ -467,72 +185,13 @@ class ConversationController extends Controller
 
     public function leaveGroup($id)
     {
-        $conversation = Conversation::where('type', 'group')
-            ->whereHas('users', fn($q) => $q->where('user_id', auth()->id()))
-            ->findOrFail($id);
-
-        $notification = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => null,
-            'content' => (auth()->user()->profile->display_name ?? auth()->user()->name) . ' đã rời khỏi nhóm.',
-            'type' => 'notification'
-        ]);
-
-        $newLeaderNoti = null;
-        if ($conversation->creator_id== auth()->id()) {
-            $nextLeader = $conversation->users->where('id', '!=', auth()->id())->first();
-            if ($nextLeader) {
-                $conversation->update(['creator_id' => $nextLeader->id]);
-                $newLeaderNoti = Message::create([
-                    'conversation_id' => $conversation->id,
-                    'sender_id' => null,
-                    'content' => ($nextLeader?->profile?->display_name ?? $nextLeader?->name) . ' đã được chỉ định làm trưởng nhóm mới.',
-                    'type' => 'notification'
-                ]);
-            }
-        }
-
-        $conversation->users()->detach(auth()->id());
-        $allNotis = array_filter([$notification, $newLeaderNoti]);
-        foreach ($allNotis as $noti) {
-            foreach ($conversation->users as $member) {
-                if ($member->id !== auth()->id()) {
-                    $chatData = [
-                        'id'              => $noti->id,
-                        'content'         => $noti->content,
-                        'sender_id'       => null,
-                        'sender_name'     => 'Hệ thống',
-                        'is_group'        => true,
-                        'type'            => 'notification',
-                        'conversation_id' => $conversation->id,
-                        'group_name'      => $conversation->name,
-                        'group_avatar'    => $conversation->avatar,
-                        'receiver_id'     => $member->id,
-                        'created_at'      => $noti->created_at->format('H:i d/m'),
-                        'timestamp'       => $noti->created_at->timestamp,
-                        'media'           => [],
-                    ];
-                    broadcast(new \App\Events\MessageSent((object) $chatData))->toOthers();
-                }
-            }
-        }
-
-
-        if ($conversation->users()->count() === 0) {
-            $conversation->delete();
-        }
-
+        $this->conversationService->leaveGroup($id, auth()->user());
         return redirect()->route('conversations.index')->with('success', 'Bạn đã rời khỏi nhóm');
     }
 
     public function clearChat($id)
     {
-        $conversation = Conversation::whereHas('users', fn($q) => $q->where('user_id', auth()->id()))
-            ->findOrFail($id);
-
-        $conversation->users()->updateExistingPivot(auth()->id(), [
-            'deleted_at' => now()
-        ]);
+        $this->conversationService->clearChat($id, auth()->id());
 
         return response()->json([
             'success' => true,

@@ -13,10 +13,12 @@ use Illuminate\Support\Facades\Auth;
 class PostController extends Controller
 {
     protected $postService;
+    protected $topicService;
 
-    public function __construct(PostService $postService)
+    public function __construct(PostService $postService, \App\Services\TopicService $topicService)
     {
         $this->postService = $postService;
+        $this->topicService = $topicService;
     }
 
     // 1. Hiển thị danh sách bài viết (Admin/Mod)
@@ -29,8 +31,8 @@ class PostController extends Controller
     // 2. Giao diện tạo bài viết
     public function create()
     {
-        $topics = Topic::all(); 
-        $post = Post::all();
+        $topics = $this->topicService->getAllTopics(); 
+        $post = $this->postService->getAllPosts();
         return view('posts.create', compact('topics', 'post'));
     }
 
@@ -64,7 +66,7 @@ class PostController extends Controller
     // 5. Giao diện chỉnh sửa
     public function edit($id)
     {
-        $topics = Topic::all();
+        $topics = $this->topicService->getAllTopics();
         $post = $this->postService->getPostForEdit($id, auth()->user());
 
         if (request()->ajax()) {
@@ -103,7 +105,7 @@ class PostController extends Controller
         return response()->json([
             'success' => true,
             'data' => $postlist,
-            'count' => Post::count(),
+            'count' => $this->postService->getPostCount(),
             'message' => 'Xóa thành công'
         ]);
     }
@@ -111,7 +113,7 @@ class PostController extends Controller
     // 8. Hiển thị bài viết theo chủ đề
     public function postsByTopic($topicId)
     {
-        $topic = Topic::findOrFail($topicId);
+        $topic = $this->topicService->getTopicById($topicId);
         $posts = $this->postService->getPostsByTopic($topicId);
         
         return view('posts.topic', compact('posts', 'topic'));
@@ -119,23 +121,13 @@ class PostController extends Controller
 
     // --- Các hàm bên dưới sẽ được tách qua Service khác trong tương lai ---
 
-    public function loadComments($id)
+    public function loadComments($id, \App\Services\CommentService $commentService)
     {
-        $comments = Comment::where('post_id', $id)
-            ->whereNull('parent_comment_id')
-            ->where('status', 'show')
-            ->whereHas('user', function($q) {
-                $q->where('status', 'show');
-            })
-            ->with(['user.profile', 'replies' => function($q) {
-                $q->where('status', 'show')->whereHas('user', fn($u) => $u->where('status', 'show'))->with('user.profile');
-            }])
-            ->latest()
-            ->get();
+        $comments = $commentService->getPostComments($id);
         return view('posts.comments', compact('comments'));
     }
 
-    public function like_list(Request $request, $id)
+    public function like_list(Request $request, $id, \App\Services\InteractionService $interactionService)
     {
         if (!$request->ajax()) {
             return redirect()->back();
@@ -143,9 +135,7 @@ class PostController extends Controller
         $layout = 'layouts.empty';
         
         // Lấy bài viết và chỉ lấy những người thích đang ở trạng thái 'show'
-        $item = Post::with(['likedUsers' => function($q) {
-            $q->where('status', 'show')->with('profile');
-        }])->findOrFail($id);
+        $item = $interactionService->getPostWithLikes($id);
         
         $values = $item->likedUsers; 
         return view('like.like-list', compact('values', 'item', 'layout'));

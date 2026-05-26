@@ -3,47 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Report;
-use App\Models\Post;
-use App\Models\Comment;
-use App\Models\Conversation;
-use App\Models\Message;
+use App\Models\Topic;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
-use App\Jobs\ProcessReportAction;
+use App\Services\UserService;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     public function index()
     {
-                $users = User::with(['profile']) 
-                ->withCount([
-                    'posts',    
-                    'comments',
-                    'favorites',
-                    'followers',
-                    'following'  
-                ])
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
+        $users = $this->userService->getPaginatedUsers(10);
         return view('admin.users', compact('users'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('admin.createUser');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -67,187 +50,73 @@ class UserController extends Controller
             'name.alpha_dash' => 'Tên người dùng chỉ được chứa chữ cái, số, dấu gạch ngang và gạch dưới.'
         ]);
 
-        // 1. Create User
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'role' => $request->role,
-            'status' => 'show',
-            'email_verified_at' => now(),
-        ]);
-
-        // 2. Handle Avatar Upload
-        $avatarPath = null;
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-        }
-
-        // 3. Create Profile
-        $profile = $user->profile()->create([
-            'display_name' => $request->display_name ?? $request->name,
-            'bio' => $request->bio,
-            'avatar' => $avatarPath,
-        ]);
-
-        // Get the full user object with profile for the response
-        $newUser = User::with('profile')->find($user->id);
+        $newUser = $this->userService->createUser($request->all(), $request->file('avatar'));
 
         return response()->json([
             'success' => true,
             'data' => $newUser,
-            'count' => User::count(),
+            'count' => $this->userService->getUserCount(),
             'message' => 'Người dùng và Profile đã được tạo thành công'
         ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Topic $topic)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Topic $topic)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Topic $topic)
     {
         //
     }
+
     public function hide(Request $request, $id)
     {
-        $user = User::find($id);
         if (auth()->user()->role !== 'admin' ){
             abort(403, 'Bạn không có quyền');
         }
-        if (!$user) {
+
+        try {
+            $newStatus = $this->userService->toggleUserStatus($id, $request->type, auth()->id());
+            
+            return response()->json([
+                'success' => true,
+                'status' => $newStatus,
+                'message' => ($newStatus === 'hidden') ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản'
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Không tìm thấy người dùng'
             ], 404);
         }
-        
-        $type = $request->type; // 'hide' hoặc 'show'
-        $newStatus = ($type === 'hide') ? 'hidden' : 'show';
-        $user->status = $newStatus;
-        $user->save();
-
-        // Đẩy toàn bộ xử lý nặng (ẩn bài viết, bình luận, gửi mail, log báo cáo) vào Queue
-        $action = ($type === 'hide') ? 'hide' : 'restore';
-        ProcessReportAction::dispatch($action, User::class, $user->id, null, auth()->id());
-
-        return response()->json([
-            'success' => true,
-            'status' => $newStatus,
-            'message' => ($newStatus === 'hidden') ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản'
-        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        $user = User::with(['profile', 'posts.media', 'comments', 'conversations'])->find($id);
         if (auth()->user()->role !== 'admin' ){
             abort(403, 'Bạn không có quyền');
         }
-        if (!$user) {
+
+        try {
+            $userslist = $this->userService->deleteUserPermanently($id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $userslist,
+                'count' => $this->userService->getUserCount(),
+                'message' => 'Đã xóa vĩnh viễn người dùng và dọn dẹp toàn bộ dữ liệu liên quan'
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Không tìm thấy người dùng'
             ], 404);
         }
-
-        // 1. Xóa file Avatar
-        if ($user->profile && $user->profile->avatar) {
-            Storage::disk('public')->delete($user->profile->avatar);
-        }
-
-        // 2. Xóa file Media trong các bài viết (Posts)
-        foreach ($user->posts as $post) {
-            foreach ($post->media as $m) {
-                if ($m->file_path) {
-                    Storage::disk('public')->delete($m->file_path);
-                }
-            }
-        }
-
-        // 3. Xóa file Media trong các bình luận (Comments)
-        foreach ($user->comments as $comment) {
-            if ($comment->media_path) {
-                Storage::disk('public')->delete($comment->media_path);
-            }
-        }
-
-        // 4. Chuyển quyền chủ nhóm cho thành viên khác và thông báo
-        Conversation::where('creator_id', $id)->update(['creator_id' => null]);
-        $groupConvos = Conversation::where('type', 'group')
-            ->where('creator_id', $id)
-            ->with('users')
-            ->get();
-
-        foreach ($groupConvos as $convo) {
-            $nextLeader = $convo->users->where('id', '!=', $id)->first();
-            if ($nextLeader) {
-                $convo->update(['creator_id' => $nextLeader->id]);
-                // Gửi thông báo hệ thống vào nhóm
-                Message::create([
-                    'conversation_id' => $convo->id,
-                    'sender_id' => null,
-                    'content' => ($nextLeader->profile->display_name ?? $nextLeader->name) . ' đã được chỉ định làm trưởng nhóm mới do chủ nhóm cũ bị xóa.',
-                    'type' => 'notification'
-                ]);
-            } else {
-                $convo->update(['creator_id' => null]);
-            }
-        }
-
-        // 5. Xóa Media của các tin nhắn đã gửi
-        $messages = Message::where('sender_id', $id)->with('media')->get();
-        foreach ($messages as $msg) {
-            foreach ($msg->media as $mm) {
-                if ($mm->file_path) {
-                    Storage::disk('public')->delete($mm->file_path);
-                }
-            }
-        }
-
-        // 5. Xóa Hội thoại cá nhân (Private Conversations)
-        foreach ($user->conversations as $convo) {
-            if ($convo->type === 'private') {
-                $convoMessages = Message::where('conversation_id', $convo->id)->with('media')->get();
-                foreach ($convoMessages as $cm) {
-                    foreach ($cm->media as $cmm) {
-                        if ($cmm->file_path) {
-                            Storage::disk('public')->delete($cmm->file_path);
-                        }
-                    }
-                }
-                $convo->delete(); 
-            }
-      
-        }
-
-        Report::where('target_id', $id)->where('target_type', User::class)->delete();
-        $user->delete();
-
-        $userslist = User::latest()->get();
-        return response()->json([
-            'success' => true,
-            'data' => $userslist,
-            'count' => User::count(),
-            'message' => 'Đã xóa vĩnh viễn người dùng và dọn dẹp toàn bộ dữ liệu liên quan'
-        ]);
     }
 }

@@ -2,29 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Notification;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class NotificationController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $notifications = auth()->user()->notifications()->orderBy('created_at', 'desc')->paginate(15);
+        $notifications = $this->notificationService->getUserNotificationsPaginated(auth()->user(), 15);
         return view('notification.notification-list', compact('notifications'));
     }
+
     public function ajax()
     {
-        $notifications = auth()->user()
-            ->notifications()
-            ->latest()
-            ->take(20)
-            ->get();
-
+        $notifications = $this->notificationService->getRecentUserNotifications(auth()->user(), 20);
         return view('notification.ajax_list', compact('notifications'));
     }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -44,7 +48,7 @@ class NotificationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Notification $notification)
+    public function show($id)
     {
         //
     }
@@ -52,7 +56,7 @@ class NotificationController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Notification $notification)
+    public function edit($id)
     {
         //
     }
@@ -60,7 +64,7 @@ class NotificationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Notification $notification)
+    public function update(Request $request, $id)
     {
         //
     }
@@ -70,12 +74,9 @@ class NotificationController extends Controller
      */
     public function markAsRead($id)
     {
-        $notification = Notification::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->first();
+        $success = $this->notificationService->markAsRead($id, auth()->id());
 
-        if ($notification) {
-            $notification->update(['is_read' => true]);
+        if ($success) {
             return response()->json(['success' => true]);
         }
 
@@ -84,7 +85,7 @@ class NotificationController extends Controller
 
     public function markAllAsRead()
     {
-        auth()->user()->notifications()->where('is_read', 0)->update(['is_read' => 1]);
+        $this->notificationService->markAllAsRead(auth()->user());
         return back()->with('success', 'Đã đánh dấu tất cả là đã đọc.');
     }
 }

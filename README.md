@@ -1,59 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Mạng Xã Hội (Social Network App)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Giới thiệu
+Đây là dự án Mạng Xã Hội được phát triển nhằm cung cấp nền tảng kết nối, chia sẻ bài viết, tương tác thời gian thực (Real-time) và tích hợp hệ thống trí tuệ nhân tạo (AI Recommender) để đề xuất nội dung bài viết và kết bạn thông minh dựa trên sở thích và hành vi của người dùng.
 
-## About Laravel
+## Công nghệ sử dụng
+- **Backend:** PHP 8.2+, Laravel 12
+- **Real-time & WebSockets:** Laravel Reverb
+- **Search Engine:** Meilisearch & Laravel Scout
+- **AI & Data Service:** Python (FastAPI, Scikit-learn, Pandas, TF-IDF, Collaborative Filtering)
+- **Database:** MySQL
+- **Frontend:** JavaScript (ES6+), Blade Template, TailwindCSS, Vite
+- **Background Tasks:** Laravel Queue Worker
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Chức năng
+- **Xác thực & Tài khoản:** Đăng ký, đăng nhập, quản lý trang cá nhân, thiết lập hồ sơ.
+- **Tương tác Bài viết:** Đăng bài viết, cập nhật bài viết, thả tim (Like), lưu bài viết yêu thích (Favorite), bình luận (Comment).
+- **Hệ thống Đề xuất AI:** Đề xuất bài viết và gợi ý người dùng (kết bạn/theo dõi) thông minh bằng dịch vụ Python AI.
+- **Tìm kiếm Thông minh:** Tìm kiếm nhanh chóng bài viết, người dùng, chủ đề với Meilisearch & sắp xếp thứ tự bởi AI.
+- **Nhắn tin Real-time:** Nhắn tin cá nhân và nhắn tin nhóm thời gian thực qua WebSockets (Laravel Reverb).
+- **Thông báo Real-time:** Thông báo khi có tương tác mới (thích, bình luận, follow).
+- **Theo dõi & Chia sẻ:** Theo dõi người dùng khác (Follow/Unfollow), chia sẻ bài viết.
+- **Quản trị hệ thống (Admin & Moderator Dashboard):** Quản lý người dùng, bài viết, chủ đề (Topic), xử lý báo cáo vi phạm (Reports) và xem nhật ký hoạt động (Activity Logs).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Hướng dẫn cài đặt
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Yêu cầu môi trường
+- PHP >= 8.2
+- Composer
+- Node.js & NPM
+- MySQL (XAMPP / Local MySQL Server)
+- Python 3.9+ (để chạy dịch vụ AI)
 
-## Learning Laravel
+### Các bước cài đặt
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+1. **Clone repository về máy:**
+   ```bash
+   git clone <repository_url>
+   cd Social
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. **Cài đặt các gói phụ thuộc (PHP & Node.js):**
+   ```bash
+   composer install
+   npm install
+   ```
 
-## Laravel Sponsors
+3. **Cấu hình môi trường (`.env`):**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   *Cấu hình thông tin kết nối MySQL database trong tệp `.env`.*
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+4. **Chạy Migration & Import dữ liệu mẫu:**
+   ```bash
+   php artisan migrate
+   ```
 
-### Premium Partners
+5. **Cài đặt môi trường Python AI Service:**
+   ```bash
+   cd python_ai_service
+   pip install -r requirements.txt
+   cd ..
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+6. **Khởi chạy ứng dụng:**
+   Bạn có thể chạy tệp `run-realtime.bat` trên Windows hoặc khởi chạy thủ công các dịch vụ:
+   ```bash
+   # Terminal 1: Chạy Web Server
+   php artisan serve
 
-## Contributing
+   # Terminal 2: Chạy Vite Frontend
+   npm run dev
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+   # Terminal 3: Chạy Python AI Service
+   cd python_ai_service && python -m uvicorn main:app --reload --port 8001
 
-## Code of Conduct
+   # Terminal 4: Chạy WebSocket Reverb
+   php artisan reverb:start
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+   # Terminal 5: Chạy Queue Worker
+   php artisan queue:work
 
-## Security Vulnerabilities
+   # Terminal 6: Chạy Meilisearch & Import dữ liệu tìm kiếm
+   .\meilisearch.exe
+   php artisan scout:import "App\Models\Post"
+   php artisan scout:import "App\Models\User"
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Hình ảnh
+*(Cập nhật hình ảnh/screenshot giao diện dự án tại đây)*
 
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Tác giả
+Phan Thành Đức
